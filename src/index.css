@@ -1,0 +1,19 @@
+/* ========================================
+   GLOBAL RESET — Mobile-first
+   ======================================== */
+@import './tokens/index.css';
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{font-family:var(--font);font-size:var(--text-base);line-height:var(--leading-normal);color:var(--c-text);background:var(--c-bg);min-height:100vh;overflow-x:hidden}
+img,svg,video,canvas{display:block;max-width:100%}
+a{color:var(--c-primary);text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+ul,ol{list-style:none}
+h1,h2,h3,h4{font-weight:600;line-height:var(--leading-tight);color:var(--c-text)}
+::selection{background:var(--c-primary);color:#fff}
+:focus-visible{outline:2px solid var(--c-primary);outline-offset:2px}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--s-300);border-radius:var(--r-full)}
+::-webkit-scrollbar-thumb:hover{background:var(--s-400)}

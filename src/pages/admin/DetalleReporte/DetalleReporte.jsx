@@ -1,0 +1,170 @@
+import { useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowRight, Bug, ChartBar, CheckCircle, FileText, MagnifyingGlass, User } from 'phosphor-react'
+import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
+import PageHeader from '../../../components/PageHeader/PageHeader'
+import DataPanel from '../../../components/DataPanel/DataPanel'
+import Badge from '../../../components/Badge/Badge'
+import Avatar from '../../../components/Avatar/Avatar'
+import EmptyState from '../../../components/EmptyState/EmptyState'
+import {
+  findBugReportById,
+  findUserById,
+  updateBugReportEstado,
+  createNotification,
+  displayNames,
+} from '../../../data/mockData'
+import s from './DetalleReporte.module.css'
+
+const ESTADO_VARIANT = {
+  pendiente: 'warning',
+  en_revision: 'info',
+  resuelto: 'success',
+  cerrado: 'neutral',
+  rechazado: 'danger',
+}
+
+const ESTADOS = ['pendiente', 'en_revision', 'resuelto', 'cerrado', 'rechazado']
+
+export default function DetalleReporte() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [nuevoEstado, setNuevoEstado] = useState(() => {
+    const r = findBugReportById(id)
+    return r ? r.estado : 'pendiente'
+  })
+  const [guardado, setGuardado] = useState(false)
+
+  const reporte = findBugReportById(id)
+  const reportante = reporte && reporte.reporterId ? findUserById(reporte.reporterId) : null
+
+  if (!reporte) {
+    return (
+      <DashboardLayout role="admin" titulo="Detalle de Reporte">
+        <div className={s.page}>
+          <EmptyState
+            icon={<MagnifyingGlass />}
+            title="Reporte no encontrado"
+            message="El reporte de falla que buscas no existe."
+            actionLabel="Volver a reportes de fallas"
+            onAction={() => navigate('/admin/reportes-fallas')}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const guardarEstado = (e) => {
+    e.preventDefault()
+    if (nuevoEstado === reporte.estado) return
+    updateBugReportEstado(reporte.id, nuevoEstado)
+    if (reporte.reporterId) {
+      createNotification({
+        mensaje: `Tu reporte '${reporte.titulo}' ha pasado a ${
+          displayNames.bugReportStatus[nuevoEstado] || nuevoEstado
+        }`,
+        tipo: 'sistema',
+        userId: reporte.reporterId,
+        reporteId: reporte.id,
+      })
+    }
+    setGuardado(true)
+  }
+
+  return (
+    <DashboardLayout role="admin" titulo="Detalle de Reporte">
+      <div className={s.page}>
+        <PageHeader
+          title={reporte.titulo}
+          subtitle={`Reporte #${reporte.id} · Recibido el ${reporte.createdAt}`}
+          icon={<Bug />}
+          breadcrumb={[
+            { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
+            { label: 'Reportes de Fallas', to: '/admin/reportes-fallas', icon: <Bug size={14} /> },
+            { label: `#${reporte.id}` },
+          ]}
+        />
+
+        {guardado && (
+          <p className={s.alertSuccess} role="status">
+            <CheckCircle size={14} /> El estado del reporte se actualizó correctamente.
+          </p>
+        )}
+
+        <DataPanel
+          title="Información del reporte"
+          icon={<FileText />}
+          action={
+            <Badge variant={ESTADO_VARIANT[reporte.estado] || 'neutral'} className={s.bigBadge}>
+              {displayNames.bugReportStatus[reporte.estado] || reporte.estado}
+            </Badge>
+          }
+        >
+          <p className={s.description}>{reporte.descripcion}</p>
+
+          <dl className={s.grid}>
+            <div className={s.cell}>
+              <dt>Tipo</dt>
+              <dd>{displayNames.bugReportType[reporte.tipo] || reporte.tipo}</dd>
+            </div>
+            <div className={s.cell}>
+              <dt>Fecha del reporte</dt>
+              <dd>{reporte.createdAt}</dd>
+            </div>
+            <div className={s.cell}>
+              <dt>Última actualización</dt>
+              <dd>{reporte.updatedAt || reporte.createdAt}</dd>
+            </div>
+          </dl>
+
+          <form className={s.statusForm} onSubmit={guardarEstado}>
+            <label className={s.statusField}>
+              <span className={s.statusLabel}>Cambiar estado</span>
+              <select
+                className={s.select}
+                value={nuevoEstado}
+                onChange={(e) => {
+                  setNuevoEstado(e.target.value)
+                  setGuardado(false)
+                }}
+              >
+                {ESTADOS.map((est) => (
+                  <option key={est} value={est}>
+                    {displayNames.bugReportStatus[est]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              className={`${s.btn} ${s.primary}`}
+              disabled={nuevoEstado === reporte.estado}
+            >
+              <CheckCircle size={14} /> Guardar estado
+            </button>
+          </form>
+        </DataPanel>
+
+        <DataPanel title="Información del reportante"           icon={<User />}>
+          {reportante ? (
+            <div className={s.personCard}>
+              <Avatar name={reportante.name} size="md" />
+              <div className={s.personInfo}>
+                <span className={s.personName}>{reportante.name}</span>
+                <span className={s.personEmail}>{reportante.email}</span>
+              </div>
+              <Link to={`/admin/detalle-usuario/${reportante.id}`} className={`${s.btn} ${s.secondary}`}>
+                Ver usuario <ArrowRight size={14} />
+              </Link>
+            </div>
+          ) : (
+            <p className={s.muted}>
+              Reportado por <strong>{reporte.reporterName}</strong> (usuario no registrado o
+              eliminado).
+            </p>
+          )}
+        </DataPanel>
+      </div>
+    </DashboardLayout>
+  )
+}

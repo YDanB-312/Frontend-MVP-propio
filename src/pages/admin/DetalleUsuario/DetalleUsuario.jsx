@@ -1,0 +1,181 @@
+import { useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { User, IdentificationCard, FolderOpen, Eye, Pause, Play, MagnifyingGlass, ChartBar, Users } from 'phosphor-react'
+import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
+import PageHeader from '../../../components/PageHeader/PageHeader'
+import DataPanel from '../../../components/DataPanel/DataPanel'
+import Badge from '../../../components/Badge/Badge'
+import Avatar from '../../../components/Avatar/Avatar'
+import EmptyState from '../../../components/EmptyState/EmptyState'
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import {
+  findUserById,
+  findFichaById,
+  getProjectsByStudent,
+  getAllSimilarities,
+  setUserActive,
+  displayNames,
+} from '../../../data/mockData'
+import s from './DetalleUsuario.module.css'
+
+const ESTADO_VARIANT = {
+  pendiente: 'warning',
+  en_revision: 'info',
+  aprobado: 'success',
+  rechazado: 'danger',
+  requiere_ajustes: 'warning',
+}
+
+function similitudInfo(similitudes, projectId) {
+  const propias = similitudes.filter((x) => x.projectId1 === projectId || x.projectId2 === projectId)
+  if (propias.length === 0) return null
+  return {
+    pct: Math.max(...propias.map((x) => Math.round(x.similitud * 100))),
+    count: propias.length,
+  }
+}
+
+export default function DetalleUsuario() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [modalEstado, setModalEstado] = useState(false)
+
+  const usuario = findUserById(id)
+  const proyectos = usuario && usuario.role === 'aprendiz' ? getProjectsByStudent(usuario.id) : []
+  const similitudes = getAllSimilarities()
+
+  if (!usuario) {
+    return (
+      <DashboardLayout role="admin" titulo="Detalle de Usuario">
+        <div className={s.page}>
+          <EmptyState
+            icon={<MagnifyingGlass />}
+            title="Usuario no encontrado"
+            message="El usuario que buscas no existe o fue eliminado."
+            actionLabel="Volver a gestión de usuarios"
+            onAction={() => navigate('/admin/gestion-usuarios')}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const activo = usuario.estado === 1
+  const ficha = usuario.fichaId ? findFichaById(usuario.fichaId) : null
+
+  const confirmarCambioEstado = () => {
+    setUserActive(usuario.id, !activo)
+    setModalEstado(false)
+  }
+
+  return (
+    <DashboardLayout role="admin" titulo="Detalle de Usuario">
+      <div className={s.page}>
+        <PageHeader
+          title={usuario.name}
+          subtitle={`Cuenta ${displayNames.userRole[usuario.role] || usuario.role} · ${
+            activo ? 'Activa' : 'Inactiva'
+          }`}
+          icon={<User />}
+          breadcrumb={[
+            { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
+            { label: 'Gestión de Usuarios', to: '/admin/gestion-usuarios', icon: <Users size={14} /> },
+            { label: usuario.name },
+          ]}
+        />
+
+        <DataPanel title="Perfil del usuario" icon={<IdentificationCard />}>
+          <div className={s.profile}>
+            <Avatar name={usuario.name} size="lg" />
+            <div className={s.profileInfo}>
+              <h2 className={s.name}>{usuario.name}</h2>
+              <p className={s.email}>{usuario.email}</p>
+              <div className={s.tags}>
+                <Badge variant="primary">{displayNames.userRole[usuario.role] || usuario.role}</Badge>
+                {activo ? <Badge variant="success">Activo</Badge> : <Badge variant="danger">Inactivo</Badge>}
+              </div>
+              <button
+                type="button"
+                className={`${s.btn} ${activo ? s.danger : s.success}`}
+                onClick={() => setModalEstado(true)}
+              >
+                {activo ? '                <Pause size={14} /> Desactivar cuenta' : '                <Play size={14} /> Activar cuenta'}
+              </button>
+            </div>
+            <dl className={s.details}>
+              <div className={s.detail}>
+                <dt>Teléfono</dt>
+                <dd>{usuario.telefono || 'No registrado'}</dd>
+              </div>
+              <div className={s.detail}>
+                <dt>Documento</dt>
+                <dd>{usuario.documentoIdentidad || 'No registrado'}</dd>
+              </div>
+              <div className={s.detail}>
+                <dt>Ficha</dt>
+                <dd>{ficha ? `${ficha.codigo} — ${ficha.nombre}` : 'Sin ficha'}</dd>
+              </div>
+              <div className={s.detail}>
+                <dt>{usuario.role === 'instructor' ? 'Área encargada' : 'Programa'}</dt>
+                <dd>
+                  {usuario.role === 'instructor'
+                    ? usuario.areaEncargada || 'No asignada'
+                    : usuario.programa || 'No asignado'}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </DataPanel>
+
+        {usuario.role === 'aprendiz' && (
+          <DataPanel title={`Proyectos del aprendiz (${proyectos.length})`} icon={<FolderOpen />}>
+            {proyectos.length === 0 ? (
+              <EmptyState
+                icon={<FolderOpen />}
+                title="Sin proyectos"
+                message="Este aprendiz aún no ha registrado ningún proyecto."
+              />
+            ) : (
+              <ul className={s.projectList}>
+                {proyectos.map((p) => {
+                  const info = similitudInfo(similitudes, p.id)
+                  return (
+                    <li key={p.id}>
+                      <Link to={`/admin/detalle-proyecto/${p.id}`} className={s.projectRow}>
+                        <span className={s.projectInfo}>
+                          <span className={s.projectTitle}>{p.title}</span>
+                          <span className={s.projectMeta}>Enviado el {p.createdAt}</span>
+                        </span>
+                        {info && (
+                          <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
+                            <MagnifyingGlass size={12} /> {info.pct}% · {info.count}
+                          </Badge>
+                        )}
+                        <Badge variant={ESTADO_VARIANT[p.estado] || 'neutral'}>
+                          {displayNames.projectStatus[p.estado] || p.estado}
+                        </Badge>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </DataPanel>
+        )}
+      </div>
+
+      <ConfirmModal
+        open={modalEstado}
+        titulo={activo ? 'Desactivar cuenta' : 'Activar cuenta'}
+        mensaje={
+          activo
+            ? `¿Seguro que deseas desactivar la cuenta de "${usuario.name}"? No podrá iniciar sesión hasta que la reactives.`
+            : `¿Deseas reactivar la cuenta de "${usuario.name}"? Volverá a poder iniciar sesión normalmente.`
+        }
+        textoConfirmar={activo ? 'Sí, desactivar' : 'Sí, activar'}
+        onConfirmar={confirmarCambioEstado}
+        onCancelar={() => setModalEstado(false)}
+      />
+    </DashboardLayout>
+  )
+}

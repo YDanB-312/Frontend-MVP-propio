@@ -1,0 +1,30 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-bg);
+  padding: var(--sp-6) var(--sp-4);
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-lg);
+  padding: var(--sp-8) var(--sp-6);
+}
+
+.logo {
+  display: block;
+  height: 48px;
+  margin: 0 auto var(--sp-6);
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: var(--sp-6) var(--sp-4);
+  }
+}

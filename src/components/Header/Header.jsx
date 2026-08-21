@@ -1,0 +1,99 @@
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
+import s from './Header.module.css'
+
+const RUTA_NOTIFICACIONES = {
+  aprendiz: '/aprendiz/alertas',
+  instructor: '/instructor/alertas',
+  admin: '/admin/notificaciones',
+}
+
+function iniciales(nombre = '') {
+  return nombre
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(p => p[0]?.toUpperCase() || '')
+    .join('')
+}
+
+function HamburgerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <path d="M3 6h18M3 12h18M3 18h18" />
+    </svg>
+  )
+}
+
+function BellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  )
+}
+
+function LogoutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  )
+}
+
+export default function Header({ titulo = '', usuario = null, notificaciones = 0, role = '', onToggleSidebar }) {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  const cerrarSesion = () => {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
+  const irANotificaciones = () => {
+    const ruta = RUTA_NOTIFICACIONES[role]
+    if (ruta) navigate(ruta)
+  }
+
+  return (
+    <header className={s.header}>
+      <div className={s.container}>
+        <div className={s.left}>
+          <button type="button" className={s.hamburger} onClick={onToggleSidebar} aria-label="Abrir menú de navegación">
+            <HamburgerIcon />
+          </button>
+          <Link to="/" className={s.logo} aria-label="Ir al inicio">
+            <img src="/images/Logo-ProyecTwin.png" alt="ProyecTwin SENA" />
+          </Link>
+          <span className={s.title}>{titulo}</span>
+        </div>
+
+        <div className={s.right}>
+          <span className={s.senaWrap}>
+            <img className={s.senaLogo} src="/images/logo-sena-blanco.png" alt="SENA" />
+          </span>
+
+          <button type="button" className={s.notif} onClick={irANotificaciones} aria-label={`Notificaciones${notificaciones > 0 ? ` (${notificaciones} sin leer)` : ''}`}>
+            <BellIcon />
+            {notificaciones > 0 && <span className={s.badge}>{notificaciones > 99 ? '99+' : notificaciones}</span>}
+          </button>
+
+          <div className={s.user} title={usuario?.correo}>
+            <span className={s.avatar} aria-hidden="true">{iniciales(usuario?.nombre)}</span>
+            <span className={s.userInfo}>
+              <span className={s.userName}>{usuario?.nombre}</span>
+              <span className={s.userRole}>{role}</span>
+            </span>
+          </div>
+
+          <button type="button" className={s.logoutBtn} onClick={cerrarSesion} aria-label="Cerrar sesión">
+            <LogoutIcon />
+            <span className={s.logoutText}>Salir</span>
+          </button>
+        </div>
+      </div>
+    </header>
+  )
+}

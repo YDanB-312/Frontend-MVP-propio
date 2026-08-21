@@ -1,0 +1,104 @@
+.bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--govbar-h);
+  background: var(--c-govbar);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 1000;
+}
+
+.container {
+  max-width: none;
+  height: 100%;
+  padding: 0 var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.accessibility {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--govbar-text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.themeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-md);
+  color: var(--govbar-text-dim);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.themeBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--govbar-text);
+}
+
+/* ---- Dark theme token overrides (activado vía data-theme en <html>) ---- */
+:global(html[data-theme='dark']) {
+  --c-bg: #000000;
+  --c-surface: #0a0a0a;
+  --c-surface-alt: #111111;
+  --c-primary-light: rgba(57, 169, 0, 0.15);
+  --c-primary-strong: #8fe649;
+  --c-primary-hover: #4cb944;
+  --c-text: #ededed;
+  --c-text-2: #a1a1a1;
+  --c-text-3: #707070;
+  --c-border: #333333;
+  --c-border-2: #222222;
+  --c-border-h: #404040;
+  --c-success-bg: rgba(57, 169, 0, 0.14);
+  --c-warning-bg: rgba(245, 158, 11, 0.12);
+  --c-danger-bg: rgba(239, 68, 68, 0.14);
+  --c-info-bg: rgba(27, 137, 168, 0.16);
+  --par-a-strong: #8fe649;
+  --par-a-bg: rgba(57, 169, 0, 0.12);
+  --par-a-border: rgba(57, 169, 0, 0.35);
+  --par-b-strong: #6cc5dd;
+  --par-b-bg: rgba(27, 137, 168, 0.12);
+  --par-b-border: rgba(27, 137, 168, 0.35);
+  --c-sidebar: #0a0a0a;
+  --c-sidebar-border: #262626;
+  --c-sidebar-active: rgba(57, 169, 0, 0.14);
+  --c-sidebar-active-t: #8fe649;
+  --c-sidebar-hover: #1a1a1a;
+  --c-sidebar-text: #a1a1a1;
+  --c-sidebar-indicator: #4cb944;
+  --c-govbar: #0a0a0a;
+  --govbar-text: #a1a1a1;
+  --govbar-text-dim: #707070;
+  --c-header-accent: rgba(57, 169, 0, 0.4);
+  --grad-hero: linear-gradient(135deg, #111111 0%, #0a0a0a 55%, #0a1214 100%);
+  --grad-wash: linear-gradient(90deg, rgba(57, 169, 0, 0.10), transparent 40%);
+  --grad-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(27, 137, 168, 0.04));
+  --ring-color: rgba(110, 231, 74, 0.28);
+  --sh-xs: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --sh-sm: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --sh-md: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 4px rgba(0, 0, 0, 0.5);
+  --sh-lg: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 8px 24px -6px rgba(0, 0, 0, 0.6);
+  --sh-xl: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 16px 40px -8px rgba(0, 0, 0, 0.7);
+  --sh-card: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --sh-card-h: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 8px 24px -6px rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 var(--sp-3);
+  }
+
+  .accessibility {
+    font-size: 0.6875rem;
+  }
+}

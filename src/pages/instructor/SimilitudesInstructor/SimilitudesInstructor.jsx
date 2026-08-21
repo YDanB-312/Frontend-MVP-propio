@@ -1,0 +1,158 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Eye, MagnifyingGlass } from 'phosphor-react'
+import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
+import PageHeader from '../../../components/PageHeader/PageHeader'
+import FilterBar from '../../../components/FilterBar/FilterBar'
+import Badge from '../../../components/Badge/Badge'
+import Pagination from '../../../components/Pagination/Pagination'
+import EmptyState from '../../../components/EmptyState/EmptyState'
+import { useAuth } from '../../../contexts/AuthContext'
+import { getAllSimilarities, getProjectsByInstructor, displayNames } from '../../../data/mockData'
+import s from './SimilitudesInstructor.module.css'
+
+const ITEMS_POR_PAGINA = 8
+
+const SIM_VARIANT = { pendiente: 'warning', revisada: 'info', resuelta: 'success' }
+
+export default function SimilitudesInstructor() {
+  const { user } = useAuth()
+  const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [pagina, setPagina] = useState(1)
+
+  const idsPropios = new Set(
+    user ? getProjectsByInstructor(Number(user.id)).map((p) => p.id) : []
+  )
+  const similitudes = getAllSimilarities().filter(
+    (x) => idsPropios.has(x.projectId1) || idsPropios.has(x.projectId2)
+  )
+
+  const filtradas =
+    filtroEstado === 'todos' ? similitudes : similitudes.filter((x) => x.estado === filtroEstado)
+
+  const paginadas = filtradas.slice(
+    (pagina - 1) * ITEMS_POR_PAGINA,
+    pagina * ITEMS_POR_PAGINA
+  )
+
+  return (
+    <DashboardLayout role="instructor" titulo="Similitudes">
+      <div className={s.page}>
+        <PageHeader
+          title="Similitudes Detectadas"
+          subtitle="Analiza los pares de proyectos con contenido similar entre tus aprendices y dales seguimiento."
+          icon={<MagnifyingGlass />}
+          breadcrumb={[{ label: 'Dashboard', to: '/instructor/dashboard' }, { label: 'Similitudes' }]}
+        />
+
+        <FilterBar title="Filtrar por estado">
+          <label className={s.field}>
+            <span className={s.label}>Estado</span>
+            <select
+              className={s.select}
+              value={filtroEstado}
+              onChange={(e) => {
+                setFiltroEstado(e.target.value)
+                setPagina(1)
+              }}
+            >
+              <option value="todos">Todos</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="revisada">Revisada</option>
+              <option value="resuelta">Resuelta</option>
+            </select>
+          </label>
+          <p className={s.info}>
+            {filtradas.length} similitud{filtradas.length !== 1 ? 'es' : ''}
+          </p>
+        </FilterBar>
+
+        {paginadas.length === 0 ? (
+          <EmptyState
+            icon={<MagnifyingGlass />}
+            title="Sin similitudes"
+            message={
+              similitudes.length === 0
+                ? 'No se han detectado similitudes entre los proyectos de tus aprendices.'
+                : 'No hay similitudes con el estado seleccionado.'
+            }
+          />
+        ) : (
+          <>
+            <div className={s.tableWrap}>
+              <table className={s.table}>
+                <thead>
+                  <tr>
+                    <th>Proyecto A</th>
+                    <th>Proyecto B</th>
+                    <th>Similitud</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th className={s.colActions}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginadas.map((sim) => {
+                    const pct = Math.round((sim.similitud || 0) * 100)
+                    return (
+                      <tr key={sim.id}>
+                        <td>
+                          <span className={s.title}>{sim.project1Title}</span>
+                          <span className={s.subText}>{sim.project1Student}</span>
+                        </td>
+                        <td>
+                          <span className={s.title}>{sim.project2Title}</span>
+                          <span className={s.subText}>{sim.project2Student}</span>
+                        </td>
+                        <td>
+                          <span
+                            className={`${s.pct} ${
+                              pct >= 60 ? s.pctHigh : pct >= 40 ? s.pctMid : s.pctLow
+                            }`}
+                          >
+                            {pct}%
+                          </span>
+                          <span className={s.barTrack} aria-hidden="true">
+                            <span
+                              className={`${s.barFill} ${
+                                pct >= 60 ? s.fillHigh : pct >= 40 ? s.fillMid : s.fillLow
+                              }`}
+                              style={{ width: `${Math.min(pct, 100)}%` }}
+                            />
+                          </span>
+                        </td>
+                        <td>
+                          <Badge variant={SIM_VARIANT[sim.estado] || 'neutral'}>
+                            {displayNames.similarityStatus[sim.estado] || sim.estado}
+                          </Badge>
+                        </td>
+                        <td className={s.date}>{sim.createdAt}</td>
+                        <td className={s.colActions}>
+                          <Link
+                            to={`/instructor/detalle-similitud/${sim.id}`}
+                            className={`${s.btn} ${s.secondary}`}
+                          >
+                            <Eye size={14} /> Ver
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              totalItems={filtradas.length}
+              itemsPerPage={ITEMS_POR_PAGINA}
+              paginaActual={pagina}
+              setPaginaActual={setPagina}
+              itemName="similitudes"
+              filteredCount={filtradas.length}
+            />
+          </>
+        )}
+      </div>
+    </DashboardLayout>
+  )
+}

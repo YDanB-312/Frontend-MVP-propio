@@ -1,0 +1,205 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.headActions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+/* Info grid */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+}
+
+.cell {
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border-2);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.cell dt {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c-text-3);
+}
+
+.cell dd {
+  margin-top: var(--sp-1);
+  font-size: var(--text-sm);
+  color: var(--c-text);
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.codigo {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--c-primary);
+}
+
+.directorioBtn {
+  margin-top: var(--sp-5);
+}
+
+/* Edit form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  max-width: 480px;
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: var(--sp-2_5) var(--sp-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px var(--ring-color);
+}
+
+.formActions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1_5);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.primary {
+  background: var(--c-primary);
+  color: #fff;
+}
+
+.primary:hover {
+  background: var(--c-primary-hover);
+}
+
+.secondary {
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  border-color: var(--c-border);
+}
+
+.secondary:hover {
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.danger {
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+  border-color: var(--c-danger);
+}
+
+.danger:hover {
+  background: var(--c-danger);
+  color: #fff;
+}
+
+/* Student list */
+.studentList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+}
+
+.studentRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border-2);
+  border-radius: var(--r-md);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.studentRow:hover {
+  border-color: var(--c-primary);
+  background: var(--c-surface);
+  box-shadow: var(--sh-card-h);
+  transform: translateY(-1px);
+}
+
+.studentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-0_5);
+  min-width: 0;
+  flex: 1;
+}
+
+.studentName {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studentEmail {
+  font-size: var(--text-xs);
+  color: var(--c-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arrow {
+  color: var(--c-text-3);
+  font-size: var(--text-sm);
+}
+
+.studentRow:hover .arrow {
+  color: var(--c-primary);
+}
+
+@media (min-width: 1024px) {
+  .studentList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

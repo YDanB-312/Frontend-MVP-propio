@@ -1,0 +1,117 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  max-width: 640px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-4);
+}
+
+@media (min-width: 768px) {
+  .row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: var(--sp-2_5) var(--sp-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.textarea {
+  font-family: var(--font);
+  line-height: var(--leading-normal);
+  resize: vertical;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px var(--ring-color);
+}
+
+.formActions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2_5) var(--sp-5);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.primary {
+  background: var(--c-primary);
+  color: #fff;
+}
+
+.primary:hover {
+  background: var(--c-primary-hover);
+}
+
+.secondary {
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  border-color: var(--c-border);
+}
+
+.secondary:hover {
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.successBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.successText {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text-2);
+  background: var(--c-success-bg);
+  border: 1px solid var(--c-success);
+  border-radius: var(--r-md);
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
