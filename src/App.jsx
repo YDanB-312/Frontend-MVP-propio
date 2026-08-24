@@ -1,5 +1,6 @@
+import PageFallback from './components/PageFallback/PageFallback'
 import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
 import SafeRoute from './components/SafeRoute/SafeRoute'
 
@@ -14,14 +15,14 @@ const PaginaNoEncontrada = lazy(() => import('./pages/public/PaginaNoEncontrada'
 
 // Aprendiz
 const DashboardAprendiz = lazy(() => import('./pages/aprendiz/DashboardAprendiz'))
-const MisProyectos = lazy(() => import('./pages/aprendiz/MisProyectos'))
-const NuevoProyecto = lazy(() => import('./pages/aprendiz/NuevoProyecto'))
+const Propuestas = lazy(() => import('./pages/aprendiz/Propuestas'))
 const AlertasAprendiz = lazy(() => import('./pages/aprendiz/AlertasAprendiz'))
 const MiPerfil = lazy(() => import('./pages/aprendiz/MiPerfil'))
 const DetalleProyecto = lazy(() => import('./pages/aprendiz/DetalleProyecto'))
 const DetalleSimilitud = lazy(() => import('./pages/aprendiz/DetalleSimilitud'))
 const ReportarFallaAprendiz = lazy(() => import('./pages/aprendiz/ReportarFallaAprendiz'))
-const UnirseFicha = lazy(() => import('./pages/aprendiz/UnirseFicha'))
+const MiFicha = lazy(() => import('./pages/aprendiz/MiFicha'))
+const SimilitudesAprendiz = lazy(() => import('./pages/aprendiz/Similitudes'))
 const DetalleFicha = lazy(() => import('./pages/aprendiz/DetalleFicha'))
 const DetalleCompanero = lazy(() => import('./pages/aprendiz/DetalleCompanero'))
 const DetalleInstructorAprendiz = lazy(() => import('./pages/aprendiz/DetalleInstructor'))
@@ -37,15 +38,13 @@ const DetalleProyectoInstructor = lazy(() => import('./pages/instructor/DetalleP
 const DetalleSimilitudInstructor = lazy(() => import('./pages/instructor/DetalleSimilitudInstructor'))
 const SimilitudesInstructor = lazy(() => import('./pages/instructor/SimilitudesInstructor'))
 const ReportarFallaInstructor = lazy(() => import('./pages/instructor/ReportarFallaInstructor'))
-const GestionarFichas = lazy(() => import('./pages/instructor/GestionarFichas'))
-const CrearFicha = lazy(() => import('./pages/instructor/CrearFicha'))
+const Fichas = lazy(() => import('./pages/instructor/Fichas'))
 const DetalleFichaInstructor = lazy(() => import('./pages/instructor/DetalleFichaInstructor'))
 const DirectorioFichaInstructor = lazy(() => import('./pages/instructor/DirectorioFichaInstructor'))
 
 // Admin
 const DashboardAdmin = lazy(() => import('./pages/admin/DashboardAdmin'))
-const GestionUsuarios = lazy(() => import('./pages/admin/GestionUsuarios'))
-const NuevoUsuario = lazy(() => import('./pages/admin/NuevoUsuario'))
+const Usuarios = lazy(() => import('./pages/admin/Usuarios'))
 const ProyectosAdmin = lazy(() => import('./pages/admin/ProyectosAdmin'))
 const DetalleProyectoAdmin = lazy(() => import('./pages/admin/DetalleProyectoAdmin'))
 const SimilitudesAdmin = lazy(() => import('./pages/admin/SimilitudesAdmin'))
@@ -56,12 +55,7 @@ const DetalleReporte = lazy(() => import('./pages/admin/DetalleReporte'))
 const NotificacionesAdmin = lazy(() => import('./pages/admin/NotificacionesAdmin'))
 const PerfilAdmin = lazy(() => import('./pages/admin/PerfilAdmin'))
 
-const PageLoader = (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-    <div style={{ width: 32, height: 32, border: '3px solid var(--c-border)', borderTopColor: 'var(--c-primary)', borderRadius: 'var(--r-full)', animation: 'spin .6s linear infinite' }} />
-    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-  </div>
-)
+const PageLoader = <PageFallback />
 
 export default function App() {
   return (
@@ -75,9 +69,12 @@ export default function App() {
         <Route path="/confirmacion" element={<Confirmacion />} />
 
         <Route path="/aprendiz/dashboard" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><DashboardAprendiz /></SafeRoute></ProtectedRoute>} />
-        <Route path="/aprendiz/mis-proyectos" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><MisProyectos /></SafeRoute></ProtectedRoute>} />
-        <Route path="/aprendiz/nuevo-proyecto" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><NuevoProyecto /></SafeRoute></ProtectedRoute>} />
-        <Route path="/aprendiz/unirse-ficha" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><UnirseFicha /></SafeRoute></ProtectedRoute>} />
+        <Route path="/aprendiz/mis-proyectos" element={<Navigate to="/aprendiz/propuestas" replace />} />
+        <Route path="/aprendiz/nuevo-proyecto" element={<Navigate to="/aprendiz/propuestas?crear=1" replace />} />
+        <Route path="/aprendiz/propuestas" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><Propuestas /></SafeRoute></ProtectedRoute>} />
+        <Route path="/aprendiz/unirse-ficha" element={<Navigate to="/aprendiz/ficha" replace />} />
+        <Route path="/aprendiz/similitudes" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><SimilitudesAprendiz /></SafeRoute></ProtectedRoute>} />
+        <Route path="/aprendiz/ficha" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><MiFicha /></SafeRoute></ProtectedRoute>} />
         <Route path="/aprendiz/alertas" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><AlertasAprendiz /></SafeRoute></ProtectedRoute>} />
         <Route path="/aprendiz/reportar-falla" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><ReportarFallaAprendiz /></SafeRoute></ProtectedRoute>} />
         <Route path="/aprendiz/perfil" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><MiPerfil /></SafeRoute></ProtectedRoute>} />
@@ -98,14 +95,17 @@ export default function App() {
         <Route path="/instructor/detalle-similitud/:id" element={<ProtectedRoute allowedRoles={['instructor']}><SafeRoute><DetalleSimilitudInstructor /></SafeRoute></ProtectedRoute>} />
         <Route path="/instructor/similitudes" element={<ProtectedRoute allowedRoles={['instructor']}><SafeRoute><SimilitudesInstructor /></SafeRoute></ProtectedRoute>} />
         <Route path="/instructor/reportar-falla" element={<ProtectedRoute allowedRoles={['instructor']}><SafeRoute><ReportarFallaInstructor /></SafeRoute></ProtectedRoute>} />
-        <Route path="/instructor/gestionar-fichas" element={<ProtectedRoute allowedRoles={['instructor']}><SafeRoute><GestionarFichas /></SafeRoute></ProtectedRoute>} />
-        <Route path="/instructor/crear-ficha" element={<ProtectedRoute allowedRoles={['instructor']}><SafeRoute><CrearFicha /></SafeRoute></ProtectedRoute>} />
+        <Route path="/instructor/gestionar-fichas" element={<Navigate to="/instructor/fichas" replace />} />
+        <Route path="/instructor/crear-ficha" element={<Navigate to="/instructor/fichas?crear=1" replace />} />
+        <Route path="/instructor/fichas" element={<ProtectedRoute allowedRoles={['instructor']}><SafeRoute><Fichas /></SafeRoute></ProtectedRoute>} />
         <Route path="/instructor/detalle-ficha/:id" element={<ProtectedRoute allowedRoles={['instructor']}><SafeRoute><DetalleFichaInstructor /></SafeRoute></ProtectedRoute>} />
         <Route path="/instructor/directorio-ficha/:id" element={<ProtectedRoute allowedRoles={['instructor']}><SafeRoute><DirectorioFichaInstructor /></SafeRoute></ProtectedRoute>} />
 
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><DashboardAdmin /></SafeRoute></ProtectedRoute>} />
-        <Route path="/admin/gestion-usuarios" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><GestionUsuarios /></SafeRoute></ProtectedRoute>} />
-        <Route path="/admin/nuevo-usuario" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><NuevoUsuario /></SafeRoute></ProtectedRoute>} />
+        <Route path="/admin/gestion-usuarios" element={<Navigate to="/admin/usuarios" replace />} />
+        <Route path="/admin/nuevo-usuario" element={<Navigate to="/admin/usuarios" replace />} />
+        <Route path="/admin/usuarios" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><Usuarios /></SafeRoute></ProtectedRoute>} />
+
         <Route path="/admin/proyectos" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><ProyectosAdmin /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/detalle-proyecto/:id" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><DetalleProyectoAdmin /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/similitudes" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><SimilitudesAdmin /></SafeRoute></ProtectedRoute>} />

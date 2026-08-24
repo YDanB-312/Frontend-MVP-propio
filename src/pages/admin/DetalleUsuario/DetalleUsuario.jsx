@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { User, IdentificationCard, FolderOpen, Eye, Pause, Play, MagnifyingGlass, ChartBar, Users } from 'phosphor-react'
+import { User, IdentificationCard, FolderOpen, Pause, Play, MagnifyingGlass, ChartBar, Users } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Badge from '../../../components/Badge/Badge'
+import Button from '../../../components/Button/Button'
 import Avatar from '../../../components/Avatar/Avatar'
+import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import {
@@ -39,6 +41,7 @@ export default function DetalleUsuario() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [modalEstado, setModalEstado] = useState(false)
+  const [fotoViendo, setFotoViendo] = useState(null)
 
   const usuario = findUserById(id)
   const proyectos = usuario && usuario.role === 'aprendiz' ? getProjectsByStudent(usuario.id) : []
@@ -52,7 +55,7 @@ export default function DetalleUsuario() {
             icon={<MagnifyingGlass />}
             title="Usuario no encontrado"
             message="El usuario que buscas no existe o fue eliminado."
-            actionLabel="Volver a gestión de usuarios"
+            actionLabel="Volver a usuarios"
             onAction={() => navigate('/admin/gestion-usuarios')}
           />
         </div>
@@ -79,14 +82,20 @@ export default function DetalleUsuario() {
           icon={<User />}
           breadcrumb={[
             { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
-            { label: 'Gestión de Usuarios', to: '/admin/gestion-usuarios', icon: <Users size={14} /> },
+            { label: 'Usuarios', to: '/admin/usuarios', icon: <Users size={14} /> },
             { label: usuario.name },
           ]}
         />
 
         <DataPanel title="Perfil del usuario" icon={<IdentificationCard />}>
           <div className={s.profile}>
-            <Avatar name={usuario.name} size="lg" />
+            {usuario.fotoPerfil ? (
+              <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: usuario.fotoPerfil, alt: usuario.name })}>
+                <Avatar name={usuario.name} src={usuario.fotoPerfil} size="lg" />
+              </button>
+            ) : (
+              <Avatar name={usuario.name} size="lg" />
+            )}
             <div className={s.profileInfo}>
               <h2 className={s.name}>{usuario.name}</h2>
               <p className={s.email}>{usuario.email}</p>
@@ -94,13 +103,13 @@ export default function DetalleUsuario() {
                 <Badge variant="primary">{displayNames.userRole[usuario.role] || usuario.role}</Badge>
                 {activo ? <Badge variant="success">Activo</Badge> : <Badge variant="danger">Inactivo</Badge>}
               </div>
-              <button
+              <Button
                 type="button"
-                className={`${s.btn} ${activo ? s.danger : s.success}`}
+                variant={activo ? 'danger' : 'success'}
                 onClick={() => setModalEstado(true)}
               >
-                {activo ? '                <Pause size={14} /> Desactivar cuenta' : '                <Play size={14} /> Activar cuenta'}
-              </button>
+                {activo ? <><Pause size={14} /> Desactivar cuenta</> : <><Play size={14} /> Activar cuenta</>}
+              </Button>
             </div>
             <dl className={s.details}>
               <div className={s.detail}>
@@ -128,12 +137,12 @@ export default function DetalleUsuario() {
         </DataPanel>
 
         {usuario.role === 'aprendiz' && (
-          <DataPanel title={`Proyectos del aprendiz (${proyectos.length})`} icon={<FolderOpen />}>
+          <DataPanel title={`Propuestas del aprendiz (${proyectos.length})`} icon={<FolderOpen />}>
             {proyectos.length === 0 ? (
               <EmptyState
                 icon={<FolderOpen />}
-                title="Sin proyectos"
-                message="Este aprendiz aún no ha registrado ningún proyecto."
+                title="Sin propuestas"
+                message="Este aprendiz aún no ha registrado ninguna propuesta."
               />
             ) : (
               <ul className={s.projectList}>
@@ -165,7 +174,7 @@ export default function DetalleUsuario() {
       </div>
 
       <ConfirmModal
-        open={modalEstado}
+        open={!!modalEstado}
         titulo={activo ? 'Desactivar cuenta' : 'Activar cuenta'}
         mensaje={
           activo
@@ -176,6 +185,10 @@ export default function DetalleUsuario() {
         onConfirmar={confirmarCambioEstado}
         onCancelar={() => setModalEstado(false)}
       />
+
+      {fotoViendo && (
+        <Lightbox src={fotoViendo.src} alt={fotoViendo.alt} caption={fotoViendo.alt} onClose={() => setFotoViendo(null)} />
+      )}
     </DashboardLayout>
   )
 }

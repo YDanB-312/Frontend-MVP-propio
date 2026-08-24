@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { Envelope, Warning, ArrowLeft } from 'phosphor-react'
 import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import FormField from '../../../components/FormField/FormField'
+import Button from '../../../components/Button/Button'
+import { Input } from '../../../components/Input/Input'
 import s from './RecuperarContrasena.module.css'
 
 export default function RecuperarContrasena() {
@@ -35,19 +37,19 @@ export default function RecuperarContrasena() {
             </p>
           </header>
           <div className={s.actions}>
-            <Link to="/login" className={`${s.btn} ${s.primary}`}>
+            <Button as="link" to="/login">
               Volver al login
-            </Link>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={`${s.btn} ${s.secondary}`}
+              variant="secondary"
               onClick={() => {
                 setEnviado(false)
                 setEmail('')
               }}
             >
               Usar otro correo
-            </button>
+            </Button>
           </div>
         </div>
       </AuthLayout>
@@ -71,9 +73,8 @@ export default function RecuperarContrasena() {
             </p>
           )}
           <FormField label="Correo electrónico" required>
-            <input
+            <Input
               type="email"
-              className={s.input}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nombre.correo@soy.sena.edu.co"
@@ -81,9 +82,9 @@ export default function RecuperarContrasena() {
               autoFocus
             />
           </FormField>
-          <button type="submit" className={`${s.btn} ${s.primary}`}>
+          <Button type="submit" size="lg" fullWidth>
             Enviar enlace
-          </button>
+          </Button>
         </form>
 
         <p className={s.footer}>

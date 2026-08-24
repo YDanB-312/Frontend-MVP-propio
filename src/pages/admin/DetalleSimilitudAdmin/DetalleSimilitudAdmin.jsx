@@ -4,6 +4,10 @@ import { ArrowCounterClockwise, ChatCircle, CheckCircle, Eye, Plus, Scales } fro
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DetalleSimilitudBase from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase'
 import DataPanel from '../../../components/DataPanel/DataPanel'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
+import { Select, Textarea } from '../../../components/Input/Input'
+import Tag from '../../../components/Tag/Tag'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findSimilarityById,
@@ -56,32 +60,32 @@ export default function DetalleSimilitudAdmin() {
       <p className={s.hint}>
         Cambia el estado del análisis según el seguimiento dado a los proyectos involucrados.
       </p>
-      <div className={s.actions}>
-        <button
+      <Actions form>
+        <Button
           type="button"
-          className={`${s.btn} ${s.info}`}
+          variant="info"
           onClick={() => cambiarEstado('revisada')}
           disabled={similitud.estado === 'revisada'}
         >
           <Eye size={14} /> Marcar como revisada
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={`${s.btn} ${s.success}`}
+          variant="success"
           onClick={() => cambiarEstado('resuelta')}
           disabled={similitud.estado === 'resuelta'}
         >
           <CheckCircle size={14} /> Marcar como resuelta
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={`${s.btn} ${s.warning}`}
+          variant="warning"
           onClick={() => cambiarEstado('pendiente')}
           disabled={similitud.estado === 'pendiente'}
         >
           <ArrowCounterClockwise size={14} /> Volver a pendiente
-        </button>
-      </div>
+        </Button>
+      </Actions>
     </DataPanel>
   )
 
@@ -89,26 +93,24 @@ export default function DetalleSimilitudAdmin() {
     <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
       <form className={s.obsForm} onSubmit={agregarObservacion}>
         <div className={s.obsControls}>
-          <select
-            className={s.select}
+          <Select
             value={proyectoObs}
             onChange={(e) => setProyectoObs(e.target.value)}
-            aria-label="Proyecto para la observación"
+            aria-label="Propuesta para la observación"
           >
-            <option value="1">Proyecto A: {(proyectoA?.title || '').slice(0, 40)}</option>
-            <option value="2">Proyecto B: {(proyectoB?.title || '').slice(0, 40)}</option>
-          </select>
-          <textarea
-            className={s.textarea}
+            <option value="1">Propuesta A: {(proyectoA?.title || '').slice(0, 40)}</option>
+            <option value="2">Propuesta B: {(proyectoB?.title || '').slice(0, 40)}</option>
+          </Select>
+          <Textarea
             rows={3}
             value={textoObs}
             onChange={(e) => setTextoObs(e.target.value)}
-            placeholder="Escribe una observación sobre el proyecto seleccionado…"
+                  placeholder="Escribe una observación sobre la propuesta seleccionada…"
           />
         </div>
-        <button type="submit" className={`${s.btn} ${s.primary}`} disabled={!textoObs.trim()}>
+        <Button type="submit" disabled={!textoObs.trim()}>
           <Plus size={14} /> Agregar observación
-        </button>
+        </Button>
       </form>
 
       {observaciones.length === 0 ? (
@@ -120,7 +122,7 @@ export default function DetalleSimilitudAdmin() {
             return (
               <li key={o.id} className={s.obsItem}>
                 <div className={s.obsHead}>
-                  <span className={`${s.obsTag} ${esA ? s.tagA : s.tagB}`}>Proyecto {esA ? 'A' : 'B'}</span>
+                  <Tag variant={esA ? 'a' : 'b'} className={s.obsTag}>Propuesta {esA ? 'A' : 'B'}</Tag>
                   <span className={s.obsAutor}>{o.autor}</span>
                   <time className={s.obsFecha}>{o.fecha}</time>
                 </div>

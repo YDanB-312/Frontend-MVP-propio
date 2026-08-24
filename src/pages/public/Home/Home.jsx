@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { Brain, FolderOpen, ChartBar } from 'phosphor-react'
+import { Brain, FolderOpen, ChartBar, CheckCircle } from 'phosphor-react'
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
-import { CONTACTO as Contacto } from '../../../constants/contacto'
+import Button from '../../../components/Button/Button'
 import s from './Home.module.css'
 
 const FEATURES = [
@@ -39,7 +39,7 @@ const PASOS = [
   {
     numero: '03',
     title: 'Recibe el análisis',
-    description: 'DetectaIA compara tu proyecto con la base de datos y te muestra el nivel de similitud con recomendaciones.',
+    description: 'ProyecTwin compara tu propuesta con la base de datos y te muestra el nivel de similitud con recomendaciones.',
   },
 ]
 
@@ -50,33 +50,26 @@ export default function Home() {
         <section className={s.hero}>
           <div className={s.heroInner}>
             <span className={s.heroBadge}>Plataforma académica · SENA</span>
-            <h1 className={s.title}>DetectaIA</h1>
+            <h1 className={s.title}>
+              Proyec<span className={s.titleAccent}>Twin</span>
+            </h1>
             <p className={s.subtitle}>
               Sistema inteligente de detección de plagio para proyectos de formación. Compara, analiza y protege la
               originalidad del trabajo de los aprendices en toda la institución.
             </p>
             <div className={s.ctaRow}>
-              <Link to="/login" className={`${s.btn} ${s.btnSecondary}`}>
-                Iniciar Sesion
-              </Link>
-              <Link to="/register" className={`${s.btn} ${s.btnPrimary}`}>
+              <Button as="link" to="/login" variant="secondary">
+                Iniciar Sesión
+              </Button>
+              <Button as="link" to="/register">
                 Crear Cuenta
-              </Link>
+              </Button>
             </div>
-            <dl className={s.heroStats}>
-              <div className={s.heroStat}>
-                <dt>Proyectos analizados</dt>
-                <dd>+500</dd>
-              </div>
-              <div className={s.heroStat}>
-                <dt>Fichas activas</dt>
-                <dd>+40</dd>
-              </div>
-              <div className={s.heroStat}>
-                <dt>Precisión de detección</dt>
-                <dd>98%</dd>
-              </div>
-            </dl>
+            <ul className={s.heroPoints}>
+              <li><CheckCircle size={16} weight="fill" /> Detección automática de similitud</li>
+              <li><CheckCircle size={16} weight="fill" /> Propuestas organizadas por ficha</li>
+              <li><CheckCircle size={16} weight="fill" /> Reportes claros para instructores</li>
+            </ul>
           </div>
           <div className={`${s.blob} ${s.blobOne}`} aria-hidden="true" />
           <div className={`${s.blob} ${s.blobTwo}`} aria-hidden="true" />
@@ -123,27 +116,14 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={s.section} aria-labelledby="cta-title">
-          <div className={s.sectionInner}>
-            <div className={s.ctaPanel}>
-              <h2 id="cta-title" className={s.ctaTitle}>
-                ¿Listo para proteger la originalidad de tus proyectos?
-              </h2>
-              <p className={s.ctaText}>
-                Únete a la comunidad ProyecTwin del SENA y comienza a analizar tus propuestas hoy mismo.
-              </p>
-              <div className={s.ctaRow}>
-                <Link to="/register" className={`${s.btn} ${s.btnLight}`}>
-                  Crear Cuenta
-                </Link>
-                <Link to="/login" className={`${s.btn} ${s.btnOutline}`}>
-                  Iniciar Sesion
-                </Link>
-              </div>
-              <p className={s.ctaContact}>
-                ¿Dudas? Escríbenos a <strong>{Contacto.email}</strong> o llama al <strong>{Contacto.telefono}</strong>
-              </p>
-            </div>
+        <section className={s.ctaSection} aria-labelledby="cta-title">
+          <div className={s.ctaInner}>
+            <h2 id="cta-title" className={s.ctaTitle}>
+              ¿Listo para proteger la originalidad?
+            </h2>
+            <Button as="link" to="/register">
+              Crear Cuenta
+            </Button>
           </div>
         </section>
       </main>

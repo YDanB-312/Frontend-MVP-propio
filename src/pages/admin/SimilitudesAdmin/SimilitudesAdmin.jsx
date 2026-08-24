@@ -4,6 +4,8 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
 import Badge from '../../../components/Badge/Badge'
+import Button from '../../../components/Button/Button'
+import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { getAllSimilarities, displayNames } from '../../../data/mockData'
@@ -42,8 +44,7 @@ export default function SimilitudesAdmin() {
         <FilterBar title="Filtrar por estado">
           <label className={s.field}>
             <span className={s.label}>Estado</span>
-            <select
-              className={s.select}
+            <Select
               value={filtroEstado}
               onChange={(e) => {
                 setFiltroEstado(e.target.value)
@@ -54,7 +55,7 @@ export default function SimilitudesAdmin() {
               <option value="pendiente">Pendiente</option>
               <option value="revisada">Revisada</option>
               <option value="resuelta">Resuelta</option>
-            </select>
+            </Select>
           </label>
           <p className={s.info}>
             {filtradas.length} similitud{filtradas.length !== 1 ? 'es' : ''}
@@ -77,8 +78,8 @@ export default function SimilitudesAdmin() {
               <table className={s.table}>
                 <thead>
                   <tr>
-                    <th>Proyecto A</th>
-                    <th>Proyecto B</th>
+                    <th>Propuesta A</th>
+                    <th>Propuesta B</th>
                     <th>Similitud</th>
                     <th>Estado</th>
                     <th>Fecha</th>
@@ -122,12 +123,14 @@ export default function SimilitudesAdmin() {
                         </td>
                         <td className={s.date}>{sim.createdAt}</td>
                         <td className={s.colActions}>
-                          <Link
+                          <Button
+                            as="link"
                             to={`/admin/detalle-similitud/${sim.id}`}
-                            className={`${s.btn} ${s.secondary}`}
+                            size="sm"
+                            variant="secondary"
                           >
                             <Eye size={14} /> Ver
-                          </Link>
+                          </Button>
                         </td>
                       </tr>
                     )

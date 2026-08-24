@@ -8,6 +8,8 @@ import Badge from '../../../components/Badge/Badge'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import Button from '../../../components/Button/Button'
+import { Input, Select } from '../../../components/Input/Input'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   getAllFichas,
@@ -59,17 +61,16 @@ export default function GestionarFichas() {
           subtitle="Consulta las fichas de formación, revisa sus aprendices y administra su información."
           icon={<Books />}
           actions={
-            <Link to="/instructor/crear-ficha" className={`${s.btn} ${s.primary}`}>
+            <Button as="link" to="/instructor/crear-ficha">
               <Plus size={14} /> Crear Ficha
-            </Link>
+            </Button>
           }
         />
 
         <FilterBar title="Buscar y filtrar">
           <label className={s.field}>
             <span className={s.label}>Buscar</span>
-            <input
-              className={s.input}
+            <Input
               value={busqueda}
               onChange={(e) => {
                 setBusqueda(e.target.value)
@@ -80,8 +81,7 @@ export default function GestionarFichas() {
           </label>
           <label className={s.field}>
             <span className={s.label}>Estado</span>
-            <select
-              className={s.select}
+            <Select
               value={filtroEstado}
               onChange={(e) => {
                 setFiltroEstado(e.target.value)
@@ -92,7 +92,7 @@ export default function GestionarFichas() {
               <option value="activo">Activo</option>
               <option value="inactivo">Inactivo</option>
               <option value="finalizado">Finalizado</option>
-            </select>
+            </Select>
           </label>
           <p className={s.info}>
             {filtradas.length} ficha{filtradas.length !== 1 ? 's' : ''}
@@ -121,7 +121,7 @@ export default function GestionarFichas() {
                     <th>Código</th>
                     <th>Ficha</th>
                     <th>Aprendices</th>
-                    <th>Proyectos</th>
+                        <th>Propuestas</th>
                     <th>Estado</th>
                     <th>Creada</th>
                     <th className={s.colActions}>Acciones</th>
@@ -159,19 +159,22 @@ export default function GestionarFichas() {
                         <td className={s.date}>{f.createdAt}</td>
                         <td className={s.colActions}>
                           <div className={s.actions}>
-                            <Link
+                            <Button
+                              as="link"
                               to={`/instructor/detalle-ficha/${f.id}`}
-                              className={`${s.btn} ${s.secondary}`}
+                              size="sm"
+                              variant="secondary"
                             >
                               <Eye size={14} /> Ver
-                            </Link>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
-                              className={`${s.btn} ${s.danger}`}
+                              size="sm"
+                              variant="danger"
                               onClick={() => setAEliminar(f)}
                             >
                               <Trash size={14} /> Eliminar
-                            </button>
+                            </Button>
                           </div>
                         </td>
                       </tr>

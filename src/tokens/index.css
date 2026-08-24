@@ -27,32 +27,40 @@
   /* Semánticos */
   --c-primary:var(--g-600);
   --c-primary-hover:var(--g-700);
-  --c-primary-strong:#256d00;      /* texto/links sobre claro (AA) */
+  --c-primary-strong:#256d00;
   --c-primary-light:var(--g-50);
   --c-surface:#ffffff;--c-surface-alt:var(--s-100);--c-bg:#f7faf3;
   --c-text:var(--s-900);--c-text-2:#666666;--c-text-3:#999999;
   --c-border:var(--s-200);--c-border-2:#f0f0f0;--c-border-h:var(--s-300);
-  --c-success:var(--g-500);--c-success-bg:var(--g-50);
-  --c-warning:var(--amber-500);--c-warning-bg:var(--amber-50);
+  --c-success:var(--g-500);--c-success-bg:var(--g-50);--c-success-hover:var(--g-700);
+  --c-warning:var(--amber-500);--c-warning-bg:var(--amber-50);--c-warning-hover:var(--amber-600);
   --c-danger:var(--red-500);--c-danger-bg:var(--red-50);--c-danger-hover:var(--red-600);
-  --c-info:var(--t-600);--c-info-bg:var(--t-50);
+  --c-info:var(--t-600);--c-info-bg:var(--t-50);--c-info-hover:var(--t-700);
+  --c-overlay:rgba(0,0,0,.55);
+  --c-on-primary:#ffffff;
+  --c-on-danger:#ffffff;
+  --c-unread-tint:rgba(239,68,68,.03);
+  --c-icon-bg:rgba(5,150,105,.08);
+  --c-scrim:rgba(15,23,42,.5);
+  --c-spinner-track:rgba(255,255,255,.35);
+  --c-chip-hover:rgba(0,0,0,.08);
 
-  /* Alias legacy usados por tables.css (resuelven por tema automáticamente) */
+  /* Alias legacy usados por tables.css */
   --c-header:var(--c-surface-alt);
   --c-header-text:var(--c-text-2);
   --c-zebra:var(--c-bg);
   --c-hover:var(--c-info-bg);
 
-  /* Duotono del Gemelo — código persistente A/B en comparaciones */
+  /* Duotono del Gemelo */
   --par-a:var(--g-600);--par-a-strong:#256d00;--par-a-bg:var(--g-50);--par-a-border:var(--g-200);
   --par-b:var(--t-600);--par-b-strong:var(--t-700);--par-b-bg:var(--t-50);--par-b-border:var(--t-200);
 
-  /* Sidebar — blanco con ítem activo sólido institucional (claro) */
+  /* Sidebar */
   --c-sidebar:#ffffff;--c-sidebar-border:var(--s-200);
   --c-sidebar-active:var(--g-600);--c-sidebar-active-t:#ffffff;--c-sidebar-indicator:var(--g-600);
-  --c-sidebar-hover:var(--g-50);--c-sidebar-text:var(--s-600);
+  --c-sidebar-hover:var(--g-100);--c-sidebar-text:var(--s-600);
 
-  /* Barra de gobierno y header — sello institucional SENA */
+  /* Barra de gobierno y header */
   --c-govbar:linear-gradient(180deg,var(--g-700),var(--g-800));
   --govbar-text:#ffffff;--govbar-text-dim:rgba(255,255,255,.75);
   --c-header-accent:var(--g-600);
@@ -64,29 +72,33 @@
   --grad-surface:linear-gradient(135deg,rgba(57,169,0,.03),rgba(14,116,144,.02));
   --grad-wash:linear-gradient(90deg,rgba(57,169,0,.05),transparent 40%);
 
-  /* Sombras — receta Geist: anillo 1px + capa difusa */
-  --sh-xs:0 0 0 1px rgba(0,0,0,.04);
-  --sh-sm:0 0 0 1px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-  --sh-md:0 0 0 1px rgba(0,0,0,.06),0 2px 4px rgba(0,0,0,.05);
-  --sh-lg:0 0 0 1px rgba(0,0,0,.06),0 8px 24px -6px rgba(0,0,0,.10);
-  --sh-xl:0 0 0 1px rgba(0,0,0,.07),0 16px 40px -8px rgba(0,0,0,.14);
-  --sh-2xl:0 0 0 1px rgba(0,0,0,.08),0 24px 56px -12px rgba(0,0,0,.22);
+  /* Sombras — receta Vercel-like (sutil, sin ring) */
+  --sh-xs:0 1px 2px rgba(0,0,0,.04);
+  --sh-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh-md:0 2px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh-lg:0 4px 12px rgba(0,0,0,.08);
+  --sh-xl:0 8px 24px rgba(0,0,0,.12);
+  --sh-2xl:0 16px 48px rgba(0,0,0,.16);
   --ring-color:rgba(57,169,0,.22);
   --sh-ring:0 0 0 3px var(--ring-color);
-  --sh-card:0 0 0 1px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-  --sh-card-h:0 0 0 1px rgba(0,0,0,.08),0 8px 24px -6px rgba(0,0,0,.12);
+  --sh-card:0 1px 2px rgba(0,0,0,.04);
+  --sh-card-h:0 2px 8px rgba(0,0,0,.08);
 
   /* Radius */
-  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:9999px;
+  --r-sm:6px;--r-md:8px;--r-lg:8px;--r-xl:12px;--r-full:9999px;
+
+  /* Z-index scale */
+  --z-govbar:1000;--z-header:900;--z-sidebar:950;--z-modal:1100;--z-lightbox:1200;--z-toast:1300;
 
   /* Spacing (4px base) */
   --sp-0:0;--sp-px:1px;--sp-0_5:2px;--sp-1:4px;--sp-1_5:6px;--sp-2:8px;
   --sp-2_5:10px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;
   --sp-7:28px;--sp-8:32px;--sp-9:36px;--sp-10:40px;--sp-12:48px;
-  --sp-14:56px;--sp-16:64px;--sp-20:80px;
+  --sp-14:56px;--sp-16:64px;--sp-20:80px;--sp-24:96px;--sp-28:112px;--sp-32:128px;
 
   /* Typography */
   --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --font-display:'Sora',var(--font);
   --mono:'JetBrains Mono','Fira Code',monospace;
   --text-xs:.75rem;--text-sm:.8125rem;--text-base:.875rem;--text-md:1rem;
   --text-lg:1.125rem;--text-xl:1.25rem;--text-2xl:1.5rem;--text-3xl:1.875rem;--text-4xl:2.25rem;
@@ -95,8 +107,156 @@
 
   /* Motion */
   --ease-out:cubic-bezier(.16,1,.3,1);--ease-spring:cubic-bezier(.34,1.56,.64,1);
-  --dur-fast:120ms;--dur-normal:200ms;--dur-slow:300ms;
+  --dur-fast:120ms;--dur-normal:200ms;--dur-slow:300ms;--dur-loop:1.4s;
 
   /* Layout */
   --sidebar-w:260px;--header-h:60px;--govbar-h:40px;--content-max:1200px;
+  --form-max:480px;--narrow-max:640px;
+}
+
+/* ========================================
+   DARK THEME — activado vía data-theme en <html>
+   ⚠️ MANTENER SINCRONIZADO con el bloque prefers-color-scheme más abajo
+   ======================================== */
+html[data-theme='dark'] {
+  --c-bg:#000000;
+  --c-surface:#0a0a0a;
+  --c-surface-alt:#111111;
+  --c-primary-light:rgba(57,169,0,.15);
+  --c-primary-strong:#8fe649;
+  --c-primary-hover:#4cb944;
+  --c-text:#ededed;
+  --c-text-2:#a1a1a1;
+  --c-text-3:#707070;
+  --c-border:#333333;
+  --c-border-2:#222222;
+  --c-border-h:#404040;
+  --c-success-bg:rgba(57,169,0,.14);
+  --c-success-hover:#8fe649;
+  --c-warning-bg:rgba(245,158,11,.12);
+  --c-warning-hover:#fbbf24;
+  --c-danger-bg:rgba(239,68,68,.14);
+  --c-danger-hover:#f87171;
+  --c-info-bg:rgba(27,137,168,.16);
+  --c-info-hover:#6cc5dd;
+  --c-overlay:rgba(0,0,0,.7);
+  --c-on-primary:#000000;
+  --c-on-danger:#ffffff;
+  --c-unread-tint:rgba(239,68,68,.06);
+  --c-icon-bg:rgba(5,150,105,.12);
+  --c-scrim:rgba(0,0,0,.6);
+  --c-spinner-track:rgba(255,255,255,.2);
+  --c-chip-hover:rgba(255,255,255,.08);
+  --par-a-strong:#8fe649;
+  --par-a-bg:rgba(57,169,0,.12);
+  --par-a-border:rgba(57,169,0,.35);
+  --par-b-strong:#6cc5dd;
+  --par-b-bg:rgba(27,137,168,.12);
+  --par-b-border:rgba(27,137,168,.35);
+  --c-sidebar:#0a0a0a;
+  --c-sidebar-border:#262626;
+  --c-sidebar-active:rgba(57,169,0,.14);
+  --c-sidebar-active-t:#8fe649;
+  --c-sidebar-hover:#1a1a1a;
+  --c-sidebar-text:#a1a1a1;
+  --c-sidebar-indicator:#4cb944;
+  --c-govbar:#0a0a0a;
+  --govbar-text:#a1a1a1;
+  --govbar-text-dim:#707070;
+  --c-header-accent:rgba(57,169,0,.4);
+  --grad-hero:linear-gradient(135deg,#111111 0%,#0a0a0a 55%,#0a1214 100%);
+  --grad-wash:linear-gradient(90deg,rgba(57,169,0,.10),transparent 40%);
+  --grad-surface:linear-gradient(135deg,rgba(255,255,255,.03),rgba(27,137,168,.04));
+  --ring-color:rgba(110,231,74,.28);
+  --sh-xs:0 1px 2px rgba(0,0,0,.3);
+  --sh-sm:0 1px 3px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+  --sh-md:0 2px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+  --sh-lg:0 4px 12px rgba(0,0,0,.5);
+  --sh-xl:0 8px 24px rgba(0,0,0,.6);
+  --sh-2xl:0 16px 48px rgba(0,0,0,.7);
+  --sh-card:0 1px 2px rgba(0,0,0,.3);
+  --sh-card-h:0 2px 8px rgba(0,0,0,.5);
+
+  /* Palette token remapping for dark mode — fixes contrast bugs */
+  --red-50:#2a1215;--red-100:#421d1d;--red-400:#fca5a5;--red-500:#f87171;--red-600:#ef4444;--red-700:#fca5a5;
+  --amber-50:#2a2008;--amber-100:#3d3010;--amber-400:#fde68a;--amber-500:#fbbf24;--amber-600:#fcd34d;
+  --blue-50:#0f1a2e;--blue-100:#162033;--blue-400:#93c5fd;--blue-500:#60a5fa;--blue-600:#93c5fd;
+}
+
+/* Fallback: respeta prefers-color-scheme en primera visita (sin data-theme) */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    --c-bg:#000000;
+    --c-surface:#0a0a0a;
+    --c-surface-alt:#111111;
+    --c-primary-light:rgba(57,169,0,.15);
+    --c-primary-strong:#8fe649;
+    --c-primary-hover:#4cb944;
+    --c-text:#ededed;
+    --c-text-2:#a1a1a1;
+    --c-text-3:#707070;
+    --c-border:#333333;
+    --c-border-2:#222222;
+    --c-border-h:#404040;
+    --c-success-bg:rgba(57,169,0,.14);
+    --c-success-hover:#8fe649;
+    --c-warning-bg:rgba(245,158,11,.12);
+    --c-warning-hover:#fbbf24;
+    --c-danger-bg:rgba(239,68,68,.14);
+    --c-danger-hover:#f87171;
+    --c-info-bg:rgba(27,137,168,.16);
+    --c-info-hover:#6cc5dd;
+    --c-overlay:rgba(0,0,0,.7);
+    --c-on-primary:#000000;
+    --c-on-danger:#ffffff;
+    --c-unread-tint:rgba(239,68,68,.06);
+    --c-icon-bg:rgba(5,150,105,.12);
+    --c-scrim:rgba(0,0,0,.6);
+    --c-spinner-track:rgba(255,255,255,.2);
+    --c-chip-hover:rgba(255,255,255,.08);
+    --par-a-strong:#8fe649;
+    --par-a-bg:rgba(57,169,0,.12);
+    --par-a-border:rgba(57,169,0,.35);
+    --par-b-strong:#6cc5dd;
+    --par-b-bg:rgba(27,137,168,.12);
+    --par-b-border:rgba(27,137,168,.35);
+    --c-sidebar:#0a0a0a;
+    --c-sidebar-border:#262626;
+    --c-sidebar-active:rgba(57,169,0,.14);
+    --c-sidebar-active-t:#8fe649;
+    --c-sidebar-hover:#1a1a1a;
+    --c-sidebar-text:#a1a1a1;
+    --c-sidebar-indicator:#4cb944;
+    --c-govbar:#0a0a0a;
+    --govbar-text:#a1a1a1;
+    --govbar-text-dim:#707070;
+    --c-header-accent:rgba(57,169,0,.4);
+    --grad-hero:linear-gradient(135deg,#111111 0%,#0a0a0a 55%,#0a1214 100%);
+    --grad-wash:linear-gradient(90deg,rgba(57,169,0,.10),transparent 40%);
+    --grad-surface:linear-gradient(135deg,rgba(255,255,255,.03),rgba(27,137,168,.04));
+    --ring-color:rgba(110,231,74,.28);
+    --sh-xs:0 1px 2px rgba(0,0,0,.3);
+    --sh-sm:0 1px 3px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+    --sh-md:0 2px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+    --sh-lg:0 4px 12px rgba(0,0,0,.5);
+    --sh-xl:0 8px 24px rgba(0,0,0,.6);
+    --sh-2xl:0 16px 48px rgba(0,0,0,.7);
+    --sh-card:0 1px 2px rgba(0,0,0,.3);
+    --sh-card-h:0 2px 8px rgba(0,0,0,.5);
+    --red-50:#2a1215;--red-100:#421d1d;--red-400:#fca5a5;--red-500:#f87171;--red-600:#ef4444;--red-700:#fca5a5;
+    --amber-50:#2a2008;--amber-100:#3d3010;--amber-400:#fde68a;--amber-500:#fbbf24;--amber-600:#fcd34d;
+    --blue-50:#0f1a2e;--blue-100:#162033;--blue-400:#93c5fd;--blue-500:#60a5fa;--blue-600:#93c5fd;
+  }
+}
+
+/* ========================================
+   REDUCED MOTION — kill-switch global
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after {
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
 }

@@ -4,6 +4,8 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
 import Badge from '../../../components/Badge/Badge'
+import Button from '../../../components/Button/Button'
+import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
@@ -11,7 +13,12 @@ import Avatar from '../../../components/Avatar/Avatar'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   getProjectsByInstructor,
+  getAllProjects,
+  getAllFichas,
   getAllSimilarities,
+  getSimilitudesValidas,
+  findUserById,
+  findFichaById,
   updateProjectEstado,
   createNotification,
   displayNames,
@@ -44,8 +51,12 @@ export default function RevisionPropuestas() {
   const [pagina, setPagina] = useState(1)
   const [modal, setModal] = useState(null)
 
-  const proyectos = user ? getProjectsByInstructor(Number(user.id)) : []
-  const similitudes = getAllSimilarities()
+  // Solo propuestas de fichas a su cargo
+  const idsMisFichas = new Set(
+    (user ? getAllFichas().filter((f) => f.instructorId === Number(user.id)) : []).map((f) => f.id)
+  )
+  const proyectos = getAllProjects().filter((p) => idsMisFichas.has(p.fichaId))
+  const similitudes = getSimilitudesValidas()
 
   const filtrados =
     filtroEstado === 'todos'
@@ -87,8 +98,7 @@ export default function RevisionPropuestas() {
         <FilterBar title="Filtros de estado">
           <label className={s.filterField}>
             <span className={s.filterLabel}>Estado</span>
-            <select
-              className={s.select}
+            <Select
               value={filtroEstado}
               onChange={(e) => {
                 setFiltroEstado(e.target.value)
@@ -101,7 +111,7 @@ export default function RevisionPropuestas() {
               <option value="aprobado">Aprobado</option>
               <option value="rechazado">Rechazado</option>
               <option value="requiere_ajustes">Requiere Ajustes</option>
-            </select>
+            </Select>
           </label>
           <p className={s.filterInfo}>
             {filtrados.length} propuesta{filtrados.length !== 1 ? 's' : ''} encontrada
@@ -125,7 +135,7 @@ export default function RevisionPropuestas() {
               <table className={s.table}>
                 <thead>
                   <tr>
-                    <th>Proyecto</th>
+                    <th>Propuesta</th>
                     <th>Aprendiz</th>
                     <th>Similitud</th>
                     <th>Fecha</th>
@@ -136,21 +146,23 @@ export default function RevisionPropuestas() {
                 <tbody>
                   {paginados.map((p) => {
                     const info = similitudInfo(similitudes, p.id)
+                    const est = findUserById(p.studentId)
+                    const fic = p.fichaId ? findFichaById(p.fichaId) : null
                     return (
                     <tr key={p.id}>
-                      <td>
+                      <td data-label="Propuesta">
                         <Link to={`/instructor/detalle-proyecto/${p.id}`} className={s.titleLink}>
                           {p.title}
                         </Link>
-                        <span className={s.subText}>{p.fichaId ? `Ficha #${p.fichaId}` : ''}</span>
+                        <span className={s.subText}>{fic ? `${fic.codigo} · ${fic.nombre}` : 'Sin ficha'}</span>
                       </td>
-                      <td>
+                      <td data-label="Aprendiz">
                         <span className={s.student}>
-                          <Avatar name={p.studentName} size="sm" />
+                          <Avatar name={p.studentName} src={est?.fotoPerfil} size="sm" />
                           {p.studentName}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Similitud">
                         {info ? (
                           <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
                             <MagnifyingGlass size={12} /> {info.pct}% · {info.count}
@@ -159,38 +171,42 @@ export default function RevisionPropuestas() {
                           <span className={s.muted}>—</span>
                         )}
                       </td>
-                      <td className={s.date}>{p.createdAt}</td>
-                      <td>
+                      <td data-label="Fecha" className={s.date}>{p.createdAt}</td>
+                      <td data-label="Estado">
                         <Badge variant={ESTADO_VARIANT[p.estado] || 'neutral'}>
                           {displayNames.projectStatus[p.estado] || p.estado}
                         </Badge>
                       </td>
-                      <td className={s.colActions}>
+                      <td data-label="Acciones" className={s.colActions}>
                         <div className={s.actions}>
                           {p.estado === 'pendiente' ? (
                             <>
-                              <button
+                              <Button
                                 type="button"
-                                className={`${s.btn} ${s.success}`}
+                                size="sm"
+                                variant="success"
                                 onClick={() => abrirModal(p, 'aprobado')}
                               >
                                 <CheckCircle size={14} /> Aprobar
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 type="button"
-                                className={`${s.btn} ${s.danger}`}
+                                size="sm"
+                                variant="danger"
                                 onClick={() => abrirModal(p, 'rechazado')}
                               >
                                 <XCircle size={14} /> Rechazar
-                              </button>
+                              </Button>
                             </>
                           ) : (
-                            <Link
+                            <Button
+                              as="link"
                               to={`/instructor/detalle-proyecto/${p.id}`}
-                              className={`${s.btn} ${s.secondary}`}
+                              size="sm"
+                              variant="secondary"
                             >
                               Ver detalle
-                            </Link>
+                            </Button>
                           )}
                         </div>
                       </td>

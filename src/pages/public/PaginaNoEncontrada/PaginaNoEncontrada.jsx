@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
 import s from './PaginaNoEncontrada.module.css'
 
 export default function PaginaNoEncontrada() {
@@ -14,14 +16,14 @@ export default function PaginaNoEncontrada() {
           <p className={s.message}>
             Lo sentimos, la página que buscas no existe o fue movida. Verifica la dirección o vuelve al inicio.
           </p>
-          <div className={s.actions}>
-            <Link to="/" className={`${s.btn} ${s.primary}`}>
+          <Actions align="center" wrap>
+            <Button as="link" to="/">
               Volver al inicio
-            </Link>
-            <Link to="/login" className={`${s.btn} ${s.secondary}`}>
+            </Button>
+            <Button as="link" to="/login" variant="secondary">
               Iniciar sesión
-            </Link>
-          </div>
+            </Button>
+          </Actions>
         </div>
       </main>
     </LandingLayout>

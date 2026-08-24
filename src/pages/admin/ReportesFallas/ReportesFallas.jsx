@@ -4,6 +4,8 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
 import Badge from '../../../components/Badge/Badge'
+import Button from '../../../components/Button/Button'
+import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { getAllBugReports, displayNames } from '../../../data/mockData'
@@ -53,8 +55,7 @@ export default function ReportesFallas() {
         <FilterBar title="Filtrar por estado">
           <label className={s.field}>
             <span className={s.label}>Estado</span>
-            <select
-              className={s.select}
+            <Select
               value={filtroEstado}
               onChange={(e) => {
                 setFiltroEstado(e.target.value)
@@ -67,7 +68,7 @@ export default function ReportesFallas() {
               <option value="resuelto">Resuelto</option>
               <option value="cerrado">Cerrado</option>
               <option value="rechazado">Rechazado</option>
-            </select>
+            </Select>
           </label>
           <p className={s.info}>
             {filtrados.length} reporte{filtrados.length !== 1 ? 's' : ''}
@@ -124,12 +125,14 @@ export default function ReportesFallas() {
                         </td>
                         <td className={s.date}>{r.createdAt}</td>
                         <td className={s.colActions}>
-                          <Link
+                          <Button
+                            as="link"
                             to={`/admin/detalle-reporte/${r.id}`}
-                            className={`${s.btn} ${s.secondary}`}
+                            size="sm"
+                            variant="secondary"
                           >
                             <Eye size={14} /> Ver
-                          </Link>
+                          </Button>
                         </td>
                       </tr>
                     )

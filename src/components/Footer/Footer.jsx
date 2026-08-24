@@ -5,7 +5,8 @@ import s from './Footer.module.css'
 const FOOTER_BY_ROLE = {
   aprendiz: {
     links: [
-      { label: 'Mis Proyectos', to: '/aprendiz/mis-proyectos' },
+      { label: 'Mis Propuestas', to: '/aprendiz/propuestas' },
+      { label: 'Similitudes', to: '/aprendiz/similitudes' },
       { label: 'Alertas', to: '/aprendiz/alertas' },
       { label: 'Mi Perfil', to: '/aprendiz/perfil' },
     ],
@@ -14,15 +15,15 @@ const FOOTER_BY_ROLE = {
     links: [
       { label: 'Revision Propuestas', to: '/instructor/revision-propuestas' },
       { label: 'Similitudes', to: '/instructor/similitudes' },
-      { label: 'Gestionar Fichas', to: '/instructor/gestionar-fichas' },
+      { label: 'Fichas', to: '/instructor/fichas' },
       { label: 'Mi Perfil', to: '/instructor/perfil' },
     ],
   },
   admin: {
     links: [
-      { label: 'Gestionar Usuarios', to: '/admin/gestion-usuarios' },
-      { label: 'Proyectos', to: '/admin/proyectos' },
-      { label: 'Reportes', to: '/admin/reportes-fallas' },
+      { label: 'Usuarios', to: '/admin/usuarios' },
+      { label: 'Propuestas', to: '/admin/proyectos' },
+      { label: 'Reportes de Fallas', to: '/admin/reportes-fallas' },
     ],
   },
 }

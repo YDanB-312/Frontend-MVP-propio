@@ -1,0 +1,10 @@
+.lightbox{position:fixed;inset:0;z-index:var(--z-lightbox);display:flex;align-items:center;justify-content:center;background:var(--c-overlay);backdrop-filter:blur(4px);cursor:zoom-out;animation:lightboxIn var(--dur-normal) var(--ease-out)}
+@keyframes lightboxIn{from{opacity:0}to{opacity:1}}
+.fig{margin:0;display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);animation:zoomIn var(--dur-normal) var(--ease-out)}
+@keyframes zoomIn{from{transform:scale(.95);opacity:.5}to{transform:scale(1);opacity:1}}
+.img{max-width:90vmin;max-height:82vmin;border-radius:var(--r-lg);box-shadow:var(--sh-2xl);cursor:default;user-select:none}
+.caption{padding:var(--sp-1_5) var(--sp-4);border-radius:var(--r-full);background:rgba(255,255,255,.12);color:#fff;font-size:var(--text-sm);font-weight:600}
+.close{position:absolute;top:var(--sp-5);right:var(--sp-5);width:40px;height:40px;border-radius:var(--r-full);background:rgba(255,255,255,.12);border:none;color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background var(--dur-fast) var(--ease-out)}
+.close:hover{background:rgba(255,255,255,.22)}
+.close:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.lightbox,.fig{animation:none}}

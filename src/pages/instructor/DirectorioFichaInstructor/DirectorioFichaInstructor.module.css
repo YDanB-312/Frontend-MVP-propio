@@ -61,7 +61,6 @@
 }
 
 .card:hover {
-  transform: translateY(-3px);
   box-shadow: var(--sh-card-h);
 }
 

@@ -1,0 +1,97 @@
+.header {
+  position: fixed;
+  top: var(--govbar-h);
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  background: var(--c-surface);
+  border-bottom: 2px solid var(--c-header-accent);
+  z-index: var(--z-header);
+}
+
+.container {
+  height: 100%;
+  padding: 0 var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.logo img {
+  height: 32px;
+  width: auto;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+}
+
+.senaWrap {
+  display: inline-flex;
+  align-items: center;
+  background: var(--grad-primary);
+  border-radius: var(--r-sm);
+  padding: var(--sp-1_5) var(--sp-2);
+}
+
+.senaLogo {
+  height: 18px;
+  width: auto;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.btnGhost {
+  color: var(--c-text-2);
+  background: transparent;
+}
+
+.btnGhost:hover {
+  color: var(--c-text);
+  background: var(--c-surface-alt);
+}
+
+.btnPrimary {
+  color: var(--c-on-primary);
+  background: var(--c-primary);
+}
+
+.btnPrimary:hover {
+  background: var(--c-primary-hover);
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 var(--sp-3);
+  }
+
+  .senaWrap {
+    display: none;
+  }
+
+  .btn {
+    padding: var(--sp-1_5) var(--sp-3);
+    font-size: var(--text-xs);
+  }
+}

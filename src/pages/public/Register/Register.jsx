@@ -4,6 +4,8 @@ import { GraduationCap, ChalkboardTeacher } from 'phosphor-react'
 import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
+import Button from '../../../components/Button/Button'
+import { Input } from '../../../components/Input/Input'
 import s from './Register.module.css'
 
 export default function Register() {
@@ -55,7 +57,7 @@ export default function Register() {
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout showBack>
       <div className={s.wrapper}>
         <header className={s.header}>
           <h1 className={s.title}>Crear cuenta</h1>
@@ -65,9 +67,8 @@ export default function Register() {
         <form className={s.form} onSubmit={handleSubmit} noValidate>
           <div className={s.grid2}>
             <FormField label="Nombres" error={errors.nombre} required>
-              <input
+              <Input
                 type="text"
-                className={s.input}
                 value={form.nombre}
                 onChange={(e) => set('nombre', e.target.value)}
                 placeholder="María José"
@@ -76,9 +77,8 @@ export default function Register() {
               />
             </FormField>
             <FormField label="Apellidos" error={errors.apellido} required>
-              <input
+              <Input
                 type="text"
-                className={s.input}
                 value={form.apellido}
                 onChange={(e) => set('apellido', e.target.value)}
                 placeholder="González Ruiz"
@@ -88,9 +88,8 @@ export default function Register() {
           </div>
 
           <FormField label="Correo electrónico" error={errors.correo} required>
-            <input
+            <Input
               type="email"
-              className={s.input}
               value={form.correo}
               onChange={(e) => set('correo', e.target.value)}
               placeholder="nombre.correo@soy.sena.edu.co"
@@ -100,9 +99,8 @@ export default function Register() {
 
           <div className={s.grid2}>
             <FormField label="Contraseña" error={errors.password} help="Mínimo 6 caracteres" required>
-              <input
+              <Input
                 type="password"
-                className={s.input}
                 value={form.password}
                 onChange={(e) => set('password', e.target.value)}
                 placeholder="••••••••"
@@ -110,9 +108,8 @@ export default function Register() {
               />
             </FormField>
             <FormField label="Confirmar contraseña" error={errors.confirmar} required>
-              <input
+              <Input
                 type="password"
-                className={s.input}
                 value={form.confirmar}
                 onChange={(e) => set('confirmar', e.target.value)}
                 placeholder="••••••••"
@@ -145,9 +142,9 @@ export default function Register() {
             </div>
           </fieldset>
 
-          <button type="submit" className={`${s.btn} ${s.primary}`} disabled={cargando}>
+          <Button type="submit" size="lg" fullWidth disabled={cargando}>
             {cargando ? 'Creando cuenta...' : 'Crear Cuenta'}
-          </button>
+          </Button>
         </form>
 
         <p className={s.footer}>

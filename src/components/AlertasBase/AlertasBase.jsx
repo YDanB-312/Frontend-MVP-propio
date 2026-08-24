@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Bell, MagnifyingGlass, CheckCircle, ChatCircle, GearSix } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
 import Badge from '../Badge/Badge'
+import Button from '../Button/Button'
 import EmptyState from '../EmptyState/EmptyState'
 import { useAuth } from '../../contexts/AuthContext'
 import {
@@ -14,6 +15,7 @@ import {
 import s from './AlertasBase.module.css'
 
 const TIPO_CONFIG = {
+  observacion: { icon: <ChatCircle size={18} />, label: 'Observación', variant: 'primary' },
   similitud: { icon: <MagnifyingGlass size={18} />, label: 'Similitud', variant: 'warning' },
   revision: { icon: <CheckCircle size={18} />, label: 'Revisión', variant: 'info' },
   mensaje: { icon: <ChatCircle size={18} />, label: 'Mensaje', variant: 'neutral' },
@@ -55,9 +57,9 @@ export default function AlertasBase({ role, titulo, subtitle, detallePath, empty
         subtitle={subtitle}
         icon={<Bell size={20} />}
         actions={
-          <button type="button" className={s.btnSecondary} onClick={marcarTodas} disabled={sinLeer === 0}>
+          <Button type="button" variant="secondary" onClick={marcarTodas} disabled={sinLeer === 0}>
             <CheckCircle size={14} /> Marcar todas como leídas
-          </button>
+          </Button>
         }
       />
 

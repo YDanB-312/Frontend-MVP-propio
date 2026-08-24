@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Actions from '../Actions/Actions'
 import s from './FilterBar.module.css'
 
 export default function FilterBar({ title = 'Filtros', children, actions, defaultOpen = true, className = '' }) {
@@ -20,7 +21,7 @@ export default function FilterBar({ title = 'Filtros', children, actions, defaul
       {open && (
         <div id="filterbar-content" className={s.content}>
           <div className={s.filters}>{children}</div>
-          {actions && <div className={s.actions}>{actions}</div>}
+          {actions && <Actions className={s.actions}>{actions}</Actions>}
         </div>
       )}
     </section>

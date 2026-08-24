@@ -5,6 +5,9 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import FormField from '../../../components/FormField/FormField'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
+import { Input, Select } from '../../../components/Input/Input'
 import {
   createUser,
   getAllFichas,
@@ -88,8 +91,7 @@ export default function NuevoUsuario() {
           <form className={s.form} onSubmit={onSubmit} noValidate>
             <div className={s.row}>
               <FormField label="Nombre completo" required error={errores.name}>
-                <input
-                  className={s.input}
+                <Input
                   name="name"
                   value={form.name}
                   onChange={onChange}
@@ -99,8 +101,7 @@ export default function NuevoUsuario() {
               </FormField>
 
               <FormField label="Correo electrónico" required error={errores.email}>
-                <input
-                  className={s.input}
+                <Input
                   name="email"
                   type="email"
                   value={form.email}
@@ -117,8 +118,7 @@ export default function NuevoUsuario() {
                 error={errores.password}
                 help="Mínimo 6 caracteres. El usuario podrá cambiarla después."
               >
-                <input
-                  className={s.input}
+                <Input
                   name="password"
                   type="password"
                   value={form.password}
@@ -129,11 +129,11 @@ export default function NuevoUsuario() {
               </FormField>
 
               <FormField label="Rol" required error={errores.role}>
-                <select className={s.select} name="role" value={form.role} onChange={onChange}>
+                <Select name="role" value={form.role} onChange={onChange}>
                   <option value="aprendiz">Aprendiz</option>
                   <option value="instructor">Instructor</option>
                   <option value="admin">Administrador</option>
-                </select>
+                </Select>
               </FormField>
             </div>
 
@@ -146,8 +146,7 @@ export default function NuevoUsuario() {
               }
               error={errores.fichaId}
             >
-              <select
-                className={s.select}
+              <Select
                 name="fichaId"
                 value={form.fichaId}
                 onChange={onChange}
@@ -158,21 +157,21 @@ export default function NuevoUsuario() {
                     {f.codigo} — {f.nombre}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FormField>
 
-            <div className={s.formActions}>
-              <button type="submit" className={`${s.btn} ${s.primary}`}>
+            <Actions form>
+              <Button type="submit">
                 <CheckCircle size={14} /> Crear usuario
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className={`${s.btn} ${s.secondary}`}
+                variant="secondary"
                 onClick={() => navigate('/admin/gestion-usuarios')}
               >
                 Cancelar
-              </button>
-            </div>
+              </Button>
+            </Actions>
           </form>
         </DataPanel>
       </div>

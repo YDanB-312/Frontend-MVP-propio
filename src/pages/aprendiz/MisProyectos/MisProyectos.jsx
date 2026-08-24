@@ -6,9 +6,11 @@ import FilterBar from '../../../components/FilterBar/FilterBar'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import Badge from '../../../components/Badge/Badge'
+import Button from '../../../components/Button/Button'
+import { Select } from '../../../components/Input/Input'
 import { CalendarBlank, FolderOpen, MagnifyingGlass, Plus, Tray } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
-import { getProjectsByStudent, getAllSimilarities, displayNames } from '../../../data/mockData'
+import { getProjectsByStudent, getAllSimilarities, getSimilitudesValidas, displayNames } from '../../../data/mockData'
 import s from './MisProyectos.module.css'
 
 const ITEMS_POR_PAGINA = 6
@@ -41,7 +43,7 @@ export default function MisProyectos() {
   const [pagina, setPagina] = useState(1)
 
   const proyectos = useMemo(() => getProjectsByStudent(user.id), [user.id])
-  const similitudes = useMemo(() => getAllSimilarities(), [])
+  const similitudes = useMemo(() => getSimilitudesValidas(), [])
 
   const filtrados = useMemo(
     () => (filtro === 'todos' ? proyectos : proyectos.filter((p) => p.estado === filtro)),
@@ -64,17 +66,16 @@ export default function MisProyectos() {
           subtitle="Administra y revisa el estado de tus propuestas académicas"
           icon={<FolderOpen />}
           actions={
-            <Link to="/aprendiz/nuevo-proyecto" className={`${s.btn} ${s.primary}`}>
+            <Button as="link" to="/aprendiz/nuevo-proyecto">
               <Plus size={14} /> Nueva propuesta
-            </Link>
+            </Button>
           }
         />
 
         <FilterBar title="Filtros">
           <label className={s.filterField}>
             <span className={s.filterLabel}>Estado</span>
-            <select
-              className={s.select}
+            <Select
               value={filtro}
               onChange={(e) => cambiarFiltro(e.target.value)}
             >
@@ -84,7 +85,7 @@ export default function MisProyectos() {
               <option value="aprobado">Aprobado</option>
               <option value="rechazado">Rechazado</option>
               <option value="requiere_ajustes">Requiere Ajustes</option>
-            </select>
+            </Select>
           </label>
         </FilterBar>
 
@@ -94,7 +95,7 @@ export default function MisProyectos() {
             title={filtro === 'todos' ? 'Aún no tienes proyectos' : 'Sin resultados'}
             message={
               filtro === 'todos'
-                ? 'Registra tu primera propuesta para comenzar a analizarla con DetectaIA.'
+                ? 'Registra tu primera propuesta para comenzar a analizarla en ProyecTwin.'
                 : 'No hay proyectos con el estado seleccionado. Prueba con otro filtro.'
             }
             actionLabel={filtro === 'todos' ? 'Crear propuesta' : undefined}

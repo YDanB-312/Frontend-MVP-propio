@@ -4,18 +4,24 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import Avatar from '../../../components/Avatar/Avatar'
 import Badge from '../../../components/Badge/Badge'
+import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import { findFichaById, getEstudiantesDeFicha } from '../../../data/mockData'
+import { useAuth } from '../../../contexts/AuthContext'
+import { findFichaById, getEstudiantesDeFicha, instructorVeFicha } from '../../../data/mockData'
 import s from './DirectorioFichaInstructor.module.css'
 import { ArrowRight, Books, ChartBar, MagnifyingGlass, Users } from 'phosphor-react'
 
 export default function DirectorioFichaInstructor() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [busqueda, setBusqueda] = useState('')
 
   const ficha = findFichaById(id)
   const estudiantes = ficha ? getEstudiantesDeFicha(ficha.id) : []
+
+  // Autorización: solo el instructor a cargo de la ficha
+  const autorizado = ficha && instructorVeFicha(ficha, user?.id)
 
   if (!ficha) {
     return (
@@ -25,8 +31,24 @@ export default function DirectorioFichaInstructor() {
             icon={<MagnifyingGlass />}
             title="Ficha no encontrada"
             message="La ficha que buscas no existe o fue eliminada."
-            actionLabel="Volver a gestionar fichas"
+            actionLabel="Volver a fichas"
             onAction={() => navigate('/instructor/gestionar-fichas')}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!autorizado) {
+    return (
+      <DashboardLayout role="instructor" titulo="Directorio de Ficha">
+        <div className={s.page}>
+          <EmptyState
+            icon={<LockKey size={40} weight="light" />}
+            title="Esta ficha no está a tu cargo"
+            message="Pertenece a otro instructor. Solo puedes ver los directorios de tus propias fichas."
+            actionLabel="Volver al dashboard"
+            onAction={() => navigate('/instructor/dashboard')}
           />
         </div>
       </DashboardLayout>
@@ -50,7 +72,7 @@ export default function DirectorioFichaInstructor() {
           icon={<Users />}
           breadcrumb={[
             { label: 'Dashboard', to: '/instructor/dashboard', icon: <ChartBar size={14} /> },
-            { label: 'Gestionar Fichas', to: '/instructor/gestionar-fichas', icon: <Books size={14} /> },
+            { label: 'Fichas', to: '/instructor/fichas', icon: <Books size={14} /> },
             { label: ficha.nombre, to: `/instructor/detalle-ficha/${ficha.id}` },
             { label: 'Directorio' },
           ]}
@@ -82,7 +104,7 @@ export default function DirectorioFichaInstructor() {
           <ul className={s.grid}>
             {filtrados.map((est) => (
               <li key={est.id} className={s.card}>
-                <Avatar name={est.name} size="lg" />
+                <Avatar name={est.name} src={est.fotoPerfil} size="lg" />
                 <h3 className={s.name}>{est.name}</h3>
                 <p className={s.email}>{est.email}</p>
                 {est.programa && (
@@ -90,12 +112,13 @@ export default function DirectorioFichaInstructor() {
                     {est.programa}
                   </Badge>
                 )}
-                <Link
+                <Button
+                  as="link"
                   to={`/instructor/perfil-companero/${est.id}`}
-                  className={`${s.btn} ${s.secondary}`}
+                  variant="secondary"
                 >
                   Ver perfil <ArrowRight size={14} />
-                </Link>
+                </Button>
               </li>
             ))}
           </ul>

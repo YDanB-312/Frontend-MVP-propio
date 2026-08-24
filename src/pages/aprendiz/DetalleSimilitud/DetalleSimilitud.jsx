@@ -3,25 +3,37 @@ import { ChatCircle } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DetalleSimilitudBase from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase'
 import DataPanel from '../../../components/DataPanel/DataPanel'
-import { findSimilarityById, getObservaciones } from '../../../data/mockData'
+import { useAuth } from '../../../contexts/AuthContext'
+import { findSimilarityById, findProjectById, getObservaciones } from '../../../data/mockData'
 import s from './DetalleSimilitud.module.css'
 
 export default function DetalleSimilitud() {
   const { id } = useParams()
+  const { user } = useAuth()
   const similitud = findSimilarityById(id)
-  const observaciones = similitud ? getObservaciones(similitud.projectId1) : []
+
+  // Solo las observaciones de MI propuesta del par — nunca las de la ajena
+  let miPid = null
+  if (similitud && user) {
+    const p1 = findProjectById(similitud.projectId1)
+    const p2 = findProjectById(similitud.projectId2)
+    const esMia = (p) => p && (Number(p.studentId) === Number(user.id) || (p.integrantes || []).includes(user.nombre))
+    if (esMia(p1)) miPid = p1.id
+    else if (esMia(p2)) miPid = p2.id
+  }
+  const observaciones = miPid ? getObservaciones(miPid) : []
 
   return (
     <DashboardLayout role="aprendiz" titulo="Detalle de Similitud">
       <DetalleSimilitudBase
         similitud={similitud}
         role="aprendiz"
-        backTo="/aprendiz/mis-proyectos"
-        backLabel="Volver a mis proyectos"
+        backTo="/aprendiz/propuestas"
+        backLabel="Volver a mis propuestas"
       >
-        <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
+        <DataPanel title={`Observaciones de tu propuesta (${observaciones.length})`} icon={<ChatCircle />}>
           {observaciones.length === 0 ? (
-            <p className={s.muted}>Sin observaciones registradas para este análisis.</p>
+            <p className={s.muted}>Aún no hay observaciones en tu propuesta para este análisis.</p>
           ) : (
             <ul className={s.obsList}>
               {observaciones.map((o) => (

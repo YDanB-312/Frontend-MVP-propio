@@ -4,6 +4,8 @@ import { CheckCircle, Warning, ArrowLeft } from 'phosphor-react'
 import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
+import Button from '../../../components/Button/Button'
+import { Input } from '../../../components/Input/Input'
 import s from './RestablecerContrasena.module.css'
 
 export default function RestablecerContrasena() {
@@ -52,9 +54,9 @@ export default function RestablecerContrasena() {
             </p>
           </header>
           <div className={s.actions}>
-            <Link to="/login" className={`${s.btn} ${s.primary}`}>
+            <Button as="link" to="/login">
               Ir al login
-            </Link>
+            </Button>
           </div>
         </div>
       </AuthLayout>
@@ -77,9 +79,8 @@ export default function RestablecerContrasena() {
           )}
 
           <FormField label="Correo electrónico" required>
-            <input
+            <Input
               type="email"
-              className={s.input}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nombre.correo@soy.sena.edu.co"
@@ -88,9 +89,8 @@ export default function RestablecerContrasena() {
           </FormField>
 
           <FormField label="Nueva contraseña" help="Mínimo 6 caracteres" required>
-            <input
+            <Input
               type="password"
-              className={s.input}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -99,9 +99,8 @@ export default function RestablecerContrasena() {
           </FormField>
 
           <FormField label="Confirmar nueva contraseña" required>
-            <input
+            <Input
               type="password"
-              className={s.input}
               value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)}
               placeholder="••••••••"
@@ -109,9 +108,9 @@ export default function RestablecerContrasena() {
             />
           </FormField>
 
-          <button type="submit" className={`${s.btn} ${s.primary}`}>
+          <Button type="submit" size="lg" fullWidth>
             Restablecer contraseña
-          </button>
+          </Button>
         </form>
 
         <p className={s.footer}>

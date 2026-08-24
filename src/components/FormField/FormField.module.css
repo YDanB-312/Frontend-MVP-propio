@@ -5,6 +5,6 @@
 .field :global(input),.field :global(select),.field :global(textarea){transition:border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
 .field :global(input:focus),.field :global(select:focus),.field :global(textarea:focus){border-color:var(--c-primary);box-shadow:var(--sh-ring);outline:none}
 .hasError :global(input),.hasError :global(select),.hasError :global(textarea){border-color:var(--c-danger)}
-.hasError :global(input:focus),.hasError :global(select:focus),.hasError :global(textarea:focus){border-color:var(--c-danger);box-shadow:0 0 0 3px rgba(239,68,68,.15)}
+.hasError :global(input:focus),.hasError :global(select:focus),.hasError :global(textarea:focus){border-color:var(--c-danger);box-shadow:0 0 0 3px var(--c-danger-bg)}
 .error{font-size:var(--text-xs);color:var(--c-danger);margin:0;display:flex;align-items:center;gap:var(--sp-1)}
 .help{font-size:var(--text-xs);color:var(--c-text-3);margin:0;line-height:var(--leading-normal)}

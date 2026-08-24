@@ -143,63 +143,17 @@
   flex-wrap: wrap;
 }
 
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-1_5);
-  padding: var(--sp-1_5) var(--sp-3);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  white-space: nowrap;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-}
-
-.primary {
-  background: var(--c-primary);
-  color: #fff;
-}
-
-.primary:hover {
-  background: var(--c-primary-hover);
-}
-
-.secondary {
-  background: var(--c-surface);
-  color: var(--c-text-2);
-  border-color: var(--c-border);
-}
-
-.secondary:hover {
-  color: var(--c-primary);
-  border-color: var(--c-primary);
-}
-
-.danger {
-  background: var(--c-danger-bg);
-  color: var(--c-danger);
-  border-color: var(--c-danger);
-}
-
-.danger:hover {
-  background: var(--c-danger);
-  color: #fff;
-}
-
-.success {
-  background: var(--c-success-bg);
-  color: var(--c-success);
-  border-color: var(--c-success);
-}
-
-.success:hover {
-  background: var(--c-success);
-  color: #fff;
+/* ---- Movil: tablas como tarjetas ---- */
+@media(max-width:768px){
+  .tableWrap{overflow-x:visible;border:none;box-shadow:none;background:transparent;border-radius:0}
+  .table{min-width:0}
+  .table thead{display:none}
+  .table tbody tr{display:flex;flex-direction:column;gap:var(--sp-2);padding:var(--sp-4);margin-bottom:var(--sp-3);border-radius:var(--r-lg);background:var(--c-surface);box-shadow:var(--sh-card)}
+  .table tbody tr:nth-child(even){background:var(--c-surface)}
+  .table tbody tr:hover{background:var(--c-surface)}
+  .table td{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);border-bottom:1px solid var(--c-border-2);padding:var(--sp-1_5) 0}
+  .table td:last-child{border-bottom:none;padding-bottom:0}
+  .table td::before{content:attr(data-label);font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3)}
+  .colActions{text-align:right}
+  .actions,.colActions .actions{justify-content:flex-end}
 }

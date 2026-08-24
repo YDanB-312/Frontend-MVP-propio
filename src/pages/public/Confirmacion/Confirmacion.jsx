@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { CheckCircle, ArrowLeft } from 'phosphor-react'
 import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
+import Button from '../../../components/Button/Button'
 import s from './Confirmacion.module.css'
 
 export default function Confirmacion() {
@@ -27,9 +28,9 @@ export default function Confirmacion() {
           </p>
         </header>
         <div className={s.actions}>
-          <Link to="/login" className={`${s.btn} ${s.primary}`}>
+          <Button as="link" to="/login">
             Ir al login
-          </Link>
+          </Button>
         </div>
         <p className={s.footer}>
           <Link to="/" className={s.link}>

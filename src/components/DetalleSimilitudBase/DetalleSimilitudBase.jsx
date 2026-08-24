@@ -4,8 +4,10 @@ import { ArrowLeft, ArrowRight, CalendarBlank, FileText, MagnifyingGlass, User }
 import PageHeader from '../PageHeader/PageHeader'
 import DataPanel from '../DataPanel/DataPanel'
 import Badge from '../Badge/Badge'
+import Tag from '../Tag/Tag'
 import EmptyState from '../EmptyState/EmptyState'
-import { findProjectById, getAllSimilarities, displayNames } from '../../data/mockData'
+import { useAuth } from '../../contexts/AuthContext'
+import { findProjectById, getAllSimilarities, getSimilitudesValidas, getFichasDelInstructor, displayNames } from '../../data/mockData'
 import s from './DetalleSimilitudBase.module.css'
 
 const SIM_VARIANT = { pendiente: 'warning', revisada: 'info', resuelta: 'success' }
@@ -14,7 +16,7 @@ const ESTADO_PROYECTO_VARIANT = (estado) =>
   estado === 'aprobado' ? 'success' : estado === 'rechazado' ? 'danger' : estado === 'en_revision' ? 'info' : 'warning'
 
 const RUTA_POR_ROL = {
-  aprendiz: { volver: '/aprendiz/mis-proyectos', label: 'Mis Proyectos' },
+  aprendiz: { volver: '/aprendiz/propuestas', label: 'Mis Propuestas' },
   instructor: { volver: '/instructor/dashboard', label: 'Dashboard' },
   admin: { volver: '/admin/similitudes', label: 'Similitudes' },
 }
@@ -39,7 +41,7 @@ export default function DetalleSimilitudBase({
     const idA = proyecto1?.id
     const idB = proyecto2?.id
     const vistas = new Map()
-    for (const x of getAllSimilarities()) {
+    for (const x of getSimilitudesValidas()) {
       if (x.id === similitud.id) continue
       let origen = null
       let otroPid = null
@@ -75,6 +77,19 @@ export default function DetalleSimilitudBase({
     { p: proyecto2, tag: 'B' },
   ]
 
+  // El botón "Ver proyecto" solo para propuestas de fichas a cargo del instructor
+  const { user } = useAuth()
+  const esInstructor = role === 'instructor'
+  const misFichasIds = useMemo(() => {
+    if (!esInstructor || !user?.id) return null
+    return new Set(getFichasDelInstructor(Number(user.id)).map((f) => f.id))
+  }, [esInstructor, user?.id])
+
+  function puedeVerProyecto(pid) {
+    if (!esInstructor || !misFichasIds) return true
+    return misFichasIds.has(Number(pid))
+  }
+
   const crumbPrevio =
     role === 'admin'
       ? [
@@ -109,7 +124,7 @@ export default function DetalleSimilitudBase({
 
       <div className={s.grid}>
         {proyectos.map(({ p, tag }) => (
-          <DataPanel key={tag} title={`Proyecto ${tag}`} icon={<FileText />}>
+          <DataPanel key={tag} title={`Propuesta ${tag}`} icon={<FileText />}>
             {p ? (
               <div className={s.projectCard}>
                 <h3 className={s.projectTitle}>{p.title}</h3>
@@ -123,9 +138,13 @@ export default function DetalleSimilitudBase({
                 <Badge variant={ESTADO_PROYECTO_VARIANT(p.estado)}>
                   {displayNames.projectStatus[p.estado] || p.estado}
                 </Badge>
-                <Link to={`/${role}${projectPath}/${p.id}`} className={s.link}>
-                  Ver proyecto <ArrowRight size={14} />
-                </Link>
+                {puedeVerProyecto(p.id) ? (
+                  <Link to={`/${role}${projectPath}/${p.id}`} className={s.link}>
+                    Ver proyecto <ArrowRight size={14} />
+                  </Link>
+                ) : (
+                  <span className={s.muted}>Propuesta de otra ficha</span>
+                )}
               </div>
             ) : (
               <p className={s.muted}>Este proyecto ya no está disponible.</p>
@@ -143,9 +162,9 @@ export default function DetalleSimilitudBase({
               return (
                 <li key={x.id}>
                   <Link to={`/${role}/detalle-similitud/${x.id}`} className={s.otrasRow}>
-                    <span className={`${s.tagOrigen} ${x.origen === 'A' ? s.tagA : s.tagB}`}>
+                    <Tag variant={x.origen === 'A' ? 'a' : 'b'}>
                       Proyecto {x.origen}
-                    </span>
+                    </Tag>
                     <span className={s.otrasInfo}>
                       <span className={s.otrasTitle}>{otro?.title || 'Proyecto no disponible'}</span>
                       <span className={s.otrasMeta}>

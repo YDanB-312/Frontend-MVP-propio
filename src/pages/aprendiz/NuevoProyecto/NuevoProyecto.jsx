@@ -4,6 +4,9 @@ import { Plus } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FormField from '../../../components/FormField/FormField'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
+import { Input, Textarea, Select } from '../../../components/Input/Input'
 import { useAuth } from '../../../contexts/AuthContext'
 import { getAllFichas, findFichaById, findUserById, createProject } from '../../../data/mockData'
 import s from './NuevoProyecto.module.css'
@@ -115,9 +118,8 @@ export default function NuevoProyecto() {
 
         <form className={s.form} onSubmit={handleSubmit} noValidate>
           <FormField label="Nombre de la propuesta" error={errors.title} required>
-            <input
+            <Input
               type="text"
-              className={s.input}
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
               placeholder="Ej: Sistema de monitoreo ambiental con IoT"
@@ -132,8 +134,7 @@ export default function NuevoProyecto() {
             help={`${form.description.length}/600 caracteres`}
             required
           >
-            <textarea
-              className={s.textarea}
+            <Textarea
               rows={5}
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
@@ -148,8 +149,7 @@ export default function NuevoProyecto() {
             help="Qué quieres lograr con la solución, en una sola frase."
             required
           >
-            <textarea
-              className={s.textarea}
+            <Textarea
               rows={3}
               value={form.objetivoGeneral}
               onChange={(e) => set('objetivoGeneral', e.target.value)}
@@ -164,8 +164,7 @@ export default function NuevoProyecto() {
             help={`Un objetivo por línea (mínimo 2). Usa verbos como Implementar, Diseñar, Evaluar. Llevas ${objetivosValidos.length}.`}
             required
           >
-            <textarea
-              className={s.textarea}
+            <Textarea
               rows={5}
               value={form.objetivosEspecificos}
               onChange={(e) => set('objetivosEspecificos', e.target.value)}
@@ -175,8 +174,7 @@ export default function NuevoProyecto() {
 
           <div className={s.grid2}>
             <FormField label="Área de aplicación" error={errors.areaAplicacion} required>
-              <select
-                className={s.select}
+              <Select
                 value={form.areaAplicacion}
                 onChange={(e) => set('areaAplicacion', e.target.value)}
               >
@@ -186,12 +184,11 @@ export default function NuevoProyecto() {
                     {a}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FormField>
 
             <FormField label="Ficha de formación" error={errors.fichaId} required>
-              <select
-                className={s.select}
+              <Select
                 value={form.fichaId}
                 onChange={(e) => set('fichaId', e.target.value)}
               >
@@ -201,7 +198,7 @@ export default function NuevoProyecto() {
                     {f.nombre} · {f.codigo}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FormField>
           </div>
 
@@ -209,23 +206,22 @@ export default function NuevoProyecto() {
             label="Palabras clave"
             help="Opcional. Si aún no las tienes claras, puedes agregarlas después."
           >
-            <input
+            <Input
               type="text"
-              className={s.input}
               value={form.keywords}
               onChange={(e) => set('keywords', e.target.value)}
               placeholder="iot, sensores, agricultura"
             />
           </FormField>
 
-          <div className={s.actions}>
-            <button type="submit" className={`${s.btn} ${s.primary}`} disabled={guardando}>
+          <Actions form className={s.actions}>
+            <Button type="submit" disabled={guardando}>
               {guardando ? 'Enviando...' : 'Enviar propuesta y analizar'}
-            </button>
-            <Link to="/aprendiz/mis-proyectos" className={`${s.btn} ${s.secondary}`}>
+            </Button>
+            <Button as="link" to="/aprendiz/mis-proyectos" variant="secondary">
               Cancelar
-            </Link>
-          </div>
+            </Button>
+          </Actions>
         </form>
       </div>
     </DashboardLayout>

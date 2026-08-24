@@ -1,9 +1,9 @@
 import s from './Avatar.module.css'
 
-const SIZES = { sm: s.sm, md: s.md, lg: s.lg }
+const SIZES = { sm: s.sm, md: s.md, lg: s.lg, xl: s.xl }
 
 const PALETTE = [
-  '#39a900', '#0e7490', '#d97706', '#dc2626', '#6d28d9',
+  '#39a900', '#0e7490', '#d97706', '#dc2626', '#7c3aed',
   '#1b89a8', '#db2777', '#57ad1e', '#ea580c', '#4f46e5',
 ]
 
@@ -24,7 +24,7 @@ function getInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-export default function Avatar({ name = '', size = 'md', className = '', title }) {
+export default function Avatar({ name = '', src, size = 'md', className = '', title }) {
   const color = PALETTE[hashName(name) % PALETTE.length]
   return (
     <span
@@ -33,7 +33,7 @@ export default function Avatar({ name = '', size = 'md', className = '', title }
       title={title ?? name}
       aria-hidden={title ? undefined : true}
     >
-      {getInitials(name)}
+      {src ? <img src={src} alt="" className={s.img} draggable="false" /> : getInitials(name)}
     </span>
   )
 }

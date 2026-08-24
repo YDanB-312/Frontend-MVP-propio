@@ -127,12 +127,6 @@
   margin-bottom: var(--sp-4);
 }
 
-.actions {
-  display: flex;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
-}
-
 .btn {
   display: inline-flex;
   align-items: center;
@@ -145,10 +139,6 @@
   font-weight: 600;
   white-space: nowrap;
   transition: all var(--dur-fast) var(--ease-out);
-}
-
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
 }
 
 .btn:disabled {

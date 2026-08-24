@@ -5,6 +5,9 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import FormField from '../../../components/FormField/FormField'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
+import { Input, Select, Textarea } from '../../../components/Input/Input'
 import { useAuth } from '../../../contexts/AuthContext'
 import { createFicha, generarCodigoFicha } from '../../../data/mockData'
 import s from './CrearFicha.module.css'
@@ -77,8 +80,7 @@ export default function CrearFicha() {
         <DataPanel title="Datos de la ficha" icon={<Books />}>
           <form className={s.form} onSubmit={onSubmit} noValidate>
             <FormField label="Nombre de la ficha" required error={errores.nombre}>
-              <input
-                className={s.input}
+              <Input
                 name="nombre"
                 value={form.nombre}
                 onChange={onChange}
@@ -86,10 +88,10 @@ export default function CrearFicha() {
                 maxLength={80}
               />
             </FormField>
+            </FormField>
 
             <FormField label="Programa de formación" required error={errores.programa}>
-              <select
-                className={s.select}
+              <Select
                 name="programa"
                 value={form.programa}
                 onChange={onChange}
@@ -100,7 +102,7 @@ export default function CrearFicha() {
                     {p}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FormField>
 
             <FormField
@@ -109,27 +111,25 @@ export default function CrearFicha() {
             >
               <div className={s.codigoRow}>
                 <code className={s.codigo}>{codigo}</code>
-                <button type="button" className={`${s.btn} ${s.ghost}`} onClick={regenerarCodigo}>
+                <Button type="button" variant="ghost" onClick={regenerarCodigo}>
                   <ArrowClockwise size={14} /> Regenerar
-                </button>
+                </Button>
               </div>
             </FormField>
 
             <FormField label="Horario" help={`Jornada seleccionada: ${horarioLabel}`}>
-              <select
-                className={s.select}
+              <Select
                 name="horario"
                 value={form.horario}
                 onChange={onChange}
               >
                 <option value="manana">Lunes a Viernes · Mañana (6:00–12:00)</option>
                 <option value="tarde">Lunes a Viernes · Tarde (12:00–18:00)</option>
-              </select>
+              </Select>
             </FormField>
 
             <FormField label="Descripción" help="Opcional. Describe el enfoque o jornada de la ficha.">
-              <textarea
-                className={s.textarea}
+              <Textarea
                 name="descripcion"
                 rows={4}
                 value={form.descripcion}
@@ -138,18 +138,18 @@ export default function CrearFicha() {
               />
             </FormField>
 
-            <div className={s.formActions}>
-              <button type="submit" className={`${s.btn} ${s.primary}`}>
+            <Actions form>
+              <Button type="submit">
                 <CheckCircle size={14} /> Crear ficha
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className={`${s.btn} ${s.secondary}`}
+                variant="secondary"
                 onClick={() => navigate('/instructor/gestionar-fichas')}
               >
                 Cancelar
-              </button>
-            </div>
+              </Button>
+            </Actions>
           </form>
         </DataPanel>
       </div>

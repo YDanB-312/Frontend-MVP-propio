@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import {
-  House, FolderOpen, PlusCircle, Link, Bell, Bug, UserCircle,
-  ClipboardText, BookOpen, UsersThree, MagnifyingGlass
+  House, FolderOpen, PlusCircle, Bell, Bug, UserCircle,
+  ClipboardText, BookOpen, UsersThree, MagnifyingGlass, GraduationCap
 } from 'phosphor-react'
+import { getUnreadCount } from '../../data/mockData'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import Header from '../../components/Header/Header'
 import Sidebar from '../../components/Sidebar/Sidebar'
@@ -13,9 +14,9 @@ import s from './DashboardLayout.module.css'
 const LINKS = {
   aprendiz: [
     { to: '/aprendiz/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
-    { to: '/aprendiz/mis-proyectos', icon: <FolderOpen size={20} weight="regular" />, label: 'Mis Proyectos' },
-    { to: '/aprendiz/nuevo-proyecto', icon: <PlusCircle size={20} weight="regular" />, label: 'Nueva Propuesta' },
-    { to: '/aprendiz/unirse-ficha', icon: <Link size={20} weight="regular" />, label: 'Unirse a Ficha' },
+    { to: '/aprendiz/propuestas', icon: <FolderOpen size={20} weight="regular" />, label: 'Propuestas' },
+    { to: '/aprendiz/ficha', icon: <GraduationCap size={20} weight="regular" />, label: 'Ficha' },
+    { to: '/aprendiz/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes' },
     { to: '/aprendiz/alertas', icon: <Bell size={20} weight="regular" />, label: 'Alertas' },
     { to: '/aprendiz/reportar-falla', icon: <Bug size={20} weight="regular" />, label: 'Reportar Falla' },
     { to: '/aprendiz/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
@@ -24,14 +25,14 @@ const LINKS = {
     { to: '/instructor/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
     { to: '/instructor/revision-propuestas', icon: <ClipboardText size={20} weight="regular" />, label: 'Revision Propuestas' },
     { to: '/instructor/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes' },
-    { to: '/instructor/gestionar-fichas', icon: <BookOpen size={20} weight="regular" />, label: 'Gestionar Fichas' },
+    { to: '/instructor/fichas', icon: <BookOpen size={20} weight="regular" />, label: 'Fichas' },
     { to: '/instructor/alertas', icon: <Bell size={20} weight="regular" />, label: 'Alertas' },
     { to: '/instructor/reportar-falla', icon: <Bug size={20} weight="regular" />, label: 'Reportar Falla' },
     { to: '/instructor/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
   ],
   admin: [
     { to: '/admin/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
-    { to: '/admin/gestion-usuarios', icon: <UsersThree size={20} weight="regular" />, label: 'Gestionar Usuarios' },
+    { to: '/admin/usuarios', icon: <UsersThree size={20} weight="regular" />, label: 'Usuarios' },
     { to: '/admin/proyectos', icon: <FolderOpen size={20} weight="regular" />, label: 'Proyectos' },
     { to: '/admin/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes' },
     { to: '/admin/reportes-fallas', icon: <Bug size={20} weight="regular" />, label: 'Reportes de Fallas' },
@@ -43,6 +44,7 @@ const LINKS = {
 export default function DashboardLayout({ role = 'aprendiz', titulo = '', children }) {
   const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const sinLeer = user ? getUnreadCount(Number(user.id)) : 0
   const links = LINKS[role] || LINKS.aprendiz
 
   return (
@@ -52,6 +54,7 @@ export default function DashboardLayout({ role = 'aprendiz', titulo = '', childr
         titulo={titulo}
         usuario={user}
         role={role}
+        notificaciones={sinLeer}
         onToggleSidebar={() => setSidebarOpen(o => !o)}
       />
       <Sidebar

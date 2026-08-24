@@ -4,6 +4,8 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import Badge from '../../../components/Badge/Badge'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { findFichaByCodigo, joinFicha } from '../../../data/mockData'
@@ -84,18 +86,18 @@ export default function UnirseFicha() {
             <p className={s.successText}>
               Ahora haces parte de <strong>{unida.nombre}</strong> ({unida.codigo}).
             </p>
-            <div className={s.actions}>
-              <Link to={`/aprendiz/detalle-ficha/${unida.id}`} className={`${s.btn} ${s.primary}`}>
+            <Actions form>
+              <Button as="link" to={`/aprendiz/detalle-ficha/${unida.id}`}>
                 Ver mi ficha
-              </Link>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className={`${s.btn} ${s.secondary}`}
+                variant="secondary"
                 onClick={() => navigate('/aprendiz/dashboard')}
               >
                 Ir al dashboard
-              </button>
-            </div>
+              </Button>
+            </Actions>
           </section>
         ) : (
           <>
@@ -116,9 +118,9 @@ export default function UnirseFicha() {
                   placeholder="FT-X7K2MN"
                   autoFocus
                 />
-                <button type="submit" className={`${s.btn} ${s.primary}`} disabled={buscando}>
+                <Button type="submit" disabled={buscando}>
                   <MagnifyingGlass size={14} /> Buscar
-                </button>
+                </Button>
               </div>
               {error && (
                 <p className={s.error} role="alert">
@@ -159,15 +161,14 @@ export default function UnirseFicha() {
                 {yaInscrito ? (
                   <p className={s.notice}>Ya perteneces a esta ficha. <ThumbsUp size={16} /></p>
                 ) : (
-                  <div className={s.actions}>
-                    <button
+                  <Actions form>
+                    <Button
                       type="button"
-                      className={`${s.btn} ${s.primary}`}
                       onClick={() => setConfirmarOpen(true)}
                     >
                       Unirse a esta ficha
-                    </button>
-                  </div>
+                    </Button>
+                  </Actions>
                 )}
               </section>
             )}

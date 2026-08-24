@@ -6,7 +6,7 @@
   width: var(--sidebar-w);
   background: var(--c-sidebar);
   border-right: 1px solid var(--c-sidebar-border);
-  z-index: 800;
+  z-index: var(--z-sidebar);
   overflow-y: auto;
   padding: var(--sp-4) var(--sp-3);
   display: flex;
@@ -40,7 +40,7 @@
 
 .link:hover {
   background: var(--c-sidebar-hover);
-  color: var(--c-sidebar-active-t);
+  color: var(--c-primary-strong);
 }
 
 .linkActive,
@@ -83,14 +83,14 @@
 
 .closeBtn:hover {
   background: var(--c-sidebar-hover);
-  color: var(--c-sidebar-active-t);
+  color: var(--c-primary-strong);
 }
 
 .overlay {
   position: fixed;
   inset: 0;
   z-index: 790;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--c-scrim);
   backdrop-filter: blur(2px);
   animation: fadeIn var(--dur-normal) var(--ease-out);
 }

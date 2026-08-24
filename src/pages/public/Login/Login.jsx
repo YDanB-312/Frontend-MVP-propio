@@ -4,6 +4,8 @@ import { Warning, Key, CaretDown } from 'phosphor-react'
 import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
+import Button from '../../../components/Button/Button'
+import { Input } from '../../../components/Input/Input'
 import s from './Login.module.css'
 
 const RUTA_POR_ROL = {
@@ -61,7 +63,7 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout showBack>
       <div className={s.wrapper}>
         <header className={s.header}>
           <h1 className={s.title}>Bienvenido de nuevo</h1>
@@ -76,9 +78,8 @@ export default function Login() {
           )}
 
           <FormField label="Correo electrónico" required>
-            <input
+            <Input
               type="email"
-              className={s.input}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nombre.correo@soy.sena.edu.co"
@@ -88,9 +89,8 @@ export default function Login() {
           </FormField>
 
           <FormField label="Contraseña" required>
-            <input
+            <Input
               type="password"
-              className={s.input}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -112,9 +112,9 @@ export default function Login() {
             </Link>
           </div>
 
-          <button type="submit" className={`${s.btn} ${s.primary}`} disabled={cargando}>
+          <Button type="submit" size="lg" fullWidth disabled={cargando}>
             {cargando ? 'Ingresando...' : 'Iniciar Sesión'}
-          </button>
+          </Button>
         </form>
 
         <p className={s.footer}>

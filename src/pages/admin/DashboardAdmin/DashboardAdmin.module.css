@@ -47,27 +47,6 @@
   gap: var(--sp-4);
 }
 
-.stat {
-  height: 100%;
-}
-
-.statValue {
-  font-size: var(--text-3xl);
-  font-weight: 700;
-  line-height: var(--leading-tight);
-}
-
-.cInfo { color: var(--c-info); }
-.cSuccess { color: var(--c-success); }
-.cWarning { color: var(--c-warning); }
-.cDanger { color: var(--c-danger); }
-
-.statSub {
-  margin-top: var(--sp-1);
-  font-size: var(--text-xs);
-  color: var(--c-text-3);
-}
-
 .statLink {
   display: inline-block;
   margin-top: var(--sp-3);

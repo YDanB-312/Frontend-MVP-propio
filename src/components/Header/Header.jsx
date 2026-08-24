@@ -1,11 +1,24 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { findUserById } from '../../data/mockData'
 import s from './Header.module.css'
 
 const RUTA_NOTIFICACIONES = {
   aprendiz: '/aprendiz/alertas',
   instructor: '/instructor/alertas',
   admin: '/admin/notificaciones',
+}
+
+const RUTA_CREAR = {
+  aprendiz: '/aprendiz/propuestas?crear=1',
+  instructor: '/instructor/fichas?crear=1',
+  admin: '/admin/usuarios?crear=1',
+}
+
+const TITULO_CREAR = {
+  aprendiz: 'Nueva propuesta',
+  instructor: 'Crear ficha',
+  admin: 'Crear usuario',
 }
 
 function iniciales(nombre = '') {
@@ -43,6 +56,14 @@ function LogoutIcon() {
   )
 }
 
+function PlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  )
+}
+
 export default function Header({ titulo = '', usuario = null, notificaciones = 0, role = '', onToggleSidebar }) {
   const { logout } = useAuth()
   const navigate = useNavigate()
@@ -51,6 +72,9 @@ export default function Header({ titulo = '', usuario = null, notificaciones = 0
     logout()
     navigate('/login', { replace: true })
   }
+
+  const perfilSesion = usuario ? findUserById(usuario.id) : null
+  const fotoPerfilSesion = perfilSesion?.fotoPerfil || null
 
   const irANotificaciones = () => {
     const ruta = RUTA_NOTIFICACIONES[role]
@@ -71,17 +95,40 @@ export default function Header({ titulo = '', usuario = null, notificaciones = 0
         </div>
 
         <div className={s.right}>
+          {RUTA_CREAR[role] && (
+            <button
+              type="button"
+              className={s.ctaNueva}
+              onClick={() => navigate(RUTA_CREAR[role])}
+              aria-label={TITULO_CREAR[role]}
+              title={TITULO_CREAR[role]}
+            >
+              <PlusIcon />
+            </button>
+          )}
+
           <span className={s.senaWrap}>
             <img className={s.senaLogo} src="/images/logo-sena-blanco.png" alt="SENA" />
           </span>
 
-          <button type="button" className={s.notif} onClick={irANotificaciones} aria-label={`Notificaciones${notificaciones > 0 ? ` (${notificaciones} sin leer)` : ''}`}>
+          <button
+            type="button"
+            className={`${s.notif} ${notificaciones > 0 ? s.notifUnread : ''}`}
+            onClick={irANotificaciones}
+            aria-label={`Notificaciones${notificaciones > 0 ? ` (${notificaciones} sin leer)` : ''}`}
+          >
             <BellIcon />
-            {notificaciones > 0 && <span className={s.badge}>{notificaciones > 99 ? '99+' : notificaciones}</span>}
+            {notificaciones > 0 && <span className={s.dot} aria-hidden="true" />}
           </button>
 
           <div className={s.user} title={usuario?.correo}>
-            <span className={s.avatar} aria-hidden="true">{iniciales(usuario?.nombre)}</span>
+            <span className={s.avatar} aria-hidden="true">
+              {fotoPerfilSesion ? (
+                <img src={fotoPerfilSesion} alt="" />
+              ) : (
+                iniciales(usuario?.nombre)
+              )}
+            </span>
             <span className={s.userInfo}>
               <span className={s.userName}>{usuario?.nombre}</span>
               <span className={s.userRole}>{role}</span>
@@ -94,6 +141,7 @@ export default function Header({ titulo = '', usuario = null, notificaciones = 0
           </button>
         </div>
       </div>
+
     </header>
   )
 }

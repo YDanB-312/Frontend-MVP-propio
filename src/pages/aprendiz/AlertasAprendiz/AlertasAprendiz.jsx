@@ -9,8 +9,8 @@ export default function AlertasAprendiz() {
         titulo="Alertas"
         subtitle="Mantente al tanto de las novedades de tus proyectos"
         detallePath="/aprendiz"
-        emptyActionLabel="Ir a mis proyectos"
-        emptyActionTo="/aprendiz/mis-proyectos"
+        emptyActionLabel="Ir a mis propuestas"
+        emptyActionTo="/aprendiz/propuestas"
       />
     </DashboardLayout>
   )

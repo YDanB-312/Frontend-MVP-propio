@@ -5,6 +5,8 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
 import Badge from '../../../components/Badge/Badge'
+import Button from '../../../components/Button/Button'
+import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import {
@@ -61,19 +63,18 @@ export default function ProyectosAdmin() {
   )
 
   return (
-    <DashboardLayout role="admin" titulo="Proyectos">
+    <DashboardLayout role="admin" titulo="Propuestas">
       <div className={s.page}>
         <PageHeader
-          title="Proyectos"
-          subtitle="Consulta y supervisa todas las propuestas de proyecto registradas en la plataforma."
+          title="Propuestas"
+          subtitle="Consulta y supervisa todas las propuestas registradas en la plataforma."
           icon={<FolderOpen />}
         />
 
         <FilterBar title="Buscar y filtrar">
           <label className={s.field}>
             <span className={s.label}>Buscar</span>
-            <input
-              className={s.input}
+            <Input
               value={busqueda}
               onChange={(e) => {
                 setBusqueda(e.target.value)
@@ -84,8 +85,7 @@ export default function ProyectosAdmin() {
           </label>
           <label className={s.field}>
             <span className={s.label}>Estado</span>
-            <select
-              className={s.select}
+            <Select
               value={filtroEstado}
               onChange={(e) => {
                 setFiltroEstado(e.target.value)
@@ -98,7 +98,7 @@ export default function ProyectosAdmin() {
                   {etiqueta}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <p className={s.info}>
             {filtrados.length} proyecto{filtrados.length !== 1 ? 's' : ''}
@@ -108,11 +108,11 @@ export default function ProyectosAdmin() {
         {paginados.length === 0 ? (
           <EmptyState
             icon={<FolderOpen />}
-            title="Sin proyectos"
+            title="Sin propuestas"
             message={
               proyectos.length === 0
-                ? 'Todavía no hay proyectos registrados.'
-                : 'Ningún proyecto coincide con los filtros aplicados.'
+                ? 'Todavía no hay propuestas registradas.'
+                : 'Ninguna propuesta coincide con los filtros aplicados.'
             }
           />
         ) : (
@@ -121,7 +121,7 @@ export default function ProyectosAdmin() {
               <table className={s.table}>
                 <thead>
                   <tr>
-                    <th>Proyecto</th>
+                    <th>Propuesta</th>
                     <th>Aprendiz</th>
                     <th>Fecha</th>
                     <th>Similitud</th>
@@ -157,12 +157,14 @@ export default function ProyectosAdmin() {
                           </Badge>
                         </td>
                         <td className={s.colActions}>
-                          <Link
+                          <Button
+                            as="link"
                             to={`/admin/detalle-proyecto/${p.id}`}
-                            className={`${s.btn} ${s.secondary}`}
+                            size="sm"
+                            variant="secondary"
                           >
                             <Eye size={14} /> Ver
-                          </Link>
+                          </Button>
                         </td>
                       </tr>
                     )
@@ -176,7 +178,7 @@ export default function ProyectosAdmin() {
               itemsPerPage={ITEMS_POR_PAGINA}
               paginaActual={pagina}
               setPaginaActual={setPagina}
-              itemName="proyectos"
+              itemName="propuestas"
               filteredCount={filtrados.length}
             />
           </>

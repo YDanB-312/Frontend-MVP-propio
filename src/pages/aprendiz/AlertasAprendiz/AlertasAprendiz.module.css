@@ -20,10 +20,6 @@
   transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-normal) var(--ease-out);
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -73,7 +69,6 @@
 
 .item:hover {
   box-shadow: var(--sh-card-h);
-  transform: translateY(-2px);
 }
 
 .item:focus-visible {

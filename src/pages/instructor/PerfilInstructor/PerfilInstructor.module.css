@@ -19,13 +19,9 @@
   transition: all var(--dur-fast) var(--ease-out);
 }
 
-.btn:hover {
-  transform: translateY(-1px);
-}
-
 .primary {
   background: var(--c-primary);
-  color: #fff;
+  color: var(--c-on-primary);
 }
 
 .primary:hover {
@@ -155,10 +151,4 @@
   outline: none;
   border-color: var(--c-primary);
   box-shadow: 0 0 0 3px var(--ring-color);
-}
-
-.formActions {
-  display: flex;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
 }

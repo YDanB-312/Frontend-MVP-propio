@@ -3,9 +3,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, CalendarBlank, CaretRight, CheckCircle, MagnifyingGlass, PushPin, User } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import Badge from '../../../components/Badge/Badge'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
-import { findProjectById, findSimilarityById, getAllSimilarities, displayNames } from '../../../data/mockData'
+import { findProjectById, findSimilarityById, getAllSimilarities, getSimilitudesValidas, displayNames } from '../../../data/mockData'
 import s from './ResultadoAnalisis.module.css'
 
 const CIRCUNFERENCIA = 2 * Math.PI * 54
@@ -38,7 +40,7 @@ export default function ResultadoAnalisis() {
     }
     if (!base) return { propio: null, propias: [], seleccionada: null }
 
-    const lista = getAllSimilarities()
+    const lista = getSimilitudesValidas()
       .filter((x) => x.projectId1 === base.id || x.projectId2 === base.id)
       .sort((a, b) => b.similitud - a.similitud)
 
@@ -59,7 +61,7 @@ export default function ResultadoAnalisis() {
             message="No encontramos un análisis reciente para mostrar. Registra o selecciona un proyecto para analizarlo."
             actionLabel="Ir a mis proyectos"
             actionIcon={<ArrowLeft size={14} />}
-            onAction={() => navigate('/aprendiz/mis-proyectos')}
+            onAction={() => navigate('/aprendiz/propuestas')}
           />
         </div>
       </DashboardLayout>
@@ -76,7 +78,7 @@ export default function ResultadoAnalisis() {
             message={`Buenas noticias: "${propio.title}" no presenta similitudes con ningún otro proyecto de la base de datos.`}
             actionLabel="Ir a mis proyectos"
             actionIcon={<ArrowLeft size={14} />}
-            onAction={() => navigate('/aprendiz/mis-proyectos')}
+            onAction={() => navigate('/aprendiz/propuestas')}
           />
         </div>
       </DashboardLayout>
@@ -212,14 +214,14 @@ export default function ResultadoAnalisis() {
           </ul>
         </section>
 
-        <div className={s.actions}>
-          <Link to="/aprendiz/mis-proyectos" className={`${s.btn} ${s.primary}`}>
+        <Actions align="center" wrap>
+          <Button as="link" to="/aprendiz/propuestas">
             <ArrowLeft size={14} /> Volver a mis proyectos
-          </Link>
-          <Link to={`/aprendiz/detalle-proyecto/${propio.id}`} className={`${s.btn} ${s.secondary}`}>
+          </Button>
+          <Button as="link" to={`/aprendiz/detalle-proyecto/${propio.id}`} variant="secondary">
             Ver mi proyecto <ArrowRight size={14} />
-          </Link>
-        </div>
+          </Button>
+        </Actions>
       </div>
     </DashboardLayout>
   )

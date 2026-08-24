@@ -91,13 +91,12 @@
 }
 
 .btn:hover {
-  transform: translateY(-1px);
   box-shadow: var(--sh-lg);
 }
 
 .primary {
   background: var(--grad-primary);
-  color: #fff;
+  color: var(--c-on-primary);
   box-shadow: var(--sh-md);
 }
 

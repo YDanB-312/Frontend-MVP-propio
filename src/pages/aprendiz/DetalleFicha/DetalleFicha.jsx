@@ -97,7 +97,7 @@ export default function DetalleFicha() {
               {estudiantes.map((est) => (
                 <li key={est.id}>
                   <Link to={`/aprendiz/perfil-companero/${est.id}`} className={s.studentCard}>
-                    <Avatar name={est.name} size="md" />
+                    <Avatar name={est.name} src={est.fotoPerfil} size="md" />
                     <span className={s.studentInfo}>
                       <span className={s.studentName}>{est.name}</span>
                       <span className={s.studentEmail}>{est.email}</span>

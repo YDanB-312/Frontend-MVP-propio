@@ -6,6 +6,9 @@ import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Badge from '../../../components/Badge/Badge'
 import Avatar from '../../../components/Avatar/Avatar'
+import Button from '../../../components/Button/Button'
+import { Select } from '../../../components/Input/Input'
+import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import {
   findBugReportById,
@@ -34,6 +37,7 @@ export default function DetalleReporte() {
     return r ? r.estado : 'pendiente'
   })
   const [guardado, setGuardado] = useState(false)
+  const [fotoViendo, setFotoViendo] = useState(null)
 
   const reporte = findBugReportById(id)
   const reportante = reporte && reporte.reporterId ? findUserById(reporte.reporterId) : null
@@ -120,8 +124,7 @@ export default function DetalleReporte() {
           <form className={s.statusForm} onSubmit={guardarEstado}>
             <label className={s.statusField}>
               <span className={s.statusLabel}>Cambiar estado</span>
-              <select
-                className={s.select}
+              <Select
                 value={nuevoEstado}
                 onChange={(e) => {
                   setNuevoEstado(e.target.value)
@@ -133,29 +136,34 @@ export default function DetalleReporte() {
                     {displayNames.bugReportStatus[est]}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
-            <button
+            <Button
               type="submit"
-              className={`${s.btn} ${s.primary}`}
               disabled={nuevoEstado === reporte.estado}
             >
               <CheckCircle size={14} /> Guardar estado
-            </button>
+            </Button>
           </form>
         </DataPanel>
 
         <DataPanel title="Información del reportante"           icon={<User />}>
           {reportante ? (
             <div className={s.personCard}>
-              <Avatar name={reportante.name} size="md" />
+              {reportante.fotoPerfil ? (
+                <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: reportante.fotoPerfil, alt: reportante.name })}>
+                  <Avatar name={reportante.name} src={reportante.fotoPerfil} size="md" />
+                </button>
+              ) : (
+                <Avatar name={reportante.name} size="md" />
+              )}
               <div className={s.personInfo}>
                 <span className={s.personName}>{reportante.name}</span>
                 <span className={s.personEmail}>{reportante.email}</span>
               </div>
-              <Link to={`/admin/detalle-usuario/${reportante.id}`} className={`${s.btn} ${s.secondary}`}>
+              <Button as="link" to={`/admin/detalle-usuario/${reportante.id}`} variant="secondary">
                 Ver usuario <ArrowRight size={14} />
-              </Link>
+              </Button>
             </div>
           ) : (
             <p className={s.muted}>
@@ -165,6 +173,7 @@ export default function DetalleReporte() {
           )}
         </DataPanel>
       </div>
-    </DashboardLayout>
+          {fotoViendo && <Lightbox src={fotoViendo.src} alt={fotoViendo.alt} caption={fotoViendo.alt} onClose={() => setFotoViendo(null)} />}
+</DashboardLayout>
   )
 }

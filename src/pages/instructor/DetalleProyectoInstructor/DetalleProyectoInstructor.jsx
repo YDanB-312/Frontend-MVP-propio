@@ -4,9 +4,15 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Badge from '../../../components/Badge/Badge'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
+import { Textarea } from '../../../components/Input/Input'
 import Avatar from '../../../components/Avatar/Avatar'
+import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import { instructorVeProyecto } from '../../../data/mockData'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findProjectById,
@@ -18,8 +24,9 @@ import {
   createNotification,
   displayNames,
 } from '../../../data/mockData'
+import { agruparObservaciones } from '../../../utils/helpers'
 import s from './DetalleProyectoInstructor.module.css'
-import { ArrowCounterClockwise, ChartBar, ChatCircle, CheckCircle, ClipboardText, FileText, FolderOpen, GraduationCap, ListChecks, MagnifyingGlass, Package, Plus, Target, XCircle } from 'phosphor-react'
+import { ArrowCounterClockwise, ChartBar, ChatCircle, CheckCircle, ClipboardText, FileText, FolderOpen, GraduationCap, ListChecks, MagnifyingGlass, X, LockKey, Plus, Target, XCircle } from 'phosphor-react'
 
 const ESTADO_VARIANT = {
   pendiente: 'warning',
@@ -33,14 +40,14 @@ const SIM_VARIANT = { pendiente: 'warning', revisada: 'info', resuelta: 'success
 
 const ACCIONES = {
   aprobado: {
-    titulo: 'Aprobar proyecto',
+    titulo: 'Aprobar propuesta',
     verbo: 'aprobar',
     texto: 'Sí, aprobar',
     clase: s.success,
     icono: null,
   },
   rechazado: {
-    titulo: 'Rechazar proyecto',
+    titulo: 'Rechazar propuesta',
     verbo: 'rechazar',
     texto: 'Sí, rechazar',
     clase: s.danger,
@@ -60,21 +67,28 @@ export default function DetalleProyectoInstructor() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [textoObs, setTextoObs] = useState('')
+  const [respondiendoA, setRespondiendoA] = useState(null)
   const [modal, setModal] = useState(null)
+  const [fotoViendo, setFotoViendo] = useState(null)
 
   const proyecto = findProjectById(id)
   const estudiante = proyecto ? findUserById(proyecto.studentId) : null
   const similitudes = proyecto ? getSimilaritiesByProject(proyecto.id) : []
   const observaciones = proyecto ? getObservaciones(proyecto.id) : []
 
+  // Autorización: propuestas de fichas a su cargo (ajenas → modo lectura)
+  const enMiCargo =
+    proyecto &&
+    instructorVeProyecto(proyecto, Number(user?.id))
+
   if (!proyecto) {
     return (
-      <DashboardLayout role="instructor" titulo="Detalle de Proyecto">
+      <DashboardLayout role="instructor" titulo="Detalle de Propuesta">
         <div className={s.page}>
           <EmptyState
             icon={<MagnifyingGlass />}
-            title="Proyecto no encontrado"
-            message="El proyecto que buscas no existe o fue eliminado."
+            title="Propuesta no encontrada"
+            message="La propuesta que buscas no existe o fue eliminada."
             actionLabel="Volver a revisión de propuestas"
             onAction={() => navigate('/instructor/revision-propuestas')}
           />
@@ -110,7 +124,7 @@ export default function DetalleProyectoInstructor() {
   const tieneObjetivosNuevos = proyecto.objetivoGeneral || objetivosEsp.length > 0
 
   return (
-    <DashboardLayout role="instructor" titulo="Detalle de Proyecto">
+    <DashboardLayout role="instructor" titulo="Detalle de Propuesta">
       <div className={s.page}>
         <PageHeader
           title={proyecto.title}
@@ -123,36 +137,44 @@ export default function DetalleProyectoInstructor() {
           ]}
         />
 
+        {proyecto && !enMiCargo && (
+          <div className={s.bannerLectura}>
+            <LockKey size={14} /> Propuesta de otra ficha · modo lectura
+          </div>
+        )}
+
         <div className={s.actionsBar}>
           <Badge variant={ESTADO_VARIANT[proyecto.estado] || 'neutral'} className={s.bigBadge}>
             {displayNames.projectStatus[proyecto.estado] || proyecto.estado}
           </Badge>
-          <div className={s.actions}>
-            <button
+          {enMiCargo && (
+          <Actions form>
+            <Button
               type="button"
-              className={`${s.btn} ${s.success}`}
+              variant="success"
               onClick={() => setModal(ACCIONES.aprobado)}
             >
               <CheckCircle size={14} /> Aprobar
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={`${s.btn} ${s.danger}`}
+              variant="danger"
               onClick={() => setModal(ACCIONES.rechazado)}
             >
               <XCircle size={14} /> Rechazar
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={`${s.btn} ${s.warning}`}
+              variant="warning"
               onClick={() => setModal(ACCIONES.requiere_ajustes)}
             >
               <ArrowCounterClockwise size={14} /> Solicitar Cambios
-            </button>
-          </div>
+            </Button>
+          </Actions>
+          )}
         </div>
 
-        <DataPanel title="Información del proyecto" icon={<FileText />}>
+        <DataPanel title="Información de la propuesta" icon={<FileText />}>
           <p className={s.description}>{proyecto.description}</p>
 
           <dl className={s.grid}>
@@ -210,26 +232,34 @@ export default function DetalleProyectoInstructor() {
         <DataPanel title="Información del aprendiz" icon={<GraduationCap />}>
           {estudiante ? (
             <div className={s.studentCard}>
-              <Avatar name={estudiante.name} size="md" />
+              {estudiante.fotoPerfil ? (
+                <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: estudiante.fotoPerfil, alt: estudiante.name })}>
+                  <Avatar name={estudiante.name} src={estudiante.fotoPerfil} size="md" />
+                </button>
+              ) : (
+                <Avatar name={estudiante.name} size="md" />
+              )}
               <div className={s.studentInfo}>
                 <span className={s.studentName}>{estudiante.name}</span>
                 <span className={s.studentEmail}>{estudiante.email}</span>
               </div>
-              <Link
+              <Button
+                as="link"
                 to={`/instructor/perfil-companero/${estudiante.id}`}
-                className={`${s.btn} ${s.secondary}`}
+                variant="secondary"
               >
                 Ver perfil
-              </Link>
+              </Button>
             </div>
           ) : (
             <p className={s.muted}>No se encontró la información del aprendiz.</p>
           )}
         </DataPanel>
 
+        {enMiCargo && (
         <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
           {similitudes.length === 0 ? (
-            <p className={s.muted}>No se han detectado similitudes para este proyecto.</p>
+            <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
           ) : (
             <ul className={s.simList}>
               {similitudes.map((sim) => {
@@ -256,37 +286,34 @@ export default function DetalleProyectoInstructor() {
             </ul>
           )}
         </DataPanel>
+        )}
 
+        {enMiCargo && (
         <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
+          {respondiendoA && (
+            <div className={s.respondiendoChip}>
+              Respondiendo a {String(respondiendoA.autor).split(' | ')[0]}
+              <button type="button" onClick={() => setRespondiendoA(null)} aria-label="Cancelar respuesta"><X size={12} /></button>
+            </div>
+          )}
+          <ObservacionHilo
+            grupos={agruparObservaciones(observaciones)}
+            permitirResponder
+            onRespuesta={(o) => setRespondiendoA(o)}
+          />
           <form className={s.obsForm} onSubmit={agregarObservacion}>
-            <textarea
-              className={s.textarea}
+            <Textarea
               rows={3}
               value={textoObs}
               onChange={(e) => setTextoObs(e.target.value)}
-              placeholder="Escribe una observación para el aprendiz sobre su propuesta…"
+              placeholder={respondiendoA ? 'Continúa la conversación con tu aprendiz…' : 'Escribe una observación para el aprendiz sobre su propuesta…'}
             />
-            <button type="submit" className={`${s.btn} ${s.primary}`} disabled={!textoObs.trim()}>
+            <Button type="submit" disabled={!textoObs.trim()}>
               <Plus size={14} /> Agregar observación
-            </button>
+            </Button>
           </form>
-
-          {observaciones.length === 0 ? (
-            <p className={s.muted}>Aún no hay observaciones registradas.</p>
-          ) : (
-            <ul className={s.obsList}>
-              {observaciones.map((o) => (
-                <li key={o.id} className={s.obsItem}>
-                  <div className={s.obsHead}>
-                    <span className={s.obsAutor}>{o.autor}</span>
-                    <time className={s.obsFecha}>{o.fecha}</time>
-                  </div>
-                  <p className={s.obsTexto}>{o.texto}</p>
-                </li>
-              ))}
-            </ul>
-          )}
         </DataPanel>
+        )}
       </div>
 
       <ConfirmModal
@@ -294,13 +321,14 @@ export default function DetalleProyectoInstructor() {
         titulo={modal?.titulo}
         mensaje={
           modal
-            ? `¿Seguro que deseas ${modal.verbo} el proyecto "${proyecto.title}"? El aprendiz será notificado.`
+            ? `¿Seguro que deseas ${modal.verbo} la propuesta "${proyecto.title}"? El aprendiz será notificado.`
             : ''
         }
         textoConfirmar={modal?.texto}
         onConfirmar={confirmarAccion}
         onCancelar={() => setModal(null)}
       />
-    </DashboardLayout>
+          {fotoViendo && <Lightbox src={fotoViendo.src} alt={fotoViendo.alt} caption={fotoViendo.alt} onClose={() => setFotoViendo(null)} />}
+</DashboardLayout>
   )
 }

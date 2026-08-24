@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import Actions from '../Actions/Actions'
+import Button from '../Button/Button'
 import s from './ConfirmModal.module.css'
 
 export default function ConfirmModal({
@@ -34,14 +36,14 @@ export default function ConfirmModal({
         <div className={s.iconWrap} aria-hidden="true">⚠</div>
         <h2 id="confirm-modal-title" className={s.title}>{titulo}</h2>
         {mensaje && <p id="confirm-modal-message" className={s.message}>{mensaje}</p>}
-        <div className={s.actions}>
-          <button type="button" className={s.cancel} onClick={onCancelar}>
+        <Actions>
+          <Button variant="secondary" size="lg" onClick={onCancelar}>
             {textoCancelar}
-          </button>
-          <button type="button" className={s.confirm} onClick={onConfirmar} autoFocus>
+          </Button>
+          <Button variant="primary" size="lg" onClick={onConfirmar} autoFocus>
             {textoConfirmar}
-          </button>
-        </div>
+          </Button>
+        </Actions>
       </div>
     </div>
   )

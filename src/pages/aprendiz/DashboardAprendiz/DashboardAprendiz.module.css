@@ -43,60 +43,6 @@
   gap: var(--sp-4);
 }
 
-.stat {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-4);
-  padding: var(--sp-5);
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-card);
-  transition: box-shadow var(--dur-normal) var(--ease-out), transform var(--dur-normal) var(--ease-out);
-}
-
-.stat:hover {
-  box-shadow: var(--sh-card-h);
-  transform: translateY(-2px);
-}
-
-.statIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  font-size: 22px;
-  border-radius: var(--r-md);
-  flex-shrink: 0;
-}
-
-.statPrimary {
-  background: var(--c-success-bg);
-}
-
-.statWarning {
-  background: var(--c-warning-bg);
-}
-
-.statInfo {
-  background: var(--c-info-bg);
-}
-
-.statValue {
-  margin: 0;
-  font-size: var(--text-2xl);
-  font-weight: 800;
-  color: var(--c-text);
-  line-height: var(--leading-tight);
-}
-
-.statLabel {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--c-text-2);
-}
-
 .sectionTitle {
   margin: 0 0 var(--sp-4);
   font-size: var(--text-lg);
@@ -126,7 +72,6 @@
 
 .quickCard:hover {
   box-shadow: var(--sh-card-h);
-  transform: translateY(-3px);
   border-color: var(--c-primary);
 }
 

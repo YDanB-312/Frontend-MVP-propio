@@ -8,15 +8,20 @@ import Avatar from '../../../components/Avatar/Avatar'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import FormField from '../../../components/FormField/FormField'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
+import { Input, Select } from '../../../components/Input/Input'
+import { useAuth } from '../../../contexts/AuthContext'
 import {
   findFichaById,
   getEstudiantesDeFicha,
   updateFicha,
   deleteFicha,
+  instructorVeFicha,
   displayNames,
 } from '../../../data/mockData'
 import s from './DetalleFichaInstructor.module.css'
-import { ArrowRight, Books, ChartBar, CheckCircle, Code, GraduationCap, IdentificationCard, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
+import { ArrowRight, Books, ChartBar, CheckCircle, Code, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
 
 const PROGRAMAS = [
   'ADSO',
@@ -29,6 +34,7 @@ const PROGRAMAS = [
 export default function DetalleFichaInstructor() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [editando, setEditando] = useState(false)
   const [form, setForm] = useState(() => {
     const f = findFichaById(id)
@@ -40,6 +46,9 @@ export default function DetalleFichaInstructor() {
   const ficha = findFichaById(id)
   const estudiantes = ficha ? getEstudiantesDeFicha(ficha.id) : []
 
+  // Autorización: solo el instructor a cargo de la ficha
+  const autorizado = ficha && instructorVeFicha(ficha, user?.id)
+
   if (!ficha) {
     return (
       <DashboardLayout role="instructor" titulo="Detalle de Ficha">
@@ -48,8 +57,24 @@ export default function DetalleFichaInstructor() {
             icon={<MagnifyingGlass />}
             title="Ficha no encontrada"
             message="La ficha que buscas no existe o fue eliminada."
-            actionLabel="Volver a gestionar fichas"
+            actionLabel="Volver a fichas"
             onAction={() => navigate('/instructor/gestionar-fichas')}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!autorizado) {
+    return (
+      <DashboardLayout role="instructor" titulo="Detalle de Ficha">
+        <div className={s.page}>
+          <EmptyState
+            icon={<LockKey size={40} weight="light" />}
+            title="Esta ficha no está a tu cargo"
+            message="Pertenece a otro instructor. Solo puedes gestionar las fichas que tú creaste."
+            actionLabel="Volver al dashboard"
+            onAction={() => navigate('/instructor/dashboard')}
           />
         </div>
       </DashboardLayout>
@@ -91,7 +116,7 @@ export default function DetalleFichaInstructor() {
           icon={<Books />}
           breadcrumb={[
             { label: 'Dashboard', to: '/instructor/dashboard', icon: <ChartBar size={14} /> },
-            { label: 'Gestionar Fichas', to: '/instructor/gestionar-fichas', icon: <Books size={14} /> },
+            { label: 'Fichas', to: '/instructor/fichas', icon: <Books size={14} /> },
             { label: ficha.nombre },
           ]}
         />
@@ -101,20 +126,20 @@ export default function DetalleFichaInstructor() {
           icon={<IdentificationCard />}
           action={
             <div className={s.headActions}>
-              <button
+              <Button
                 type="button"
-                className={`${s.btn} ${s.secondary}`}
+                variant="secondary"
                 onClick={() => setEditando((v) => !v)}
               >
                 <PencilLine size={14} /> {editando ? 'Cancelar edición' : 'Editar'}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className={`${s.btn} ${s.danger}`}
+                variant="danger"
                 onClick={() => setModalEliminar(true)}
               >
                 <Trash size={14} /> Eliminar ficha
-              </button>
+              </Button>
             </div>
           }
         >
@@ -148,22 +173,22 @@ export default function DetalleFichaInstructor() {
                   <dd>{estudiantes.length}</dd>
                 </div>
                 <div className={s.cell}>
-                  <dt>Proyectos asociados</dt>
+                  <dt>Propuestas asociadas</dt>
                   <dd>{ficha.proyectos}</dd>
                 </div>
               </dl>
-              <Link
+              <Button
+                as="link"
                 to={`/instructor/directorio-ficha/${ficha.id}`}
-                className={`${s.btn} ${s.primary} ${s.directorioBtn}`}
+                className={s.directorioBtn}
               >
                 <Users size={14} /> Ver directorio de aprendices <ArrowRight size={14} />
-              </Link>
+              </Button>
             </>
           ) : (
             <form className={s.form} onSubmit={guardarEdicion} noValidate>
               <FormField label="Nombre de la ficha" required error={errores.nombre}>
-                <input
-                  className={s.input}
+                <Input
                   name="nombre"
                   value={form.nombre}
                   onChange={onChange}
@@ -171,8 +196,7 @@ export default function DetalleFichaInstructor() {
                 />
               </FormField>
               <FormField label="Programa">
-                <select
-                  className={s.select}
+                <Select
                   name="programa"
                   value={form.programa}
                   onChange={onChange}
@@ -183,11 +207,10 @@ export default function DetalleFichaInstructor() {
                       {p}
                     </option>
                   ))}
-                </select>
+                </Select>
               </FormField>
               <FormField label="Estado">
-                <select
-                  className={s.select}
+                <Select
                   name="estado"
                   value={form.estado}
                   onChange={onChange}
@@ -195,15 +218,15 @@ export default function DetalleFichaInstructor() {
                   <option value="activo">Activo</option>
                   <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
-                </select>
+                </Select>
               </FormField>
-              <div className={s.formActions}>
-                <button type="submit" className={`${s.btn} ${s.primary}`}>
+              <Actions form>
+                <Button type="submit">
                   <CheckCircle size={14} /> Guardar cambios
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className={`${s.btn} ${s.secondary}`}
+                  variant="secondary"
                   onClick={() => {
                     setEditando(false)
                     setForm({
@@ -214,8 +237,8 @@ export default function DetalleFichaInstructor() {
                   }}
                 >
                   Cancelar
-                </button>
-              </div>
+                </Button>
+              </Actions>
             </form>
           )}
         </DataPanel>
@@ -232,7 +255,7 @@ export default function DetalleFichaInstructor() {
               {estudiantes.map((est) => (
                 <li key={est.id}>
                   <Link to={`/instructor/perfil-companero/${est.id}`} className={s.studentRow}>
-                    <Avatar name={est.name} size="md" />
+                    <Avatar name={est.name} src={est.fotoPerfil} size="md" />
                     <span className={s.studentInfo}>
                       <span className={s.studentName}>{est.name}</span>
                       <span className={s.studentEmail}>{est.email}</span>

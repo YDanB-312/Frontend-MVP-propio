@@ -134,7 +134,6 @@
 .studentCard:hover {
   border-color: var(--c-primary);
   background: var(--c-success-bg);
-  transform: translateY(-2px);
 }
 
 .studentInfo {
@@ -173,3 +172,7 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+.btn{display:inline-flex;align-items:center;gap:var(--sp-1_5);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-md);font-size:var(--text-sm);font-weight:600;font-family:inherit;border:1px solid transparent;cursor:pointer;text-decoration:none;transition:all var(--dur-fast) var(--ease-out)}
+.dangerGhost{background:transparent;color:var(--c-danger);border-color:var(--c-border)}
+.dangerGhost:hover{background:var(--c-danger-bg);border-color:var(--c-danger)}

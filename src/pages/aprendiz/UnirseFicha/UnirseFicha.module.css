@@ -79,10 +79,6 @@
   transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-normal) var(--ease-out);
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -90,7 +86,7 @@
 
 .primary {
   background: var(--grad-primary);
-  color: #fff;
+  color: var(--c-on-primary);
   box-shadow: var(--sh-md);
 }
 
@@ -184,12 +180,6 @@
   border-radius: var(--r-md);
   font-size: var(--text-sm);
   color: var(--blue-600);
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
 }
 
 .successCard {

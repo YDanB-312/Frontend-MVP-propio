@@ -1,0 +1,5 @@
+.alert{display:flex;align-items:center;gap:var(--sp-2);margin:0;padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);font-size:var(--text-sm);font-weight:600}
+.success{background:var(--c-success-bg);color:var(--c-primary-strong)}
+.danger{background:var(--c-danger-bg);color:var(--c-danger)}
+.warning{background:var(--c-warning-bg);color:var(--c-warning)}
+.info{background:var(--c-info-bg);color:var(--c-info)}

@@ -4,18 +4,25 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Badge from '../../../components/Badge/Badge'
+import Button from '../../../components/Button/Button'
+import { Textarea } from '../../../components/Input/Input'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import FormField from '../../../components/FormField/FormField'
+import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
+import Tag from '../../../components/Tag/Tag'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findProjectById,
+  findFichaById,
   getAllSimilarities,
+  getSimilitudesValidas,
   getObservaciones,
   addObservacion,
   displayNames,
 } from '../../../data/mockData'
+import { agruparObservaciones } from '../../../utils/helpers'
 import s from './DetalleProyecto.module.css'
-import { CaretRight, ChatCircle, ClipboardText, FileText, MagnifyingGlass } from 'phosphor-react'
+import { CaretRight, ChatCircle, ClipboardText, FileText, MagnifyingGlass, X } from 'phosphor-react'
 
 const ESTADO_VARIANT = {
   aprobado: 'success',
@@ -38,9 +45,10 @@ export default function DetalleProyecto() {
   const [texto, setTexto] = useState('')
   const [error, setError] = useState('')
   const [observaciones, setObservaciones] = useState(() => (project ? getObservaciones(project.id) : []))
+  const [respondiendoA, setRespondiendoA] = useState(null)
 
   const similitudes = useMemo(
-    () => (project ? getAllSimilarities().filter((s) => s.projectId1 === project.id || s.projectId2 === project.id) : []),
+    () => (project ? getSimilitudesValidas().filter((s) => s.projectId1 === project.id || s.projectId2 === project.id) : []),
     [project]
   )
 
@@ -52,13 +60,20 @@ export default function DetalleProyecto() {
             icon={<MagnifyingGlass />}
             title="Proyecto no encontrado"
             message="El proyecto que buscas no existe o fue eliminado."
-            actionLabel="Volver a mis proyectos"
-            onAction={() => navigate('/aprendiz/mis-proyectos')}
+            actionLabel="Volver a mis propuestas"
+            onAction={() => navigate('/aprendiz/propuestas')}
           />
         </div>
       </DashboardLayout>
     )
   }
+
+  // Creador o integrante del equipo → derechos plenos sobre la propuesta
+  const esPropio =
+    Number(project.studentId) === Number(user.id) ||
+    (project.integrantes || []).includes(user.nombre)
+
+  const ficha = project ? findFichaById(project.fichaId) : null
 
   const keywords = (project.keywords || '')
     .split(',')
@@ -77,10 +92,11 @@ export default function DetalleProyecto() {
       setError('Escribe una observación de al menos 5 caracteres.')
       return
     }
-    addObservacion(project.id, `${user.nombre} | Aprendiz`, texto.trim())
+    addObservacion(project.id, `${user.nombre} | Aprendiz`, texto.trim(), respondiendoA?.id || null)
     setObservaciones(getObservaciones(project.id))
     setTexto('')
     setError('')
+    setRespondiendoA(null)
   }
 
   return (
@@ -92,7 +108,7 @@ export default function DetalleProyecto() {
           icon={<FileText />}
           breadcrumb={[
             { label: 'Dashboard', to: '/aprendiz/dashboard' },
-            { label: 'Mis Proyectos', to: '/aprendiz/mis-proyectos' },
+            { label: 'Mis Proyectos', to: '/aprendiz/propuestas' },
             { label: project.title },
           ]}
         />
@@ -120,7 +136,7 @@ export default function DetalleProyecto() {
                   <dt>Ficha</dt>
                   <dd>
                     <Link to={`/aprendiz/detalle-ficha/${project.fichaId}`} className={s.link}>
-                      #{project.fichaId}
+                      {ficha ? `${ficha.codigo} · ${ficha.nombre}` : `#${project.fichaId}`}
                     </Link>
                   </dd>
                 </div>
@@ -160,9 +176,9 @@ export default function DetalleProyecto() {
                   <h3 className={s.subTitle}>Palabras clave</h3>
                   <div className={s.chips}>
                     {keywords.map((k) => (
-                      <span key={k} className={s.chip}>
+                      <Tag key={k} variant="success">
                         {k}
-                      </span>
+                      </Tag>
                     ))}
                   </div>
                 </>
@@ -171,6 +187,7 @@ export default function DetalleProyecto() {
           </div>
 
           <div className={s.col}>
+            {esPropio && (
             <DataPanel title={`Similitudes detectadas (${similitudes.length})`} icon={<MagnifyingGlass />}>
               {similitudes.length === 0 ? (
                 <p className={s.muted}>Aún no se han detectado similitudes para este proyecto.</p>
@@ -196,40 +213,44 @@ export default function DetalleProyecto() {
                 </ul>
               )}
             </DataPanel>
+            )}
 
+            {esPropio && (
             <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
-              {observaciones.length === 0 ? (
-                <p className={s.muted}>No hay observaciones todavía. Sé el primero en comentar.</p>
-              ) : (
-                <ul className={s.obsList}>
-                  {observaciones.map((o) => (
-                    <li key={o.id} className={s.obsItem}>
-                      <header className={s.obsHeader}>
-                        <span className={s.obsAutor}>{o.autor}</span>
-                        <span className={s.obsFecha}>{o.fecha}</span>
-                      </header>
-                      <p className={s.obsTexto}>{o.texto}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <ObservacionHilo
+                grupos={agruparObservaciones(observaciones)}
+                permitirResponder
+                onRespuesta={(o) => setRespondiendoA(o)}
+              />
 
               <form className={s.obsForm} onSubmit={agregarObservacion} noValidate>
-                <FormField label="Nueva observación" error={error}>
-                  <textarea
-                    className={s.textarea}
+                <FormField
+                  label={respondiendoA ? `Respondiendo a ${String(respondiendoA.autor).split(' | ')[0]}` : 'Nueva observación'}
+                  error={error}
+                >
+                  <Textarea
                     rows={3}
                     value={texto}
                     onChange={(e) => setTexto(e.target.value)}
-                    placeholder="Escribe tu comentario sobre el proyecto..."
+                    placeholder={respondiendoA ? 'Escribe tu respuesta al instructor…' : 'Escribe tu comentario sobre la propuesta...'}
                     maxLength={500}
                   />
                 </FormField>
-                <button type="submit" className={`${s.btn} ${s.primary}`}>
-                  Publicar observación
-                </button>
+                {respondiendoA && (
+                  <button
+                    type="button"
+                    className={s.cancelarRespuesta}
+                    onClick={() => setRespondiendoA(null)}
+                  >
+                    <X size={12} /> Cancelar respuesta
+                  </button>
+                )}
+                <Button type="submit">
+                  {respondiendoA ? 'Publicar respuesta' : 'Publicar observación'}
+                </Button>
               </form>
             </DataPanel>
+            )}
           </div>
         </div>
       </div>

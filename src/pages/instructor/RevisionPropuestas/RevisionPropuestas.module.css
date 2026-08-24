@@ -154,10 +154,6 @@
   transition: all var(--dur-fast) var(--ease-out);
 }
 
-.btn:hover {
-  transform: translateY(-1px);
-}
-
 .success {
   background: var(--c-success-bg);
   color: var(--c-success);
@@ -177,7 +173,7 @@
 
 .danger:hover {
   background: var(--c-danger);
-  color: #fff;
+  color: var(--c-on-danger);
 }
 
 .secondary {
@@ -189,4 +185,19 @@
 .secondary:hover {
   color: var(--c-primary);
   border-color: var(--c-primary);
+}
+
+/* ---- Movil: tablas como tarjetas ---- */
+@media(max-width:768px){
+  .tableWrap{overflow-x:visible;border:none;box-shadow:none;background:transparent;border-radius:0}
+  .table{min-width:0}
+  .table thead{display:none}
+  .table tbody tr{display:flex;flex-direction:column;gap:var(--sp-2);padding:var(--sp-4);margin-bottom:var(--sp-3);border-radius:var(--r-lg);background:var(--c-surface);box-shadow:var(--sh-card)}
+  .table tbody tr:nth-child(even){background:var(--c-surface)}
+  .table tbody tr:hover{background:var(--c-surface)}
+  .table td{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);border-bottom:1px solid var(--c-border-2);padding:var(--sp-1_5) 0}
+  .table td:last-child{border-bottom:none;padding-bottom:0}
+  .table td::before{content:attr(data-label);font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3)}
+  .colActions{text-align:right}
+  .actions,.colActions .actions{justify-content:flex-end}
 }

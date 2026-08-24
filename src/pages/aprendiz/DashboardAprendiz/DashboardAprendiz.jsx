@@ -1,15 +1,18 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bell, CaretRight, Clock, FolderOpen, GraduationCap, MagnifyingGlass, PlusCircle, Tray } from 'phosphor-react'
+import { Bell, CaretRight, Clock, FolderOpen, MagnifyingGlass, PlusCircle, Tray } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import { useAuth } from '../../../contexts/AuthContext'
 import MetricCard from '../../../components/MetricCard/MetricCard'
 import DataPanel from '../../../components/DataPanel/DataPanel'
+import QuickActions from '../../../components/QuickActions/QuickActions'
+import { Sparkle } from 'phosphor-react'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import {
-  getProjectsByStudent, getAllSimilarities, findUserById, findFichaById, getUnreadCount, displayNames,
+  getProjectsByStudent, getAllSimilarities, getSimilitudesValidas, getUnreadCount, displayNames,
 } from '../../../data/mockData'
+import { parseFecha } from '../../../utils/helpers'
 import s from './DashboardAprendiz.module.css'
 
 const ESTADO_VARIANT = {
@@ -29,10 +32,8 @@ function similitudInfo(similitudes, projectId) {
 export default function DashboardAprendiz() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const perfil = findUserById(user.id)
-  const ficha = findFichaById(perfil?.fichaId)
   const misProyectos = useMemo(() => getProjectsByStudent(user.id), [user.id])
-  const similitudes = useMemo(() => getAllSimilarities(), [])
+  const similitudes = useMemo(() => getSimilitudesValidas(), [])
   const sinLeer = getUnreadCount(user.id)
   const similitudesPropias = similitudes.filter(sim =>
     misProyectos.some(p => p.id === sim.projectId1 || p.id === sim.projectId2)
@@ -40,14 +41,30 @@ export default function DashboardAprendiz() {
   const recientes = [...misProyectos].slice(0, 5)
   const hoy = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-  const acciones = [
-    { to: '/aprendiz/mis-proyectos', icon: <FolderOpen size={24} weight="regular" />, titulo: 'Mis Proyectos', descripcion: 'Consulta y revisa tus proyectos registrados' },
-    { to: '/aprendiz/nuevo-proyecto', icon: <PlusCircle size={24} weight="regular" />, titulo: 'Nueva Propuesta', descripcion: 'Registra una nueva propuesta académica' },
-    ficha
-      ? { to: `/aprendiz/detalle-ficha/${ficha.id}`, icon: <GraduationCap size={24} weight="regular" />, titulo: 'Mi Ficha', descripcion: `${ficha.nombre} · ${ficha.codigo}` }
-      : { to: '/aprendiz/unirse-ficha', icon: <GraduationCap size={24} weight="regular" />, titulo: 'Unirme a una Ficha', descripcion: 'Usa el código de tu ficha de formación' },
-    { to: '/aprendiz/alertas', icon: <Bell size={24} weight="regular" />, titulo: 'Alertas', descripcion: sinLeer > 0 ? `Tienes ${sinLeer} alerta${sinLeer > 1 ? 's' : ''} sin leer` : 'Todo leído al día' },
-  ]
+  const acciones = []
+
+  acciones.push({
+    to: '/aprendiz/propuestas?crear=1',
+    icon: <PlusCircle size={24} weight="regular" />,
+    titulo: 'Nueva Propuesta',
+    descripcion: 'Crea tu propuesta y analízala al instante',
+  })
+
+  const ultimaSim = [...similitudes]
+    .filter((s) => misProyectos.some((p) => p.id === s.projectId1 || p.id === s.projectId2))
+    .sort((a, b) => parseFecha(b.createdAt) - parseFecha(a.createdAt))[0]
+
+  if (ultimaSim) {
+    const pidPropio = misProyectos.some((p) => p.id === ultimaSim.projectId1)
+      ? ultimaSim.projectId1
+      : ultimaSim.projectId2
+    acciones.push({
+      to: `/aprendiz/resultado-analisis?projectId=${pidPropio}`,
+      icon: <MagnifyingGlass size={24} weight="regular" />,
+      titulo: 'Último análisis',
+      descripcion: `${Math.round(ultimaSim.similitud * 100)}% · ${ultimaSim.createdAt}`,
+    })
+  }
 
   return (
     <DashboardLayout role="aprendiz" titulo="Dashboard">
@@ -57,31 +74,22 @@ export default function DashboardAprendiz() {
             <h2 className={s.welcomeTitle}>¡Hola, {user.nombre.split(' ')[0]}!</h2>
             <p className={s.welcomeDate}>{hoy}</p>
           </div>
-          <p className={s.welcomeText}>Este es tu espacio para gestionar proyectos y mantener la originalidad de tu trabajo.</p>
+          <p className={s.welcomeText}>Este es tu espacio para gestionar tus propuestas y mantener la originalidad de tu trabajo.</p>
         </section>
 
         <section className={s.stats} aria-label="Resumen de actividad">
-          <MetricCard icon={<FolderOpen size={22} />} label="Proyectos totales" value={misProyectos.length} variant="primary" />
-          <MetricCard icon={<MagnifyingGlass size={22} />} label="Similitudes detectadas" value={similitudesPropias} variant="warning" />
+          <MetricCard icon={<FolderOpen size={22} />} label="Propuestas registradas" value={misProyectos.length} variant="primary" />
+          <Link to="/aprendiz/similitudes" className={s.statLink}><MetricCard icon={<MagnifyingGlass size={22} />} label="Similitudes detectadas" value={similitudesPropias} variant="warning" /></Link>
           <MetricCard icon={<Bell size={22} />} label="Alertas sin leer" value={sinLeer} variant="info" />
         </section>
 
-        <section aria-labelledby="acciones-title">
-          <h2 id="acciones-title" className={s.sectionTitle}>Acciones rápidas</h2>
-          <div className={s.quickGrid}>
-            {acciones.map(a => (
-              <Link key={a.titulo} to={a.to} className={s.quickCard}>
-                <span className={s.quickIcon} aria-hidden="true">{a.icon}</span>
-                <span className={s.quickTitle}>{a.titulo}</span>
-                <span className={s.quickDesc}>{a.descripcion}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <DataPanel title="Acciones rápidas" icon={<Sparkle size={18} />}>
+          <QuickActions items={acciones} />
+        </DataPanel>
 
-        <DataPanel title="Proyectos recientes" icon={<Clock size={18} />} action={<Link to="/aprendiz/mis-proyectos" className={s.panelLink}>Ver todos</Link>}>
+        <DataPanel title="Propuestas recientes" icon={<Clock size={18} />} action={<Link to="/aprendiz/propuestas" className={s.panelLink}>Ver todas</Link>}>
           {recientes.length === 0 ? (
-            <EmptyState icon={<Tray />} title="Aún no tienes proyectos" message="Registra tu primera propuesta para comenzar a analizarla." actionLabel="Crear propuesta" onAction={() => navigate('/aprendiz/nuevo-proyecto')} />
+            <EmptyState icon={<Tray />} title="Aún no tienes propuestas" message="Registra tu primera propuesta para comenzar a analizarla." actionLabel="Crear propuesta" onAction={() => navigate('/aprendiz/propuestas?crear=1')} />
           ) : (
             <ul className={s.projectList}>
               {recientes.map(p => {

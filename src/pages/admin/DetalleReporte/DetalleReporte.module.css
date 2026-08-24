@@ -114,10 +114,6 @@
   transition: all var(--dur-fast) var(--ease-out);
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -125,7 +121,7 @@
 
 .primary {
   background: var(--c-primary);
-  color: #fff;
+  color: var(--c-on-primary);
 }
 
 .primary:hover:not(:disabled) {
@@ -173,3 +169,6 @@
   font-size: var(--text-sm);
   color: var(--c-text-3);
 }
+
+.avatarBtn{padding:0;border:none;background:none;border-radius:var(--r-full);cursor:zoom-in;line-height:0;transition:transform var(--dur-fast) var(--ease-out)}
+.avatarBtn:hover{transform:scale(1.03)}

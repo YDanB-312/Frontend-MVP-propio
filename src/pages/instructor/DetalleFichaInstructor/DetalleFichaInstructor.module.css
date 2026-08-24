@@ -83,12 +83,6 @@
   box-shadow: 0 0 0 3px var(--ring-color);
 }
 
-.formActions {
-  display: flex;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
-}
-
 /* Buttons */
 .btn {
   display: inline-flex;
@@ -104,13 +98,9 @@
   transition: all var(--dur-fast) var(--ease-out);
 }
 
-.btn:hover {
-  transform: translateY(-1px);
-}
-
 .primary {
   background: var(--c-primary);
-  color: #fff;
+  color: var(--c-on-primary);
 }
 
 .primary:hover {
@@ -136,7 +126,7 @@
 
 .danger:hover {
   background: var(--c-danger);
-  color: #fff;
+  color: var(--c-on-danger);
 }
 
 /* Student list */
@@ -161,7 +151,6 @@
   border-color: var(--c-primary);
   background: var(--c-surface);
   box-shadow: var(--sh-card-h);
-  transform: translateY(-1px);
 }
 
 .studentInfo {

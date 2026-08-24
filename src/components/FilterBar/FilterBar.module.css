@@ -8,5 +8,5 @@
 .open{transform:rotate(180deg)}
 .content{padding:var(--sp-4);border-top:1px solid var(--c-border-2);animation:slideDown var(--dur-normal) var(--ease-out)}
 .filters{display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:flex-end}
-.actions{display:flex;justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-4);padding-top:var(--sp-3);border-top:1px dashed var(--c-border)}
+.actions{margin-top:var(--sp-4);padding-top:var(--sp-3);border-top:1px dashed var(--c-border)}
 @keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}

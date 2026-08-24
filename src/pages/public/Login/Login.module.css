@@ -119,10 +119,6 @@
     transform var(--dur-fast) var(--ease-spring);
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -130,7 +126,7 @@
 
 .primary {
   background: var(--grad-primary);
-  color: #fff;
+  color: var(--c-on-primary);
   box-shadow: var(--sh-md);
 }
 
@@ -151,7 +147,7 @@
 
 .danger {
   background: var(--c-danger);
-  color: #fff;
+  color: var(--c-on-danger);
 }
 
 .footer {

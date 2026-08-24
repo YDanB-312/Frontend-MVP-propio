@@ -51,10 +51,6 @@
 }
 
 .actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--sp-3);
   margin-top: var(--sp-2);
 }
 
@@ -74,13 +70,9 @@
   transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-normal) var(--ease-out);
 }
 
-.btn:hover {
-  transform: translateY(-1px);
-}
-
 .primary {
   background: var(--grad-primary);
-  color: #fff;
+  color: var(--c-on-primary);
   box-shadow: var(--sh-md);
 }
 

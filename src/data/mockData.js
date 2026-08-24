@@ -149,10 +149,10 @@ const ESTADO_INICIAL = {
     },
   ],
   similitudes: [
-    { id: 1, projectId1: 4, projectId2: 2, project1Title: 'Plataforma de Ventas Online', project2Title: 'App Móvil para Turismo Local', project1Student: 'María González', project2Student: 'Juan Pérez', similitud: 0.45, estado: 'pendiente', createdAt: '18/11/2026' },
-    { id: 2, projectId1: 4, projectId2: 5, project1Title: 'Plataforma de Ventas Online', project2Title: 'Sistema de Gestión de Inventarios', project1Student: 'María González', project2Student: 'María González', similitud: 0.61, estado: 'revisada', createdAt: '17/11/2026' },
-    { id: 3, projectId1: 1, projectId2: 6, project1Title: 'Sistema IoT para Agricultura', project2Title: 'App de Bienestar Deportivo', project1Student: 'Ana Martínez', project2Student: 'Juan Pérez', similitud: 0.38, estado: 'pendiente', createdAt: '16/11/2026' },
-    { id: 4, projectId1: 3, projectId2: 7, project1Title: 'Plataforma E-learning para Música', project2Title: 'Portal de Transparencia SENA', project1Student: 'Laura Gómez', project2Student: 'Laura Gómez', similitud: 0.52, estado: 'revisada', createdAt: '15/11/2026' },
+    // Regla: las coincidencias se detectan únicamente contra propuestas APROBADAS (en producción)
+    { id: 1, projectId1: 4, projectId2: 5, project1Title: 'Plataforma de Ventas Online', project2Title: 'Sistema de Gestión de Inventarios', project1Student: 'María González', project2Student: 'María González', similitud: 0.45, estado: 'pendiente', createdAt: '18/11/2026' },
+    { id: 2, projectId1: 1, projectId2: 7, project1Title: 'Sistema IoT para Agricultura', project2Title: 'Portal de Transparencia SENA', project1Student: 'Ana Martínez', project2Student: 'Laura Gómez', similitud: 0.38, estado: 'pendiente', createdAt: '16/11/2026' },
+    { id: 3, projectId1: 3, projectId2: 5, project1Title: 'Plataforma E-learning para Música', project2Title: 'Sistema de Gestión de Inventarios', project1Student: 'Laura Gómez', project2Student: 'María González', similitud: 0.52, estado: 'revisada', createdAt: '15/11/2026' },
   ],
   bugReports: [
     { id: 1, titulo: 'Pantalla blanca en Dashboard', descripcion: 'Error al cargar la página de Dashboard, muestra pantalla blanca después de iniciar sesión', tipo: 'sistema', estado: 'pendiente', reporterId: 7, reporterName: 'Carlos Rodríguez Díaz', createdAt: '12/04/2026' },
@@ -398,7 +398,32 @@ export function joinFicha(codigo, estudiante) {
   if (!ficha.estudiantes.some(e => e.id === estudiante.id)) {
     state.fichas[index] = { ...ficha, estudiantes: [...ficha.estudiantes, estudiante], aprendices: ficha.aprendices + 1 }
   }
+  const uIdx = state.users.findIndex(u => u.id === Number(estudiante.id))
+  if (uIdx !== -1 && !state.users[uIdx].fichaId) {
+    state.users[uIdx] = {
+      ...state.users[uIdx],
+      fichaId: ficha.id,
+      programa: state.users[uIdx].programa || ficha.programa || null,
+    }
+  }
+  guardar()
   return state.fichas[index]
+}
+
+export function leaveFicha(userId) {
+  const uIdx = state.users.findIndex(u => u.id === Number(userId))
+  if (uIdx === -1 || !state.users[uIdx].fichaId) return false
+  const fichaId = state.users[uIdx].fichaId
+  const fIdx = state.fichas.findIndex(f => f.id === Number(fichaId))
+  if (fIdx !== -1) {
+    const restantes = state.fichas[fIdx].estudiantes.filter(e => e.id !== Number(userId))
+    if (restantes.length !== state.fichas[fIdx].estudiantes.length) {
+      state.fichas[fIdx] = { ...state.fichas[fIdx], estudiantes: restantes, aprendices: Math.max(0, state.fichas[fIdx].aprendices - 1) }
+    }
+  }
+  state.users[uIdx] = { ...state.users[uIdx], fichaId: null }
+  guardar()
+  return true
 }
 
 export function getEstudiantesDeFicha(fichaId) {
@@ -425,11 +450,36 @@ export function findProjectById(id) {
 }
 
 export function getProjectsByStudent(studentId) {
-  return state.proyectos.filter(p => p.studentId === Number(studentId))
+  // Propuestas creadas por el aprendiz O donde figura como integrante del equipo
+  const uid = Number(studentId)
+  const usuario = state.users.find(u => u.id === uid)
+  return state.proyectos.filter(p =>
+    Number(p.studentId) === uid ||
+    (usuario && (p.integrantes || []).includes(usuario.name))
+  )
 }
 
 export function getProjectsByInstructor(instructorId) {
   return state.proyectos.filter(p => p.instructorId === Number(instructorId))
+}
+
+// Fichas a cargo de un instructor
+export function getFichasDelInstructor(instructorId) {
+  return state.fichas.filter(f => f.instructorId === Number(instructorId))
+}
+
+// Autorización: el proyecto pertenece a una ficha a cargo del instructor
+export function instructorVeProyecto(proyecto, instructorId) {
+  if (!proyecto || !instructorId && instructorId !== 0) return false
+  const uid = Number(instructorId)
+  if (Number(proyecto.instructorId) === uid) return true
+  return state.fichas.some(f => f.instructorId === uid && f.id === Number(proyecto.fichaId))
+}
+
+// Autorización: la ficha está a cargo del instructor
+export function instructorVeFicha(ficha, instructorId) {
+  if (!ficha) return false
+  return Number(ficha.instructorId) === Number(instructorId)
 }
 
 export function getProjectsByFicha(fichaId) {
@@ -491,6 +541,14 @@ export function updateProject({ id, title, description, keywords = null, objecti
   guardar()
 }
 
+export function updateUserFoto(id, foto) {
+  const index = state.users.findIndex(u => u.id === Number(id))
+  if (index === -1) return null
+  state.users[index] = { ...state.users[index], fotoPerfil: foto || null }
+  guardar()
+  return state.users[index]
+}
+
 export function updateProjectEstado(id, estado) {
   const index = state.proyectos.findIndex(p => p.id === Number(id))
   if (index !== -1) {
@@ -511,6 +569,15 @@ export function deleteProject(id) {
 // ---------------------------------------------------------------- Similitudes
 export function getAllSimilarities() {
   return state.similitudes
+}
+
+// Regla de negocio: solo coincidencias contra propuestas APROBADAS (en producción)
+export function getSimilitudesValidas() {
+  return state.similitudes.filter((x) => {
+    const p1 = findProjectById(x.projectId1)
+    const p2 = findProjectById(x.projectId2)
+    return p1?.estado === 'aprobado' || p2?.estado === 'aprobado'
+  })
 }
 
 export function findSimilarityById(id) {
@@ -625,17 +692,53 @@ export function getObservaciones(projectId) {
   return state.observaciones.filter(o => o.projectId === Number(projectId))
 }
 
-export function addObservacion(projectId, autor, texto) {
+export function addObservacion(projectId, autor, texto, respuestaA = null) {
   const observacion = {
     id: state.nextObservacionId++,
     projectId: Number(projectId),
     autor,
     fecha: hoyFormato('d MMM yyyy'),
     texto,
+    respuestaA: respuestaA ? Number(respuestaA) : null,
   }
   state.observaciones.unshift(observacion)
   guardar()
+  notificarObservacion(observacion)
   return observacion
+}
+
+function notificarObservacion(obs) {
+  const proyecto = state.proyectos.find(p => p.id === obs.projectId)
+  if (!proyecto) return
+  const partes = obs.autor.split('|').map(s => s.trim())
+  const autorNombre = partes[0] || 'Alguien'
+  const rolAutor = (partes[1] || '').toLowerCase()
+
+  // Equipo de la propuesta: creador + integrantes mapeados a usuarios registrados
+  const equipo = state.users.filter(u =>
+    u.id === Number(proyecto.studentId) ||
+    (proyecto.integrantes || []).includes(u.name)
+  )
+
+  let destinatarios = []
+  if (rolAutor === 'aprendiz') {
+    // El aprendiz respondió → avisa al instructor a cargo
+    if (proyecto.instructorId) {
+      destinatarios.push(state.users.find(u => u.id === Number(proyecto.instructorId)))
+    }
+  } else {
+    // Instructor/Admin observó → avisa a todo el equipo
+    destinatarios.push(...equipo)
+  }
+
+  destinatarios.filter(Boolean).forEach(u => {
+    createNotification({
+      mensaje: `${autorNombre} ${rolAutor === 'aprendiz' ? 'respondió en' : 'agregó una observación en'} '${proyecto.title}'`,
+      tipo: 'observacion',
+      userId: u.id,
+      projectId: proyecto.id,
+    })
+  })
 }
 
 export function removeObservacion(id) {
@@ -680,6 +783,7 @@ export const constants = {
   },
   NotificationType: {
     SIMILITUD: 'similitud',
+    OBSERVACION: 'observacion',
     REVISION: 'revision',
     MENSAJE: 'mensaje',
     SISTEMA: 'sistema',
@@ -728,6 +832,7 @@ export const displayNames = {
   },
   notificationType: {
     similitud: 'Similitud',
+    observacion: 'Observación',
     revision: 'Revisión',
     mensaje: 'Mensaje',
     sistema: 'Sistema',

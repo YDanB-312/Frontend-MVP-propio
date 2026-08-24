@@ -140,10 +140,6 @@
   transition: all var(--dur-fast) var(--ease-out);
 }
 
-.btn:hover {
-  transform: translateY(-1px);
-}
-
 .secondary {
   background: var(--c-surface);
   color: var(--c-text-2);

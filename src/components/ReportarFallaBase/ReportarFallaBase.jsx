@@ -3,6 +3,9 @@ import { Bug, PaperPlaneRight } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
 import DataPanel from '../DataPanel/DataPanel'
 import FormField from '../FormField/FormField'
+import Actions from '../Actions/Actions'
+import Button from '../Button/Button'
+import { Input, Textarea, Select } from '../Input/Input'
 import s from './ReportarFallaBase.module.css'
 
 export default function ReportarFallaBase({ role, onSubmit }) {
@@ -37,36 +40,36 @@ export default function ReportarFallaBase({ role, onSubmit }) {
       <DataPanel title="Detalles de la falla" icon={<Bug size={18} />}>
         <form className={s.form} onSubmit={handleSubmit}>
           <FormField label="Título del reporte" required>
-            <input type="text" value={form.titulo} onChange={handleChange('titulo')} placeholder="Ej: Error al cargar proyectos" className={s.input} required />
+            <Input type="text" value={form.titulo} onChange={handleChange('titulo')} placeholder="Ej: Error al cargar proyectos" required />
           </FormField>
 
           <FormField label="Descripción" required>
-            <textarea value={form.descripcion} onChange={handleChange('descripcion')} placeholder="Describe el problema con el mayor detalle posible..." className={s.textarea} rows={5} required />
+            <Textarea value={form.descripcion} onChange={handleChange('descripcion')} placeholder="Describe el problema con el mayor detalle posible..." rows={5} required />
           </FormField>
 
           <div className={s.row}>
             <FormField label="Tipo de falla">
-              <select value={form.tipo} onChange={handleChange('tipo')} className={s.select}>
+              <Select value={form.tipo} onChange={handleChange('tipo')}>
                 <option value="bug_ui">Bug de UI</option>
                 <option value="error_datos">Error de datos</option>
                 <option value="rendimiento">Rendimiento</option>
                 <option value="seguridad">Seguridad</option>
                 <option value="otro">Otro</option>
-              </select>
+              </Select>
             </FormField>
             <FormField label="Prioridad">
-              <select value={form.prioridad} onChange={handleChange('prioridad')} className={s.select}>
+              <Select value={form.prioridad} onChange={handleChange('prioridad')}>
                 <option value="baja">Baja</option>
                 <option value="media">Media</option>
                 <option value="alta">Alta</option>
                 <option value="critica">Crítica</option>
-              </select>
+              </Select>
             </FormField>
           </div>
 
-          <div className={s.actions}>
-            <button type="submit" className={s.btnPrimary}><PaperPlaneRight size={16} /> Enviar reporte</button>
-          </div>
+          <Actions className={s.actions}>
+            <Button size="lg" type="submit"><PaperPlaneRight size={16} /> Enviar reporte</Button>
+          </Actions>
         </form>
       </DataPanel>
     </div>

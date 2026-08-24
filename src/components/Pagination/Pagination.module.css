@@ -5,7 +5,7 @@
 .pageBtn,.navBtn{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;padding:0 var(--sp-2);border:1px solid var(--c-border);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text-2);font-family:var(--font);font-size:var(--text-sm);font-weight:500;cursor:pointer;transition:all var(--dur-fast) var(--ease-out)}
 .pageBtn:hover,.navBtn:hover:not(:disabled){border-color:var(--c-primary);color:var(--c-primary);background:var(--c-primary-light)}
 .pageBtn:focus-visible,.navBtn:focus-visible{outline:none;box-shadow:var(--sh-ring)}
-.active{background:var(--grad-primary);border-color:transparent;color:#fff;font-weight:700;box-shadow:var(--sh-sm)}
-.active:hover{border-color:transparent;color:#fff;background:var(--grad-primary)}
+.active{background:var(--grad-primary);border-color:transparent;color:var(--c-on-primary);font-weight:700;box-shadow:var(--sh-sm)}
+.active:hover{border-color:transparent;color:var(--c-on-primary);background:var(--grad-primary)}
 .navBtn:disabled{opacity:.4;cursor:not-allowed}
 .ellipsis{display:inline-flex;align-items:center;justify-content:center;min-width:24px;color:var(--c-text-3);font-size:var(--text-sm)}

@@ -1,0 +1,6 @@
+.actions{display:flex;align-items:center;gap:var(--sp-2_5)}
+.end{justify-content:flex-end}
+.start{justify-content:flex-start}
+.center{justify-content:center}
+.wrap{flex-wrap:wrap}
+.form{display:flex;gap:var(--sp-3);flex-wrap:wrap}

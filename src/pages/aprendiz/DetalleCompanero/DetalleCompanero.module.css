@@ -53,20 +53,6 @@
   border-radius: var(--r-md);
 }
 
-.statValue {
-  font-size: var(--text-2xl);
-  font-weight: 800;
-  color: var(--c-primary-strong);
-  line-height: var(--leading-tight);
-}
-
-.statLabel {
-  font-size: var(--text-xs);
-  color: var(--c-text-2);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-}
-
 .muted {
   margin: 0;
   font-size: var(--text-sm);
@@ -133,3 +119,6 @@
     flex: 1;
   }
 }
+
+.avatarBtn{padding:0;border:none;background:none;border-radius:var(--r-full);cursor:zoom-in;line-height:0;transition:transform var(--dur-fast) var(--ease-out)}
+.avatarBtn:hover{transform:scale(1.03)}

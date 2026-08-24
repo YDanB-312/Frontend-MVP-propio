@@ -51,7 +51,7 @@ export default function AnalizandoProyecto() {
       navigateRef.current = true
       const destino = projectId
         ? `/aprendiz/resultado-analisis?projectId=${projectId}`
-        : '/aprendiz/mis-proyectos'
+        : '/aprendiz/propuestas'
       const salida = setTimeout(() => navigate(destino, { replace: true }), 600)
       return () => clearTimeout(salida)
     }
@@ -81,7 +81,7 @@ export default function AnalizandoProyecto() {
 
           <h1 className={s.title}>Analizando propuesta...</h1>
           <p className={s.subtitle}>
-            DetectaIA está comparando tu propuesta con la base de datos académica. Este proceso toma solo unos
+            ProyecTwin está comparando tu propuesta con la base de datos académica. Este proceso toma solo unos
             segundos.
           </p>
 

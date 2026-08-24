@@ -17,6 +17,20 @@ export function parseFecha(fecha) {
   return new Date(a, m - 1, d)
 }
 
+// Agrupa observaciones planas en hilos: [{ ...obsRaiz, respuestas: [...] }]
+export function agruparObservaciones(lista) {
+  const nodos = new Map(lista.map((o) => [o.id, { ...o, respuestas: [] }]))
+  const raices = []
+  lista.forEach((o) => {
+    const nodo = nodos.get(o.id)
+    const padre = o.respuestaA ? nodos.get(Number(o.respuestaA)) : undefined
+    if (padre) padre.respuestas.push(nodo)
+    else raices.push(nodo)
+  })
+  raices.forEach((r) => r.respuestas?.sort((a, b) => a.id - b.id))
+  return raices
+}
+
 export const ROL_INFO = {
   aprendiz: { label: 'Aprendiz', badge: 'exito', icon: 'user-graduate' },
   instructor: { label: 'Instructor', badge: 'advertencia', icon: 'chalkboard-teacher' },

@@ -21,12 +21,6 @@
   align-self: flex-start;
 }
 
-.actions {
-  display: flex;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
-}
-
 @media (min-width: 768px) {
   .actionsBar {
     flex-direction: row;
@@ -50,10 +44,6 @@
   transition: all var(--dur-fast) var(--ease-out);
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -72,7 +62,7 @@
 
 .danger {
   background: var(--c-danger);
-  color: #fff;
+  color: var(--c-on-danger);
 }
 
 .danger:hover:not(:disabled) {
@@ -87,12 +77,12 @@
 
 .dangerGhost:hover:not(:disabled) {
   background: var(--c-danger);
-  color: #fff;
+  color: var(--c-on-danger);
 }
 
 .primary {
   background: var(--c-primary);
-  color: #fff;
+  color: var(--c-on-primary);
 }
 
 .primary:hover:not(:disabled) {
@@ -370,3 +360,10 @@
   line-height: var(--leading-relaxed);
   color: var(--c-text-2);
 }
+
+.avatarBtn{padding:0;border:none;background:none;border-radius:var(--r-full);cursor:zoom-in;line-height:0;transition:transform var(--dur-fast) var(--ease-out)}
+.avatarBtn:hover{transform:scale(1.03)}
+
+.respondiendoChip{display:inline-flex;align-items:center;gap:var(--sp-2);padding:var(--sp-1_5) var(--sp-3);margin-bottom:var(--sp-3);border-radius:var(--r-full);background:var(--c-primary-light);color:var(--c-primary-strong);font-size:var(--text-xs);font-weight:600}
+.respondiendoChip button{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border:none;background:transparent;color:inherit;cursor:pointer;border-radius:var(--r-full)}
+.respondiendoChip button:hover{background:rgba(0,0,0,.08)}

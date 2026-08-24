@@ -8,6 +8,8 @@ import Avatar from '../../../components/Avatar/Avatar'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import Button from '../../../components/Button/Button'
+import { Input, Select } from '../../../components/Input/Input'
 import { Users, Plus, Eye, Pause, Play } from 'phosphor-react'
 import {
   getAllUsers,
@@ -63,17 +65,16 @@ export default function GestionUsuarios() {
           subtitle="Administra las cuentas de aprendices, instructores y administradores de la plataforma."
           icon={<Users />}
           actions={
-            <Link to="/admin/nuevo-usuario" className={`${s.btn} ${s.primary}`}>
+            <Button as="link" to="/admin/nuevo-usuario" size="sm">
               <Plus size={14} /> Nuevo Usuario
-            </Link>
+            </Button>
           }
         />
 
         <FilterBar title="Buscar y filtrar">
           <label className={s.field}>
             <span className={s.label}>Buscar</span>
-            <input
-              className={s.input}
+            <Input
               value={busqueda}
               onChange={(e) => {
                 setBusqueda(e.target.value)
@@ -84,8 +85,7 @@ export default function GestionUsuarios() {
           </label>
           <label className={s.field}>
             <span className={s.label}>Rol</span>
-            <select
-              className={s.select}
+            <Select
               value={filtroRol}
               onChange={(e) => {
                 setFiltroRol(e.target.value)
@@ -96,7 +96,7 @@ export default function GestionUsuarios() {
               <option value="aprendiz">Aprendiz</option>
               <option value="instructor">Instructor</option>
               <option value="admin">Administrador</option>
-            </select>
+            </Select>
           </label>
           <p className={s.info}>
             {filtrados.length} usuario{filtrados.length !== 1 ? 's' : ''}
@@ -135,7 +135,7 @@ export default function GestionUsuarios() {
                       <tr key={u.id}>
                         <td>
                           <Link to={`/admin/detalle-usuario/${u.id}`} className={s.userCell}>
-                            <Avatar name={u.name} size="sm" />
+                            <Avatar name={u.name} src={u.fotoPerfil} size="sm" />
                             <span className={s.userName}>{u.name}</span>
                           </Link>
                         </td>
@@ -161,28 +161,32 @@ export default function GestionUsuarios() {
                         </td>
                         <td className={s.colActions}>
                           <div className={s.actions}>
-                            <Link
+                            <Button
+                              as="link"
                               to={`/admin/detalle-usuario/${u.id}`}
-                              className={`${s.btn} ${s.secondary}`}
+                              size="sm"
+                              variant="secondary"
                             >
                               <Eye size={14} /> Ver
-                            </Link>
+                            </Button>
                             {activo ? (
-                              <button
+                              <Button
                                 type="button"
-                                className={`${s.btn} ${s.danger}`}
+                                size="sm"
+                                variant="danger"
                                 onClick={() => setADesactivar(u)}
                               >
                                 <Pause size={14} /> Desactivar
-                              </button>
+                              </Button>
                             ) : (
-                              <button
+                              <Button
                                 type="button"
-                                className={`${s.btn} ${s.success}`}
+                                size="sm"
+                                variant="success"
                                 onClick={() => activar(u)}
                               >
                                 <Play size={14} /> Activar
-                              </button>
+                              </Button>
                             )}
                           </div>
                         </td>

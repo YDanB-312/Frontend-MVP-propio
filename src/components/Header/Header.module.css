@@ -6,7 +6,7 @@
   height: var(--header-h);
   background: var(--c-surface);
   border-bottom: 2px solid var(--c-header-accent);
-  z-index: 900;
+  z-index: var(--z-header);
 }
 
 .container {
@@ -100,23 +100,51 @@
   color: var(--c-primary);
 }
 
-.badge {
+.notifUnread {
+  color: var(--c-primary-strong);
+}
+
+.notifUnread:hover {
+  color: var(--c-primary);
+  background: var(--c-primary-light);
+}
+
+.dot {
   position: absolute;
-  top: 3px;
-  right: 3px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
+  top: 5px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
   border-radius: var(--r-full);
   background: var(--c-danger);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   box-shadow: 0 0 0 2px var(--c-surface);
+}
+
+.dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--c-danger);
+  animation: pingDot 1.8s var(--ease-out) infinite;
+}
+
+@keyframes pingDot {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  70%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot::after {
+    animation: none;
+  }
 }
 
 .user {
@@ -135,8 +163,9 @@
   height: 34px;
   border-radius: var(--r-full);
   background: var(--grad-primary);
-  color: #fff;
+  color: var(--c-on-primary);
   font-size: var(--text-sm);
+  overflow: hidden;
   font-weight: 600;
   letter-spacing: var(--tracking-wide);
 }
@@ -204,3 +233,8 @@
     font-size: var(--text-base);
   }
 }
+
+.ctaNueva{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:34px;height:34px;border-radius:var(--r-full);background:var(--c-primary);color:var(--c-on-primary);border:none;cursor:pointer;box-shadow:var(--sh-sm);transition:transform var(--dur-fast) var(--ease-spring),background var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
+.ctaNueva:hover{background:var(--c-primary-hover)}
+
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit}

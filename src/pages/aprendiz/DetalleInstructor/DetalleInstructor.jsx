@@ -1,16 +1,20 @@
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Avatar from '../../../components/Avatar/Avatar'
+import Lightbox from '../../../components/Lightbox/Lightbox'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import StatCard from '../../../components/StatCard/StatCard'
 import { useAuth } from '../../../contexts/AuthContext'
 import { findUserById, findFichaById, getAllFichas } from '../../../data/mockData'
 import s from './DetalleInstructor.module.css'
 import { Books, CaretRight, ChalkboardTeacher, Envelope, GraduationCap, MagnifyingGlass, Phone } from 'phosphor-react'
 
 export default function DetalleInstructor() {
+  const [fotoViendo, setFotoViendo] = useState(null)
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
 
@@ -51,7 +55,13 @@ export default function DetalleInstructor() {
         />
 
         <section className={s.profileCard}>
-          <Avatar name={instructor.name} size="lg" />
+          {instructor.fotoPerfil ? (
+            <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: instructor.fotoPerfil, alt: instructor.name })}>
+              <Avatar name={instructor.name} src={instructor.fotoPerfil} size="lg" />
+            </button>
+          ) : (
+            <Avatar name={instructor.name} size="lg" />
+          )}
           <div className={s.profileInfo}>
             <h2 className={s.profileName}>{instructor.name}</h2>
             <Badge variant="warning"><ChalkboardTeacher size={14} /> Instructor</Badge>
@@ -61,12 +71,7 @@ export default function DetalleInstructor() {
               <p className={s.profileMeta}><Books size={14} /> Área: {instructor.areaEncargada}</p>
             )}
           </div>
-          <div className={s.profileStat}>
-            <span className={s.statValue}>{fichas.length}</span>
-            <span className={s.statLabel}>
-              {fichas.length === 1 ? 'Ficha a cargo' : 'Fichas a cargo'}
-            </span>
-          </div>
+<StatCard value={fichas.length} label={fichas.length === 1 ? 'Ficha a cargo' : 'Fichas a cargo'} centered />
         </section>
 
         <DataPanel title={`Fichas de ${instructor.name.split(' ')[0]} (${fichas.length})`} icon={<GraduationCap />}>
@@ -95,6 +100,7 @@ export default function DetalleInstructor() {
           )}
         </DataPanel>
       </div>
-    </DashboardLayout>
+          {fotoViendo && <Lightbox src={fotoViendo.src} alt={fotoViendo.alt} caption={fotoViendo.alt} onClose={() => setFotoViendo(null)} />}
+</DashboardLayout>
   )
 }

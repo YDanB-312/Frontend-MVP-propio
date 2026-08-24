@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'phosphor-react'
+import Actions from '../Actions/Actions'
 import s from './PageHeader.module.css'
 
 function CrumbIcon({ icon }) {
@@ -6,11 +8,27 @@ function CrumbIcon({ icon }) {
   return typeof icon === 'string' ? <span aria-hidden="true">{icon}</span> : icon
 }
 
-export default function PageHeader({ title, subtitle, icon, actions, breadcrumb = [] }) {
+export default function PageHeader({ title, subtitle, icon, actions, breadcrumb = [], showBack = true }) {
+  const navigate = useNavigate()
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      const parent = breadcrumb.find(c => c.to)
+      if (parent) navigate(parent.to)
+    }
+  }
+
   return (
     <header className={s.header}>
       {breadcrumb.length > 0 && (
-        <nav aria-label="Breadcrumb">
+        <nav className={s.breadcrumbNav} aria-label="Breadcrumb">
+          {showBack && (
+            <button type="button" className={s.backBtn} onClick={handleBack} aria-label="Volver">
+              <ArrowLeft size={16} weight="bold" />
+            </button>
+          )}
           <ol className={s.breadcrumb}>
             {breadcrumb.map((item, i) => {
               const isLast = i === breadcrumb.length - 1
@@ -46,7 +64,7 @@ export default function PageHeader({ title, subtitle, icon, actions, breadcrumb 
             {subtitle && <p className={s.subtitle}>{subtitle}</p>}
           </div>
         </div>
-        {actions && <div className={s.actions}>{actions}</div>}
+        {actions && <Actions className={s.actions}>{actions}</Actions>}
       </div>
     </header>
   )

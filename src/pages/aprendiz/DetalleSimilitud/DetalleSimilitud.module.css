@@ -89,7 +89,6 @@
 
 .projectCard:hover {
   box-shadow: var(--sh-card-h);
-  transform: translateY(-2px);
 }
 
 .projectHeader {
@@ -199,11 +198,6 @@
   color: var(--c-text-2);
 }
 
-.actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .btn {
   display: inline-flex;
   align-items: center;
@@ -218,10 +212,6 @@
   text-decoration: none;
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-normal) var(--ease-out);
-}
-
-.btn:hover {
-  transform: translateY(-1px);
 }
 
 .secondary {

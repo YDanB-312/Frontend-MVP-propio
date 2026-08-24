@@ -4,6 +4,8 @@ import { ArrowCounterClockwise, CheckCircle, Eye, Scales } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DetalleSimilitudBase from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase'
 import DataPanel from '../../../components/DataPanel/DataPanel'
+import Actions from '../../../components/Actions/Actions'
+import Button from '../../../components/Button/Button'
 import { findSimilarityById, updateSimilarityEstado } from '../../../data/mockData'
 import s from './DetalleSimilitudInstructor.module.css'
 
@@ -33,32 +35,32 @@ export default function DetalleSimilitudInstructor() {
         Marca el análisis como revisado cuando lo hayas evaluado, o como resuelto si ya se tomó una
         decisión sobre ambos proyectos.
       </p>
-      <div className={s.actions}>
-        <button
+      <Actions form>
+        <Button
           type="button"
-          className={`${s.btn} ${s.info}`}
+          variant="info"
           onClick={() => cambiarEstado('revisada')}
           disabled={similitud.estado !== 'pendiente'}
         >
           <Eye size={14} /> Marcar como revisada
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={`${s.btn} ${s.success}`}
+          variant="success"
           onClick={() => cambiarEstado('resuelta')}
           disabled={similitud.estado === 'resuelta'}
         >
           <CheckCircle size={14} /> Marcar como resuelta
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={`${s.btn} ${s.warning}`}
+          variant="warning"
           onClick={() => cambiarEstado('pendiente')}
           disabled={similitud.estado === 'pendiente'}
         >
           <ArrowCounterClockwise size={14} /> Volver a pendiente
-        </button>
-      </div>
+        </Button>
+      </Actions>
     </DataPanel>
   )
 
