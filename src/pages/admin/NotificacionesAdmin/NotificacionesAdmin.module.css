@@ -4,36 +4,6 @@
   gap: var(--sp-6);
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2_5) var(--sp-4);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.secondary {
-  background: var(--c-surface);
-  color: var(--c-text-2);
-  border-color: var(--c-border);
-}
-
-.secondary:hover:not(:disabled) {
-  color: var(--c-primary);
-  border-color: var(--c-primary);
-}
-
 .summary {
   font-size: var(--text-sm);
   color: var(--c-text-2);

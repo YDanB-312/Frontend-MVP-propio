@@ -51,26 +51,8 @@
   gap: var(--sp-4);
 }
 
-.input {
-  width: 100%;
-  padding: var(--sp-2_5) var(--sp-3);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  background: var(--c-surface);
-  font-family: var(--font);
-  font-size: var(--text-base);
-  color: var(--c-text);
-  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
-}
-
 .input::placeholder {
   color: var(--c-text-3);
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--c-primary);
-  box-shadow: var(--sh-ring);
 }
 
 .error {
@@ -81,28 +63,6 @@
   border-radius: var(--r-md);
   font-size: var(--text-sm);
   color: var(--red-700);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  width: 100%;
-  padding: var(--sp-3) var(--sp-5);
-  border: 1px solid transparent;
-  border-radius: var(--r-lg);
-  font-family: var(--font);
-  font-size: var(--text-base);
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-normal) var(--ease-out);
-}
-
-.primary {
-  background: var(--grad-primary);
-  color: var(--c-on-primary);
-  box-shadow: var(--sh-md);
 }
 
 .footer {

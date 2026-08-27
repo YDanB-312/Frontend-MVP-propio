@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
       return { exito: false, mensaje: 'Credenciales incorrectas o usuario inactivo. Verifica tus datos.' }
     }
 
-    const sesion = { id: encontrado.id, correo: encontrado.email, nombre: encontrado.name, rol: encontrado.role, estado: encontrado.estado }
+    const sesion = { id: encontrado.id, correo: encontrado.email, nombre: encontrado.name, rol: encontrado.role }
     const destino = recordarme ? localStorage : sessionStorage
     const otro = recordarme ? sessionStorage : localStorage
     destino.setItem('auth_user', JSON.stringify(sesion))
@@ -59,6 +59,20 @@ export function AuthProvider({ children }) {
     return updateUserPassword(email, nuevaPassword)
   }, [])
 
+  // Cambio de contraseña autenticado: exige la contraseña actual del usuario en sesión
+  const cambiarMiContrasena = useCallback((actual, nueva) => {
+    const correo = user?.correo
+    if (!correo) return { exito: false, mensaje: 'Sesión no válida. Inicia sesión de nuevo.' }
+    if (!validateCredentials(correo, actual)) {
+      return { exito: false, mensaje: 'La contraseña actual no es correcta.' }
+    }
+    if (!nueva || nueva.length < 6) {
+      return { exito: false, mensaje: 'La nueva contraseña debe tener al menos 6 caracteres.' }
+    }
+    updateUserPassword(correo, nueva)
+    return { exito: true }
+  }, [user])
+
   const logout = useCallback(() => {
     localStorage.removeItem('auth_user')
     sessionStorage.removeItem('auth_user')
@@ -67,7 +81,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, login, register, cambiarContrasena, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, register, cambiarContrasena, cambiarMiContrasena, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   )

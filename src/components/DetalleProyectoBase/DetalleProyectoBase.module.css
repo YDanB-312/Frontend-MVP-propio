@@ -1,0 +1,357 @@
+/* ── Shared layout for DetalleProyecto ×3 (aprendiz · instructor · admin) ── */
+
+/* Page wrapper */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+/* Two-column responsive grid */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-5);
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+/* Badge row */
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+/* Detail list (dl/dt/dd) */
+.detailList {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--sp-4);
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2_5) 0;
+  border-bottom: 1px solid var(--c-border-2);
+}
+
+.detailRow dt {
+  font-size: var(--text-sm);
+  color: var(--c-text-3);
+}
+
+.detailRow dd {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--c-text);
+  text-align: right;
+}
+
+/* Section subtitles */
+.subTitle {
+  margin: var(--sp-4) 0 var(--sp-1_5);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--c-text-3);
+}
+
+/* Paragraph text */
+.paragraph {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text);
+  white-space: pre-line;
+}
+
+/* Objectives list */
+.objList {
+  margin: 0;
+  padding-left: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1_5);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text);
+}
+
+.objList li::marker {
+  color: var(--c-primary);
+  font-weight: 700;
+}
+
+/* Pre-formatted code/text blocks */
+.pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text-2);
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border-2);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+/* Keyword chips container */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* Inline link */
+.link {
+  font-weight: 600;
+  color: var(--c-primary);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* Muted/secondary text */
+.muted {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--c-text-3);
+}
+
+/* ── Similarity list (instructor + admin) ── */
+.simList {
+  display: flex;
+  flex-direction: column;
+}
+
+.simRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-2);
+  border-bottom: 1px solid var(--c-border-2);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.simList li:last-child .simRow {
+  border-bottom: none;
+}
+
+.simRow:hover {
+  background: var(--c-surface-alt);
+}
+
+.simPair {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.simRow:hover .simPair {
+  color: var(--c-primary);
+}
+
+.simRight {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.pct {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  min-width: 48px;
+  text-align: right;
+}
+
+.pctHigh { color: var(--c-danger); }
+.pctMid { color: var(--c-warning); }
+.pctLow { color: var(--c-info); }
+
+/* ── Person/Student card (instructor + admin) ── */
+.personCard {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.personInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-0_5);
+  flex: 1;
+  min-width: 180px;
+}
+
+.personName {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.personEmail {
+  font-size: var(--text-sm);
+  color: var(--c-text-2);
+}
+
+.avatarBtn {
+  border-radius: var(--r-full);
+  cursor: zoom-in;
+  transition: transform var(--dur-fast) var(--ease-out);
+  background: 0 0;
+  border: none;
+  padding: 0;
+  line-height: 0;
+}
+
+.avatarBtn:hover {
+  transform: scale(1.03);
+}
+
+/* ── Response chip (instructor + admin) ── */
+.respondiendoChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1_5) var(--sp-3);
+  margin-bottom: var(--sp-3);
+  border-radius: var(--r-full);
+  background: var(--c-primary-light);
+  color: var(--c-primary-strong);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.respondiendoChip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: var(--r-full);
+}
+
+.respondiendoChip button:hover {
+  background: var(--c-chip-hover);
+}
+
+/* ── Observation form ── */
+.obsForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* ── Admin info grid (cell-based metadata) ── */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+}
+
+.infoCell {
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border-2);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.infoCell dt {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c-text-3);
+}
+
+.infoCell dd {
+  margin-top: var(--sp-0_5);
+  font-size: var(--text-sm);
+  color: var(--c-text);
+}
+
+/* ── Admin description text ── */
+.description {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text-2);
+  margin-bottom: var(--sp-5);
+}
+
+/* ── Admin actions bar ── */
+.actionsBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-card);
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.bigBadge {
+  font-size: var(--text-sm);
+  align-self: flex-start;
+}
+
+/* ── Admin objective blocks ── */
+.blocks {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+}
+
+.blockTitle {
+  font-size: var(--text-sm);
+  margin-bottom: var(--sp-2);
+}
+
+/* ── Responsive breakpoints ── */
+@media (min-width: 768px) {
+  .actionsBar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .infoGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 3fr 2fr;
+  }
+
+  .blocks {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

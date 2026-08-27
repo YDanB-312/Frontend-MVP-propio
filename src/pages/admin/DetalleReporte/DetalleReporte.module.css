@@ -83,62 +83,6 @@
   color: var(--c-text-3);
 }
 
-.select {
-  width: 100%;
-  padding: var(--sp-2_5) var(--sp-3);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-md);
-  font-size: var(--text-sm);
-  background: var(--c-surface);
-  color: var(--c-text);
-  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-}
-
-.select:focus {
-  outline: none;
-  border-color: var(--c-primary);
-  box-shadow: 0 0 0 3px var(--ring-color);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2_5) var(--sp-5);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-
-.btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.primary {
-  background: var(--c-primary);
-  color: var(--c-on-primary);
-}
-
-.primary:hover:not(:disabled) {
-  background: var(--c-primary-hover);
-}
-
-.secondary {
-  background: var(--c-surface);
-  color: var(--c-text-2);
-  border-color: var(--c-border);
-}
-
-.secondary:hover {
-  color: var(--c-primary);
-  border-color: var(--c-primary);
-}
-
 /* Reporter */
 .personCard {
   display: flex;

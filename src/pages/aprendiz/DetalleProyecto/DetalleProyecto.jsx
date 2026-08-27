@@ -21,7 +21,7 @@ import {
   displayNames,
 } from '../../../data/mockData'
 import { agruparObservaciones } from '../../../utils/helpers'
-import s from './DetalleProyecto.module.css'
+import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import { CaretRight, ChatCircle, ClipboardText, FileText, MagnifyingGlass, X } from 'phosphor-react'
 
 const ESTADO_VARIANT = {

@@ -80,27 +80,6 @@
   margin-top: var(--sp-1);
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-1_5);
-  margin-top: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  white-space: nowrap;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-
-.secondary {
-  background: var(--c-surface);
-  color: var(--c-text-2);
-  border-color: var(--c-border);
-}
-
 .card:hover .secondary {
   color: var(--c-primary);
   border-color: var(--c-primary);

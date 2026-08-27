@@ -9,6 +9,9 @@ import Badge from '../../../components/Badge/Badge'
 import Avatar from '../../../components/Avatar/Avatar'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import Button from '../../../components/Button/Button'
+import Actions from '../../../components/Actions/Actions'
+import { Input } from '../../../components/Input/Input'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findUserById,
@@ -19,7 +22,7 @@ import {
   leaveFicha,
 } from '../../../data/mockData'
 import su from '../UnirseFicha/UnirseFicha.module.css'
-import sd from '../DetalleFicha/DetalleFicha.module.css'
+import sd from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 
 export default function MiFicha() {
   const { user } = useAuth()
@@ -107,9 +110,9 @@ export default function MiFicha() {
               placeholder="FT-X7K2MN"
               autoFocus
             />
-            <button type="submit" className={`${su.btn} ${su.primary}`} disabled={buscando}>
+            <Button type="submit" disabled={buscando}>
               <MagnifyingGlass size={14} /> Buscar
-            </button>
+            </Button>
           </div>
           {error && (
             <p className={su.error} role="alert">
@@ -131,6 +134,10 @@ export default function MiFicha() {
             </header>
             <dl className={su.fichaInfo}>
               <div className={su.infoRow}>
+                <dt>Número de ficha</dt>
+                <dd>N° {encontrada.numero}</dd>
+              </div>
+              <div className={su.infoRow}>
                 <dt>Programa</dt>
                 <dd>{encontrada.programa}</dd>
               </div>
@@ -150,11 +157,11 @@ export default function MiFicha() {
             {encontrada.estudiantes.some((e) => e.id === user.id) ? (
               <p className={su.notice}>Ya perteneces a esta ficha. <ThumbsUp size={16} /></p>
             ) : (
-              <div className={su.actions}>
-                <button type="button" className={`${su.btn} ${su.primary}`} onClick={() => setConfirmarUnion(true)}>
+              <Actions form>
+                <Button type="button" onClick={() => setConfirmarUnion(true)}>
                   Unirse a esta ficha
-                </button>
-              </div>
+                </Button>
+              </Actions>
             )}
           </section>
         )}
@@ -186,13 +193,13 @@ export default function MiFicha() {
       <div>
       <PageHeader
         title="Mi Ficha"
-        subtitle={`Código ${ficha.codigo} · ${ficha.programa}`}
+        subtitle={`Código ${ficha.codigo} · N° ${ficha.numero} · ${ficha.programa}`}
         icon={<GraduationCap />}
         breadcrumb={[{ label: 'Dashboard', to: '/aprendiz/dashboard' }, { label: 'Mi Ficha' }]}
         actions={
-          <button type="button" className={`${sd.btn} ${sd.dangerGhost}`} onClick={() => setConfirmarSalir(true)}>
+          <Button type="button" variant="dangerGhost" onClick={() => setConfirmarSalir(true)}>
             <SignOut size={14} /> Salir de la ficha
-          </button>
+          </Button>
         }
       />
 
@@ -209,6 +216,10 @@ export default function MiFicha() {
         </header>
 
         <dl className={sd.infoGrid}>
+          <div className={sd.infoItem}>
+            <dt>Número de ficha</dt>
+            <dd>N° {ficha.numero}</dd>
+          </div>
           <div className={sd.infoItem}>
             <dt>Programa</dt>
             <dd>{ficha.programa}</dd>

@@ -18,18 +18,11 @@ import {
   updateFicha,
   deleteFicha,
   instructorVeFicha,
+  getRedDePrograma,
   displayNames,
 } from '../../../data/mockData'
-import s from './DetalleFichaInstructor.module.css'
+import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 import { ArrowRight, Books, ChartBar, CheckCircle, Code, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
-
-const PROGRAMAS = [
-  'ADSO',
-  'Produccion Multimedia',
-  'Infraestructura Redes',
-  'Contabilidad y Finanzas',
-  'Otro',
-]
 
 export default function DetalleFichaInstructor() {
   const { id } = useParams()
@@ -38,7 +31,7 @@ export default function DetalleFichaInstructor() {
   const [editando, setEditando] = useState(false)
   const [form, setForm] = useState(() => {
     const f = findFichaById(id)
-    return f ? { nombre: f.nombre, programa: f.programa || '', estado: f.estado || 'activo' } : null
+    return f ? { nombre: f.nombre, numero: f.numero || '', estado: f.estado || 'activo' } : null
   })
   const [errores, setErrores] = useState({})
   const [modalEliminar, setModalEliminar] = useState(false)
@@ -89,14 +82,23 @@ export default function DetalleFichaInstructor() {
 
   const guardarEdicion = (e) => {
     e.preventDefault()
+    const numero = form.numero.trim()
     if (!form.nombre.trim()) {
       setErrores({ nombre: 'El nombre es obligatorio.' })
+      return
+    }
+    if (!numero) {
+      setErrores({ numero: 'El número de ficha es obligatorio.' })
+      return
+    }
+    if (!/^\d{4,8}$/.test(numero)) {
+      setErrores({ numero: 'Solo dígitos (4 a 8 caracteres).' })
       return
     }
     updateFicha({
       id: ficha.id,
       nombre: form.nombre.trim(),
-      programa: form.programa,
+      numero,
       estado: form.estado,
     })
     setEditando(false)
@@ -112,7 +114,7 @@ export default function DetalleFichaInstructor() {
       <div className={s.page}>
         <PageHeader
           title={ficha.nombre}
-          subtitle={`Código ${ficha.codigo} · Creada el ${ficha.createdAt}`}
+          subtitle={`Código ${ficha.codigo} · N° ${ficha.numero} · ${ficha.programa}`}
           icon={<Books />}
           breadcrumb={[
             { label: 'Dashboard', to: '/instructor/dashboard', icon: <ChartBar size={14} /> },
@@ -145,22 +147,30 @@ export default function DetalleFichaInstructor() {
         >
           {!editando ? (
             <>
-              <dl className={s.grid}>
-                <div className={s.cell}>
+              <dl className={s.infoGridInstructor}>
+                <div className={s.infoCell}>
                   <dt>Código</dt>
                   <dd>
                     <code className={s.codigo}>{ficha.codigo}</code>
                   </dd>
                 </div>
-                <div className={s.cell}>
+                <div className={s.infoCell}>
+                  <dt>Número de ficha</dt>
+                  <dd>N° {ficha.numero}</dd>
+                </div>
+                <div className={s.infoCell}>
+                  <dt>Red de conocimiento</dt>
+                  <dd>{getRedDePrograma(ficha.programa) || '—'}</dd>
+                </div>
+                <div className={s.infoCell}>
                   <dt>Programa</dt>
                   <dd>{ficha.programa || '—'}</dd>
                 </div>
-                <div className={s.cell}>
+                <div className={s.infoCell}>
                   <dt>Instructor</dt>
                   <dd>{ficha.instructorName || 'Sin asignar'}</dd>
                 </div>
-                <div className={s.cell}>
+                <div className={s.infoCell}>
                   <dt>Estado</dt>
                   <dd>
                     <Badge variant={ficha.estado === 'activo' ? 'success' : 'neutral'}>
@@ -168,11 +178,11 @@ export default function DetalleFichaInstructor() {
                     </Badge>
                   </dd>
                 </div>
-                <div className={s.cell}>
+                <div className={s.infoCell}>
                   <dt>Aprendices</dt>
                   <dd>{estudiantes.length}</dd>
                 </div>
-                <div className={s.cell}>
+                <div className={s.infoCell}>
                   <dt>Propuestas asociadas</dt>
                   <dd>{ficha.proyectos}</dd>
                 </div>
@@ -195,19 +205,14 @@ export default function DetalleFichaInstructor() {
                   maxLength={80}
                 />
               </FormField>
-              <FormField label="Programa">
-                <Select
-                  name="programa"
-                  value={form.programa}
+              <FormField label="Número de ficha" required error={errores.numero} help="Solo dígitos, sin espacios. Ej. 3142101">
+                <Input
+                  name="numero"
+                  inputMode="numeric"
+                  value={form.numero}
                   onChange={onChange}
-                >
-                  <option value="">Sin programa</option>
-                  {PROGRAMAS.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </Select>
+                  maxLength={8}
+                />
               </FormField>
               <FormField label="Estado">
                 <Select
@@ -231,7 +236,7 @@ export default function DetalleFichaInstructor() {
                     setEditando(false)
                     setForm({
                       nombre: ficha.nombre,
-                      programa: ficha.programa || '',
+                      numero: ficha.numero || '',
                       estado: ficha.estado || 'activo',
                     })
                   }}

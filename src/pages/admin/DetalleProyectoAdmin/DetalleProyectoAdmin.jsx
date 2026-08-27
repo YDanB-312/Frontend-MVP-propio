@@ -26,7 +26,7 @@ import {
   displayNames,
 } from '../../../data/mockData'
 import { agruparObservaciones } from '../../../utils/helpers'
-import s from './DetalleProyectoAdmin.module.css'
+import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 
 const ESTADO_VARIANT = {
   pendiente: 'warning',
@@ -149,24 +149,24 @@ export default function DetalleProyectoAdmin() {
         <DataPanel title="Información de la propuesta" icon={<FileText />}>
           <p className={s.description}>{proyecto.description}</p>
 
-          <dl className={s.grid}>
-            <div className={s.cell}>
+          <dl className={s.infoGrid}>
+            <div className={s.infoCell}>
               <dt>Aprendiz</dt>
               <dd>{proyecto.studentName}</dd>
             </div>
-            <div className={s.cell}>
+            <div className={s.infoCell}>
               <dt>Instructor</dt>
               <dd>{proyecto.instructorName || '—'}</dd>
             </div>
-            <div className={s.cell}>
+            <div className={s.infoCell}>
               <dt>Área de aplicación</dt>
               <dd>{proyecto.areaAplicacion || '—'}</dd>
             </div>
-            <div className={s.cell}>
+            <div className={s.infoCell}>
               <dt>Integrantes</dt>
               <dd>{(proyecto.integrantes || []).join(', ') || '—'}</dd>
             </div>
-            <div className={s.cell}>
+            <div className={s.infoCell}>
               <dt>Última actualización</dt>
               <dd>{proyecto.updatedAt || proyecto.createdAt}</dd>
             </div>

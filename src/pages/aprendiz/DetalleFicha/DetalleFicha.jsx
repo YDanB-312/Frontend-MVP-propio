@@ -4,19 +4,20 @@ import PageHeader from '../../../components/PageHeader/PageHeader'
 import Badge from '../../../components/Badge/Badge'
 import Avatar from '../../../components/Avatar/Avatar'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import { findFichaById, getEstudiantesDeFicha } from '../../../data/mockData'
-import s from './DetalleFicha.module.css'
+import { findFichaById, getEstudiantesDeFicha, getRedDePrograma } from '../../../data/mockData'
+import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 import { GraduationCap, MagnifyingGlass, Users } from 'phosphor-react'
 
 export default function DetalleFicha() {
   const { id } = useParams()
   const ficha = findFichaById(id)
   const estudiantes = ficha ? getEstudiantesDeFicha(ficha.id) : []
+  const red = ficha ? getRedDePrograma(ficha.programa) : null
 
   if (!ficha) {
     return (
       <DashboardLayout role="aprendiz" titulo="Detalle de Ficha">
-        <div className={s.wrapper}>
+        <div className={s.page}>
           <EmptyState
             icon={<MagnifyingGlass />}
             title="Ficha no encontrada"
@@ -29,10 +30,10 @@ export default function DetalleFicha() {
 
   return (
     <DashboardLayout role="aprendiz" titulo="Detalle de Ficha">
-      <div className={s.wrapper}>
+      <div className={s.page}>
         <PageHeader
           title={ficha.nombre}
-          subtitle={`Código ${ficha.codigo} · ${ficha.programa}`}
+          subtitle={`Código ${ficha.codigo} · N° ${ficha.numero} · ${ficha.programa}`}
           icon={<GraduationCap />}
           breadcrumb={[
             { label: 'Dashboard', to: '/aprendiz/dashboard' },
@@ -53,6 +54,14 @@ export default function DetalleFicha() {
           </header>
 
           <dl className={s.infoGrid}>
+            <div className={s.infoItem}>
+              <dt>Número de ficha</dt>
+              <dd>N° {ficha.numero}</dd>
+            </div>
+            <div className={s.infoItem}>
+              <dt>Red de conocimiento</dt>
+              <dd>{red || '—'}</dd>
+            </div>
             <div className={s.infoItem}>
               <dt>Programa</dt>
               <dd>{ficha.programa}</dd>

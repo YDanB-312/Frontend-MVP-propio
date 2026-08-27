@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -10,6 +10,7 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import Avatar from '../../../components/Avatar/Avatar'
+import Alert from '../../../components/Alert/Alert'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   getProjectsByInstructor,
@@ -23,7 +24,8 @@ import {
   createNotification,
   displayNames,
 } from '../../../data/mockData'
-import s from './RevisionPropuestas.module.css'
+import s from '../../../components/ListaBase/ListaBase.module.css'
+import local from './RevisionPropuestas.module.css'
 import { CheckCircle, ClipboardText, MagnifyingGlass, Tray, XCircle } from 'phosphor-react'
 
 const ITEMS_POR_PAGINA = 8
@@ -50,6 +52,8 @@ export default function RevisionPropuestas() {
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [pagina, setPagina] = useState(1)
   const [modal, setModal] = useState(null)
+  const [msgAprobacion, setMsgAprobacion] = useState(null)
+  const msgTimer = useRef(null)
 
   // Solo propuestas de fichas a su cargo
   const idsMisFichas = new Set(
@@ -73,7 +77,7 @@ export default function RevisionPropuestas() {
   const confirmarAccion = () => {
     if (!modal) return
     const { proyecto, accion } = modal
-    updateProjectEstado(proyecto.id, accion)
+    const coincidencias = updateProjectEstado(proyecto.id, accion)
     createNotification({
       mensaje:
         accion === 'aprobado'
@@ -83,6 +87,15 @@ export default function RevisionPropuestas() {
       userId: proyecto.studentId,
       projectId: proyecto.id,
     })
+    if (accion === 'aprobado') {
+      setMsgAprobacion(
+        coincidencias > 0
+          ? `Propuesta aprobada · se detectaron ${coincidencias} coincidencia(s) con propuestas anteriores.`
+          : "Propuesta aprobada · sin coincidencias con propuestas anteriores."
+      )
+      if (msgTimer.current) clearTimeout(msgTimer.current)
+      msgTimer.current = setTimeout(() => setMsgAprobacion(null), 6000)
+    }
     setModal(null)
   }
 
@@ -95,9 +108,15 @@ export default function RevisionPropuestas() {
           icon={<ClipboardText />}
         />
 
+        {msgAprobacion && (
+          <Alert variant={msgAprobacion.includes('sin coincidencias') ? 'success' : 'info'}>
+            {msgAprobacion}
+          </Alert>
+        )}
+
         <FilterBar title="Filtros de estado">
-          <label className={s.filterField}>
-            <span className={s.filterLabel}>Estado</span>
+          <label className={s.field}>
+            <span className={s.label}>Estado</span>
             <Select
               value={filtroEstado}
               onChange={(e) => {
@@ -113,7 +132,7 @@ export default function RevisionPropuestas() {
               <option value="requiere_ajustes">Requiere Ajustes</option>
             </Select>
           </label>
-          <p className={s.filterInfo}>
+          <p className={s.info}>
             {filtrados.length} propuesta{filtrados.length !== 1 ? 's' : ''} encontrada
             {filtrados.length !== 1 ? 's' : ''}
           </p>
@@ -157,7 +176,7 @@ export default function RevisionPropuestas() {
                         <span className={s.subText}>{fic ? `${fic.codigo} · ${fic.nombre}` : 'Sin ficha'}</span>
                       </td>
                       <td data-label="Aprendiz">
-                        <span className={s.student}>
+                        <span className={local.student}>
                           <Avatar name={p.studentName} src={est?.fotoPerfil} size="sm" />
                           {p.studentName}
                         </span>

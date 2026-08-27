@@ -34,7 +34,6 @@
 .profileInfo{display:flex;flex-direction:column;gap:var(--sp-2);min-width:0;flex:1}
 .profileName{margin:0;font-size:var(--text-xl);font-weight:700;color:var(--c-text)}
 .profileEmail{margin:0;font-size:var(--text-sm);color:var(--c-text-2)}
-.tags{display:flex;gap:var(--sp-2);flex-wrap:wrap}
 .profileMeta{margin:0;font-size:var(--text-sm);color:var(--c-text-2)}
 .detailList{display:flex;flex-direction:column;gap:var(--sp-2_5);margin:var(--sp-2) 0 0;padding-top:var(--sp-3);border-top:1px dashed var(--c-border)}
 .detailRow{display:flex;gap:var(--sp-3);font-size:var(--text-sm)}
@@ -45,3 +44,6 @@
 .input{width:100%;padding:var(--sp-2_5) var(--sp-3);border:1px solid var(--c-border);border-radius:var(--r-md);font-size:var(--text-sm);font-family:inherit;color:var(--c-text);background:var(--c-surface);transition:all var(--dur-fast) var(--ease-out)}
 .input:focus{outline:none;border-color:var(--c-primary);box-shadow:var(--sh-ring)}
 @media(max-width:768px){.stats{grid-template-columns:1fr}.profile{flex-direction:column;align-items:center;text-align:center}.detailRow dt{flex-basis:110px}}
+
+.seguridadRow{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.seguridadTexto{margin:0;font-size:var(--text-sm);color:var(--c-text-3)}

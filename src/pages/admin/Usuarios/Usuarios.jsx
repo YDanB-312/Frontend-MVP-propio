@@ -9,6 +9,7 @@ import Badge from '../../../components/Badge/Badge'
 import Avatar from '../../../components/Avatar/Avatar'
 import Alert from '../../../components/Alert/Alert'
 import Button from '../../../components/Button/Button'
+import Actions from '../../../components/Actions/Actions'
 import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
@@ -16,7 +17,6 @@ import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { Users, Plus, Eye, Pause, Play, CheckCircle, Code } from 'phosphor-react'
 import {
   getAllUsers,
-  getAllFichas,
   findFichaById,
   setUserActive,
   createUser,
@@ -24,8 +24,8 @@ import {
   displayNames,
 } from '../../../data/mockData'
 // Estilos reutilizados de las páginas originales (lista + formulario)
-import s from '../GestionUsuarios/GestionUsuarios.module.css'
-import nu from '../NuevoUsuario/NuevoUsuario.module.css'
+import s from '../../../components/ListaBase/ListaBase.module.css'
+import nu from '../../../components/FormularioBase/FormularioBase.module.css'
 
 const ITEMS_POR_PAGINA = 8
 
@@ -86,14 +86,13 @@ export default function Usuarios() {
     email: '',
     password: '',
     role: 'aprendiz',
-    fichaId: '',
   })
   const [errores, setErrores] = useState({})
 
   const onChange = (e) => {
     const { name, value } = e.target
     setForm((f) => ({ ...f, [name]: value }))
-    setErrores((err) => ({ ...err, [name]: undefined, fichaId: undefined }))
+    setErrores((err) => ({ ...err, [name]: undefined }))
   }
 
   const validar = () => {
@@ -122,18 +121,14 @@ export default function Usuarios() {
       setErrores(err)
       return
     }
-    const fichaSel = form.fichaId ? getAllFichas().find((f) => f.id === Number(form.fichaId)) : null
     createUser({
       name: form.name.trim(),
       email: form.email.trim().toLowerCase(),
       role: form.role,
       password: form.password,
       estado: 1,
-      fichaId: fichaSel ? fichaSel.id : null,
-      programa: fichaSel ? fichaSel.programa : null,
-      areaEncargada: form.role === 'instructor' ? fichaSel?.programa || null : null,
     })
-    setForm({ name: '', email: '', password: '', role: 'aprendiz', fichaId: '' })
+    setForm({ name: '', email: '', password: '', role: 'aprendiz' })
     setErrores({})
     setCreando(false)
     refrescar()
@@ -166,10 +161,9 @@ export default function Usuarios() {
         {creando ? (
           <DataPanel title="Datos del usuario" icon={<Code />}>
             <form className={nu.form} onSubmit={onSubmit} noValidate>
-              <div className={nu.row}>
+              <div className={nu.grid2}>
                 <FormField label="Nombre completo" required error={errores.name}>
-                  <input
-                    className={nu.input}
+                  <Input
                     name="name"
                     value={form.name}
                     onChange={onChange}
@@ -179,8 +173,7 @@ export default function Usuarios() {
                 </FormField>
 
                 <FormField label="Correo electrónico" required error={errores.email}>
-                  <input
-                    className={nu.input}
+                  <Input
                     name="email"
                     type="email"
                     value={form.email}
@@ -190,15 +183,14 @@ export default function Usuarios() {
                 </FormField>
               </div>
 
-              <div className={nu.row}>
+              <div className={nu.grid2}>
                 <FormField
                   label="Contraseña temporal"
                   required
                   error={errores.password}
                   help="Mínimo 6 caracteres. El usuario podrá cambiarla después."
                 >
-                  <input
-                    className={nu.input}
+                  <Input
                     name="password"
                     type="password"
                     value={form.password}
@@ -209,41 +201,22 @@ export default function Usuarios() {
                 </FormField>
 
                 <FormField label="Rol" required error={errores.role}>
-                  <select className={nu.select} name="role" value={form.role} onChange={onChange}>
+                  <Select name="role" value={form.role} onChange={onChange}>
                     <option value="aprendiz">Aprendiz</option>
                     <option value="instructor">Instructor</option>
                     <option value="admin">Administrador</option>
-                  </select>
+                  </Select>
                 </FormField>
               </div>
 
-              <FormField
-                label="Ficha de formación"
-                help={
-                  form.role === 'aprendiz'
-                    ? 'Opcional, pero recomendada para aprendices.'
-                    : 'Opcional. Asocia al usuario con una ficha existente.'
-                }
-                error={errores.fichaId}
-              >
-                <select className={nu.select} name="fichaId" value={form.fichaId} onChange={onChange}>
-                  <option value="">Sin ficha</option>
-                  {getAllFichas().map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.codigo} — {f.nombre}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-
-              <div className={nu.formActions}>
-                <button type="submit" className={`${nu.btn} ${nu.primary}`}>
+              <Actions form>
+                <Button type="submit">
                   <CheckCircle size={14} /> Crear usuario
-                </button>
-                <button type="button" className={`${nu.btn} ${nu.secondary}`} onClick={() => setCreando(false)}>
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setCreando(false)}>
                   Cancelar
-                </button>
-              </div>
+                </Button>
+              </Actions>
             </form>
           </DataPanel>
         ) : (

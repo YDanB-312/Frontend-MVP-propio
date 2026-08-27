@@ -18,27 +18,47 @@ export function generarCodigoFicha() {
   return codigo
 }
 
+// Catálogo institucional — agrupación oficial por Redes de Conocimiento
+// (Resolución 2423 de 2018, Normograma SENA). Única fuente de verdad.
+export const REDES = [
+  {
+    nombre: 'Informática, Diseño y Desarrollo de Software',
+    programas: ['ADSO', 'Infraestructura Redes'],
+  },
+  {
+    nombre: 'Artes Gráficas',
+    programas: ['Produccion Multimedia'],
+  },
+]
+export const PROGRAMAS = REDES.flatMap((r) => r.programas)
+export const PROGRAMA_ACTIVO = PROGRAMAS[0]
+
+export function getRedDePrograma(programa) {
+  return REDES.find((r) => r.programas.includes(programa))?.nombre || null
+}
+
 const ESTADO_INICIAL = {
   nextUserId: 14,
   nextFichaId: 5,
   nextProjectId: 9,
+  nextSimilitudId: 4,
   nextBugReportId: 7,
   nextNotificationId: 11,
   nextObservacionId: 4,
   users: [
-    { id: 1, name: 'María González', email: 'maria.gonzalez@soy.sena.edu.co', role: 'aprendiz', telefono: '3001112223', documentoIdentidad: '1000000001', fichaId: 1, estado: 1, programa: 'ADSO' },
-    { id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@sena.edu.co', role: 'instructor', telefono: '3002223334', documentoIdentidad: '1000000002', estado: 1, areaEncargada: 'ADSO' },
-    { id: 3, name: 'Administrador', email: 'admin@sena.edu.co', role: 'admin', telefono: '3003334445', documentoIdentidad: '1000000003', estado: 1 },
-    { id: 4, name: 'Ana Martínez', email: 'ana.martinez@soy.sena.edu.co', role: 'aprendiz', telefono: '3004445556', documentoIdentidad: '1000000004', fichaId: 1, estado: 1, programa: 'ADSO' },
-    { id: 5, name: 'Juan Pérez', email: 'juan.perez@soy.sena.edu.co', role: 'aprendiz', telefono: '3005556667', documentoIdentidad: '1000000005', fichaId: 1, estado: 1, programa: 'ADSO' },
-    { id: 6, name: 'Laura Gómez', email: 'laura.gomez@soy.sena.edu.co', role: 'aprendiz', telefono: '3006667778', documentoIdentidad: '1000000006', fichaId: 2, estado: 1, programa: 'ADSO' },
-    { id: 7, name: 'Carlos Rodríguez Díaz', email: 'carlos.rodriguez@sena.edu.co', role: 'instructor', telefono: '3007778889', documentoIdentidad: '1000000007', estado: 1, areaEncargada: 'Produccion Multimedia' },
-    { id: 8, name: 'Andrés Martínez López', email: 'andres.martinez@sena.edu.co', role: 'instructor', telefono: '3008889990', documentoIdentidad: '1000000008', estado: 1, areaEncargada: 'Infraestructura Redes' },
-    { id: 9, name: 'Laura Sánchez Pérez', email: 'laura.sanchez@soy.sena.edu.co', role: 'aprendiz', telefono: '3009990001', documentoIdentidad: '1000000009', fichaId: 3, estado: 1, programa: 'Produccion Multimedia' },
-    { id: 10, name: 'Diego Ramírez Castro', email: 'diego.ramirez@soy.sena.edu.co', role: 'aprendiz', telefono: '3011112223', documentoIdentidad: '1000000010', fichaId: 4, estado: 1, programa: 'Infraestructura Redes' },
-    { id: 11, name: 'Patricia Morales Vega', email: 'patricia.morales@soy.sena.edu.co', role: 'aprendiz', telefono: '3012223334', documentoIdentidad: '1000000011', fichaId: 2, estado: 1, programa: 'ADSO' },
-    { id: 12, name: 'María Fernanda Torres', email: 'maria.torres@sena.edu.co', role: 'admin', telefono: '3013334445', documentoIdentidad: '1000000012', estado: 1 },
-    { id: 13, name: 'Luis Fernando García', email: 'luis.garcia@sena.edu.co', role: 'instructor', telefono: '3014445556', documentoIdentidad: '1000000013', estado: 0, areaEncargada: 'ADSO' },
+    { id: 1, name: 'María González', email: 'maria.gonzalez@soy.sena.edu.co', role: 'aprendiz', fichaId: 1, estado: 1, programa: 'ADSO' },
+    { id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@sena.edu.co', role: 'instructor', estado: 1 },
+    { id: 3, name: 'Administrador', email: 'admin@sena.edu.co', role: 'admin', estado: 1 },
+    { id: 4, name: 'Ana Martínez', email: 'ana.martinez@soy.sena.edu.co', role: 'aprendiz', fichaId: 1, estado: 1, programa: 'ADSO' },
+    { id: 5, name: 'Juan Pérez', email: 'juan.perez@soy.sena.edu.co', role: 'aprendiz', fichaId: 1, estado: 1, programa: 'ADSO' },
+    { id: 6, name: 'Laura Gómez', email: 'laura.gomez@soy.sena.edu.co', role: 'aprendiz', fichaId: 2, estado: 1, programa: 'ADSO' },
+    { id: 7, name: 'Carlos Rodríguez Díaz', email: 'carlos.rodriguez@sena.edu.co', role: 'instructor', estado: 1 },
+    { id: 8, name: 'Andrés Martínez López', email: 'andres.martinez@sena.edu.co', role: 'instructor', estado: 1 },
+    { id: 9, name: 'Laura Sánchez Pérez', email: 'laura.sanchez@soy.sena.edu.co', role: 'aprendiz', fichaId: 3, estado: 1, programa: 'Produccion Multimedia' },
+    { id: 10, name: 'Diego Ramírez Castro', email: 'diego.ramirez@soy.sena.edu.co', role: 'aprendiz', fichaId: 4, estado: 1, programa: 'Infraestructura Redes' },
+    { id: 11, name: 'Patricia Morales Vega', email: 'patricia.morales@soy.sena.edu.co', role: 'aprendiz', fichaId: 2, estado: 1, programa: 'ADSO' },
+    { id: 12, name: 'María Fernanda Torres', email: 'maria.torres@sena.edu.co', role: 'admin', estado: 1 },
+    { id: 13, name: 'Luis Fernando García', email: 'luis.garcia@sena.edu.co', role: 'instructor', estado: 0 },
   ],
   passwords: {
     'maria.gonzalez@soy.sena.edu.co': '123456',
@@ -56,10 +76,10 @@ const ESTADO_INICIAL = {
     'luis.garcia@sena.edu.co': '123456',
   },
   fichas: [
-    { id: 1, codigo: 'FT-X7K2MN', nombre: 'Analisis y Desarrollo 2568', programa: 'ADSO', idPrograma: 1, aprendices: 28, proyectos: 5, estado: 'activo', instructorName: 'Carlos Ruiz', instructorId: 2, createdAt: '01/02/2026', estudiantes: [] },
-    { id: 2, codigo: 'FT-P4R8TL', nombre: 'Analisis y Desarrollo 2634', programa: 'ADSO', idPrograma: 1, aprendices: 25, proyectos: 3, estado: 'activo', instructorName: 'Carlos Rodríguez Díaz', instructorId: 7, createdAt: '10/02/2026', estudiantes: [] },
-    { id: 3, codigo: 'FT-W2J5HQ', nombre: 'Produccion Multimedia 3102', programa: 'Produccion Multimedia', idPrograma: 2, aprendices: 22, proyectos: 4, estado: 'activo', instructorName: 'Carlos Rodríguez Díaz', instructorId: 7, createdAt: '15/02/2026', estudiantes: [] },
-    { id: 4, codigo: 'FT-B9N3VK', nombre: 'Infraestructura Redes 2801', programa: 'Infraestructura Redes', idPrograma: 3, aprendices: 20, proyectos: 0, estado: 'inactivo', instructorName: 'Andrés Martínez López', instructorId: 8, createdAt: '20/02/2026', estudiantes: [] },
+    { id: 1, codigo: 'FT-X7K2MN', numero: '2568', nombre: 'Analisis y Desarrollo 2568', programa: 'ADSO', idPrograma: 1, aprendices: 28, proyectos: 5, estado: 'activo', instructorName: 'Carlos Ruiz', instructorId: 2, createdAt: '01/02/2026', estudiantes: [] },
+    { id: 2, codigo: 'FT-P4R8TL', numero: '2634', nombre: 'Analisis y Desarrollo 2634', programa: 'ADSO', idPrograma: 1, aprendices: 25, proyectos: 3, estado: 'activo', instructorName: 'Carlos Rodríguez Díaz', instructorId: 7, createdAt: '10/02/2026', estudiantes: [] },
+    { id: 3, codigo: 'FT-W2J5HQ', numero: '3102', nombre: 'Produccion Multimedia 3102', programa: 'Produccion Multimedia', idPrograma: 2, aprendices: 22, proyectos: 4, estado: 'activo', instructorName: 'Carlos Rodríguez Díaz', instructorId: 7, createdAt: '15/02/2026', estudiantes: [] },
+    { id: 4, codigo: 'FT-B9N3VK', numero: '2801', nombre: 'Infraestructura Redes 2801', programa: 'Infraestructura Redes', idPrograma: 3, aprendices: 20, proyectos: 0, estado: 'inactivo', instructorName: 'Andrés Martínez López', instructorId: 8, createdAt: '20/02/2026', estudiantes: [] },
   ],
   proyectos: [
     {
@@ -189,6 +209,21 @@ function cargar() {
     if (guardado) {
       const parsed = JSON.parse(guardado)
       let migrado = false
+      if (typeof parsed.nextSimilitudId !== 'number') {
+        parsed.nextSimilitudId = 4
+        migrado = true
+      }
+      if (Array.isArray(parsed.users)) {
+        parsed.users.forEach((u) => {
+          if (u.role === 'instructor' && (u.areaEncargada || u.area || u.red || Array.isArray(u.programas))) {
+            delete u.areaEncargada
+            delete u.area
+            delete u.red
+            delete u.programas
+            migrado = true
+          }
+        })
+      }
       if (parsed.fichas) {
         parsed.fichas.forEach(f => {
           if (f.instructorId == null && f.instructorName) {
@@ -197,6 +232,11 @@ function cargar() {
             )
             if (instructor) { f.instructorId = instructor.id; migrado = true }
           }
+          let cambio = false
+          if (typeof f.numero !== 'string') { f.numero = f.numero == null ? '' : String(f.numero); cambio = true }
+          if (!f.programa) { f.programa = PROGRAMA_ACTIVO; cambio = true }
+          if ('horario' in f) { delete f.horario; cambio = true }
+          if (cambio) migrado = true
         })
       }
       if (migrado) localStorage.setItem(KEY, JSON.stringify(parsed))
@@ -244,18 +284,13 @@ export function emailExists(email) {
   return Object.prototype.hasOwnProperty.call(state.passwords, email)
 }
 
-export function createUser({ name, email, role, fichaId = null, estado = 1, programa = null, areaEncargada = null, fechaIngreso = null, telefono = null, password = '123456' }) {
+export function createUser({ name, email, role, password = '123456', estado = 1 }) {
   const user = {
     id: state.nextUserId++,
     name,
     email,
     role,
-    telefono,
-    fichaId,
     estado,
-    programa,
-    areaEncargada,
-    fechaIngreso,
   }
   state.users.push(user)
   state.passwords[email] = password
@@ -263,26 +298,19 @@ export function createUser({ name, email, role, fichaId = null, estado = 1, prog
   return user
 }
 
-export function updateUser({ id, name, email, role = null, fichaId = null, estado = null, programa = null, areaEncargada = null, fechaIngreso = null, telefono = null }) {
+export function updateUser({ id, name = null, email = null }) {
   const index = state.users.findIndex(u => u.id === Number(id))
   if (index === -1) return
   const current = state.users[index]
-  if (current.email !== email) {
+  if (email && current.email !== email) {
     const pass = state.passwords[current.email]
     delete state.passwords[current.email]
     state.passwords[email] = pass
   }
   state.users[index] = {
     ...current,
-    name,
-    email,
-    role: role ?? current.role,
-    fichaId: fichaId ?? current.fichaId,
-    estado: estado ?? current.estado,
-    programa: programa ?? current.programa,
-    areaEncargada: areaEncargada ?? current.areaEncargada,
-    fechaIngreso: fechaIngreso ?? current.fechaIngreso,
-    telefono: telefono ?? current.telefono,
+    name: name ?? current.name,
+    email: email ?? current.email,
   }
   guardar()
 }
@@ -325,10 +353,6 @@ export function setUserFicha(userId, fichaId) {
   }
 }
 
-export function isUserActive(id) {
-  return (findUserById(id)?.estado ?? 1) === 1
-}
-
 // ---------------------------------------------------------------- Fichas
 export function getAllFichas() {
   return state.fichas
@@ -346,12 +370,13 @@ export function getActiveFichas() {
   return state.fichas.filter(f => f.estado === 'activo')
 }
 
-export function createFicha({ nombre, programa, instructorName, instructorId }) {
+export function createFicha({ nombre, numero, programa, instructorName, instructorId }) {
   const ficha = {
     id: state.nextFichaId++,
     codigo: generarCodigoFicha(),
+    numero,
     nombre,
-    programa,
+    programa: PROGRAMAS.includes(programa) ? programa : PROGRAMA_ACTIVO,
     aprendices: 0,
     proyectos: 0,
     estado: 'activo',
@@ -365,13 +390,13 @@ export function createFicha({ nombre, programa, instructorName, instructorId }) 
   return ficha
 }
 
-export function updateFicha({ id, nombre, programa, estado = null, instructorName = null, instructorId = null }) {
+export function updateFicha({ id, nombre, numero, estado = null, instructorName = null, instructorId = null }) {
   const index = state.fichas.findIndex(f => f.id === Number(id))
   if (index !== -1) {
     state.fichas[index] = {
       ...state.fichas[index],
       nombre: nombre ?? state.fichas[index].nombre,
-      programa: programa ?? state.fichas[index].programa,
+      numero: numero ?? state.fichas[index].numero,
       estado: estado ?? state.fichas[index].estado,
       instructorName: instructorName ?? state.fichas[index].instructorName,
       instructorId: instructorId ?? state.fichas[index].instructorId,
@@ -554,7 +579,11 @@ export function updateProjectEstado(id, estado) {
   if (index !== -1) {
     state.proyectos[index] = { ...state.proyectos[index], estado, updatedAt: hoyFormato('dd/MM/yyyy') }
     guardar()
+    if (estado === 'aprobado') {
+      return detectarSimilitudes(state.proyectos[index].id)
+    }
   }
+  return 0
 }
 
 export function deleteProject(id) {
@@ -594,6 +623,93 @@ export function updateSimilarityEstado(id, estado) {
     state.similitudes[index] = { ...state.similitudes[index], estado }
     guardar()
   }
+}
+
+// ------------------------------------------------- Detección (simulada)
+// Regla de negocio: una propuesta aprobada se compara contra el corpus
+// histórico APROBADO del mismo programa. En producción este cálculo vive
+// en el backend; aquí se simula con Jaccard sobre título + palabras clave.
+const STOPWORDS = new Set([
+  'de', 'la', 'el', 'los', 'las', 'un', 'una', 'para', 'con', 'del', 'al',
+  'en', 'y', 'o', 'a', 'que', 'por', 'su', 'es', 'son',
+])
+
+function tokenizar(texto) {
+  return String(texto || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 2 && !STOPWORDS.has(t))
+}
+
+function jaccard(a, b) {
+  const A = new Set(a)
+  const B = new Set(b)
+  if (!A.size || !B.size) return 0
+  let inter = 0
+  for (const t of A) {
+    if (B.has(t)) inter++
+  }
+  return inter / (A.size + B.size - inter)
+}
+
+const UMBRAL_SIMILITUD = 0.2
+
+export function getProgramaDeProyecto(proyecto) {
+  if (!proyecto) return null
+  return findFichaById(proyecto.fichaId)?.programa || null
+}
+
+export function detectarSimilitudes(projectId) {
+  const propio = findProjectById(projectId)
+  if (!propio) return 0
+  const tokensPropios = tokenizar(`${propio.title} ${propio.keywords}`)
+  const programaPropio = getProgramaDeProyecto(propio)
+
+  const corpus = state.proyectos.filter(
+    (p) =>
+      p.id !== propio.id &&
+      p.estado === 'aprobado' &&
+      getProgramaDeProyecto(p) === programaPropio
+  )
+
+  let creadas = 0
+  for (const otro of corpus) {
+    const yaExiste = state.similitudes.some(
+      (s) =>
+        (s.projectId1 === propio.id && s.projectId2 === otro.id) ||
+        (s.projectId1 === otro.id && s.projectId2 === propio.id)
+    )
+    if (yaExiste) continue
+
+    const tokensOtro = tokenizar(`${otro.title} ${otro.keywords}`)
+    const score = jaccard(tokensPropios, tokensOtro)
+    if (score < UMBRAL_SIMILITUD) continue
+
+    state.similitudes.unshift({
+      id: state.nextSimilitudId++,
+      projectId1: propio.id,
+      projectId2: otro.id,
+      project1Title: propio.title,
+      project2Title: otro.title,
+      project1Student: propio.studentName,
+      project2Student: otro.studentName,
+      similitud: Math.round(score * 100) / 100,
+      estado: 'pendiente',
+      createdAt: hoyFormato('dd/MM/yyyy'),
+    })
+    creadas++
+
+    createNotification({
+      mensaje: `Similitud del ${Math.round(score * 100)}% detectada entre '${propio.title}' y '${otro.title}'`,
+      tipo: 'similitud',
+      userId: propio.studentId,
+      projectId: propio.id,
+    })
+  }
+
+  return creadas
 }
 
 // ---------------------------------------------------------------- Reportes

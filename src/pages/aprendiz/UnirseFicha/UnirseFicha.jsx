@@ -142,6 +142,10 @@ export default function UnirseFicha() {
                 </header>
                 <dl className={s.fichaInfo}>
                   <div className={s.infoRow}>
+                    <dt>Número de ficha</dt>
+                    <dd>N° {ficha.numero}</dd>
+                  </div>
+                  <div className={s.infoRow}>
                     <dt>Programa</dt>
                     <dd>{ficha.programa}</dd>
                   </div>

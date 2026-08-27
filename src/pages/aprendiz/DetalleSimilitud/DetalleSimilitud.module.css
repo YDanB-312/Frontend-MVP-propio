@@ -198,28 +198,6 @@
   color: var(--c-text-2);
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2_5) var(--sp-5);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  font-family: var(--font);
-  font-size: var(--text-base);
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-normal) var(--ease-out);
-}
-
-.secondary {
-  background: var(--c-surface);
-  color: var(--c-text);
-  border-color: var(--c-border);
-}
-
 @media (min-width: 768px) {
   .projectsGrid {
     grid-template-columns: 1fr 1fr;

@@ -7,15 +7,15 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import Badge from '../../../components/Badge/Badge'
 import Button from '../../../components/Button/Button'
-import { Select } from '../../../components/Input/Input'
+import Actions from '../../../components/Actions/Actions'
+import { Input, Select, Textarea } from '../../../components/Input/Input'
 import FormField from '../../../components/FormField/FormField'
-import { CalendarBlank, FolderOpen, MagnifyingGlass, Plus, Tray } from 'phosphor-react'
+import { CalendarBlank, FolderOpen, GraduationCap, MagnifyingGlass, Plus, Tray } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   getProjectsByStudent,
   getAllSimilarities,
   getSimilitudesValidas,
-  getAllFichas,
   getEstudiantesDeFicha,
   findFichaById,
   findUserById,
@@ -24,8 +24,8 @@ import {
   displayNames,
 } from '../../../data/mockData'
 // Estilos reutilizados de las páginas originales (lista + formulario)
-import s from '../MisProyectos/MisProyectos.module.css'
-import n from '../NuevoProyecto/NuevoProyecto.module.css'
+import s from '../../../components/ListaBase/ListaBase.module.css'
+import n from '../../../components/FormularioBase/FormularioBase.module.css'
 
 const ITEMS_POR_PAGINA = 6
 
@@ -85,8 +85,11 @@ export default function Propuestas() {
   }
 
   /* ---------- Creación ---------- */
-  const fichas = useMemo(() => getAllFichas().filter((f) => f.estado === 'activo'), [])
   const perfil = findUserById(user.id)
+  const miFicha = useMemo(
+    () => (perfil?.fichaId ? findFichaById(perfil.fichaId) : null),
+    [perfil?.fichaId]
+  )
 
   const [form, setForm] = useState({
     title: '',
@@ -95,7 +98,6 @@ export default function Propuestas() {
     objetivosEspecificos: '',
     areaAplicacion: '',
     keywords: '',
-    fichaId: perfil?.fichaId ? String(perfil.fichaId) : '',
   })
   const [errors, setErrors] = useState({})
   const [guardando, setGuardando] = useState(false)
@@ -142,7 +144,6 @@ export default function Propuestas() {
       errs.objetivosEspecificos = 'Cada objetivo específico debe tener al menos 8 caracteres.'
     }
     if (!form.areaAplicacion) errs.areaAplicacion = 'Selecciona un área de aplicación.'
-    if (!form.fichaId) errs.fichaId = 'Selecciona tu ficha de formación.'
     return errs
   }
 
@@ -150,13 +151,7 @@ export default function Propuestas() {
     e.preventDefault()
     const errs = validar()
     setErrors(errs)
-    if (Object.keys(errs).length > 0) return
-
-    const ficha = findFichaById(form.fichaId)
-    if (!ficha) {
-      setErrors({ fichaId: 'La ficha seleccionada no existe.' })
-      return
-    }
+    if (Object.keys(errs).length > 0 || !miFicha) return
 
     setGuardando(true)
     const project = createProject({
@@ -164,9 +159,9 @@ export default function Propuestas() {
       description: form.description.trim(),
       studentId: user.id,
       studentName: user.nombre,
-      instructorId: ficha.instructorId,
-      instructorName: ficha.instructorName,
-      fichaId: ficha.id,
+      instructorId: miFicha.instructorId,
+      instructorName: miFicha.instructorName,
+      fichaId: miFicha.id,
       keywords: form.keywords.trim(),
       objetivoGeneral: form.objetivoGeneral.trim(),
       objetivosEspecificos: objetivosValidos.join('\n'),
@@ -193,6 +188,22 @@ export default function Propuestas() {
     navigate('/aprendiz/analizando-proyecto', { state: { projectId: project.id }, replace: true })
   }
 
+  if (!miFicha) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Mis Propuestas">
+        <div className={s.page}>
+          <EmptyState
+            icon={<GraduationCap size={40} weight="light" />}
+            title="Aún no perteneces a una ficha"
+            message="Únete con el código que te dio tu instructor para poder crear propuestas."
+            actionLabel="Ir a Mi Ficha"
+            onAction={() => navigate('/aprendiz/ficha')}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout role="aprendiz" titulo={creando ? 'Nueva Propuesta' : 'Mis Propuestas'}>
       <div className={s.wrapper}>
@@ -216,9 +227,8 @@ export default function Propuestas() {
         {creando ? (
           <form className={n.form} onSubmit={handleSubmit} noValidate>
             <FormField label="Nombre de la propuesta" error={errors.title} required>
-              <input
+              <Input
                 type="text"
-                className={n.input}
                 value={form.title}
                 onChange={(e) => set('title', e.target.value)}
                 placeholder="Ej: Sistema de monitoreo ambiental con IoT"
@@ -233,8 +243,7 @@ export default function Propuestas() {
               help={`${form.description.length}/600 caracteres`}
               required
             >
-              <textarea
-                className={n.textarea}
+              <Textarea
                 rows={5}
                 value={form.description}
                 onChange={(e) => set('description', e.target.value)}
@@ -249,8 +258,7 @@ export default function Propuestas() {
               help="Qué quieres lograr con la solución, en una sola frase."
               required
             >
-              <textarea
-                className={n.textarea}
+              <Textarea
                 rows={3}
                 value={form.objetivoGeneral}
                 onChange={(e) => set('objetivoGeneral', e.target.value)}
@@ -265,8 +273,7 @@ export default function Propuestas() {
               help={`Un objetivo por línea (mínimo 2). Usa verbos como Implementar, Diseñar, Evaluar. Llevas ${objetivosValidos.length}.`}
               required
             >
-              <textarea
-                className={n.textarea}
+              <Textarea
                 rows={5}
                 value={form.objetivosEspecificos}
                 onChange={(e) => set('objetivosEspecificos', e.target.value)}
@@ -279,16 +286,16 @@ export default function Propuestas() {
             help="Opcional. Compañeros de tu ficha con los que desarrollarás la propuesta."
           >
             {companeros.length === 0 ? (
-              <p className={n.hintCompaneros}>Aún no hay compañeros en tu ficha para invitar.</p>
+              <p className={n.hint}>Aún no hay compañeros en tu ficha para invitar.</p>
             ) : (
-              <div className={n.companerosLista}>
+              <div className={n.chipList}>
                 {companeros.map((c) => {
                   const activo = seleccionados.includes(c.id)
                   return (
                     <button
                       key={c.id}
                       type="button"
-                      className={`${n.companeroChip} ${activo ? n.companeroActivo : ''}`}
+                      className={`${n.chip} ${activo ? n.chipActive : ''}`}
                       onClick={() => alternarCompanero(c.id)}
                       aria-pressed={activo}
                     >
@@ -300,65 +307,50 @@ export default function Propuestas() {
             )}
           </FormField>
 
-          <div className={n.grid2}>
-              <FormField label="Área de aplicación" error={errors.areaAplicacion} required>
-                <select
-                  className={n.select}
-                  value={form.areaAplicacion}
-                  onChange={(e) => set('areaAplicacion', e.target.value)}
-                >
-                  <option value="">Selecciona un área...</option>
-                  {AREAS.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
+          <FormField label="Área de aplicación" error={errors.areaAplicacion} required>
+            <Select
+              value={form.areaAplicacion}
+              onChange={(e) => set('areaAplicacion', e.target.value)}
+            >
+              <option value="">Selecciona un área...</option>
+              {AREAS.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </Select>
+          </FormField>
 
-              <FormField label="Ficha de formación" error={errors.fichaId} required>
-                <select
-                  className={n.select}
-                  value={form.fichaId}
-                  onChange={(e) => set('fichaId', e.target.value)}
-                >
-                  <option value="">Selecciona tu ficha...</option>
-                  {fichas.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.nombre} · {f.codigo}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-            </div>
+          <p className={n.hint}>
+            Ficha de formación: {miFicha.nombre} · {miFicha.codigo} — definida al unirte con el código
+          </p>
 
             <FormField
               label="Palabras clave"
               help="Opcional. Si aún no las tienes claras, puedes agregarlas después."
             >
-              <input
+              <Input
                 type="text"
-                className={n.input}
                 value={form.keywords}
                 onChange={(e) => set('keywords', e.target.value)}
                 placeholder="iot, sensores, agricultura"
               />
             </FormField>
 
-            <div className={n.actions}>
-              <button type="submit" className={`${n.btn} ${n.primary}`} disabled={guardando}>
+            <Actions className={n.actions}>
+              <Button type="submit" disabled={guardando}>
                 {guardando ? 'Enviando...' : 'Enviar propuesta y analizar'}
-              </button>
-              <button type="button" className={`${n.btn} ${n.secondary}`} onClick={() => setCreando(false)}>
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setCreando(false)}>
                 Cancelar
-              </button>
-            </div>
+              </Button>
+            </Actions>
           </form>
         ) : (
           <>
             <FilterBar title="Filtros">
-              <label className={s.filterField}>
-                <span className={s.filterLabel}>Estado</span>
+              <label className={s.field}>
+                <span className={s.label}>Estado</span>
                 <Select
                   value={filtro}
                   onChange={(e) => cambiarFiltro(e.target.value)}
@@ -392,7 +384,7 @@ export default function Propuestas() {
               />
             ) : (
               <>
-                <div className={s.grid}>
+                <div className={s.cardGrid}>
                   {visibles.map((p) => {
                     const info = similitudInfo(similitudes, p.id)
                     return (

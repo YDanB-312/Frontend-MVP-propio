@@ -4,7 +4,6 @@
   gap: var(--sp-6);
 }
 
-/* Profile */
 .profile {
   display: flex;
   flex-direction: column;
@@ -89,45 +88,6 @@
   }
 }
 
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  margin-top: var(--sp-3);
-  padding: var(--sp-2) var(--sp-4);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  white-space: nowrap;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-
-.success {
-  background: var(--c-success-bg);
-  color: var(--c-success);
-  border-color: var(--c-success);
-}
-
-.success:hover {
-  background: var(--c-success);
-  color: #fff;
-}
-
-.danger {
-  background: var(--c-danger-bg);
-  color: var(--c-danger);
-  border-color: var(--c-danger);
-}
-
-.danger:hover {
-  background: var(--c-danger);
-  color: var(--c-on-danger);
-}
-
-/* Projects list */
 .projectList {
   display: flex;
   flex-direction: column;

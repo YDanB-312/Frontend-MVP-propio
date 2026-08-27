@@ -17,7 +17,7 @@ import {
   getEstudiantesDeFicha,
   displayNames,
 } from '../../../data/mockData'
-import s from './GestionarFichas.module.css'
+import s from '../../../components/ListaBase/ListaBase.module.css'
 
 const ITEMS_POR_PAGINA = 8
 
@@ -37,6 +37,7 @@ export default function GestionarFichas() {
       !q ||
       f.nombre.toLowerCase().includes(q) ||
       f.codigo.toLowerCase().includes(q) ||
+      (f.numero || '').toLowerCase().includes(q) ||
       (f.programa || '').toLowerCase().includes(q)
     const coincideEstado = filtroEstado === 'todos' || f.estado === filtroEstado
     return coincideQ && coincideEstado
@@ -76,7 +77,7 @@ export default function GestionarFichas() {
                 setBusqueda(e.target.value)
                 setPagina(1)
               }}
-              placeholder="Nombre, código o programa…"
+              placeholder="Nombre, código, número o programa…"
             />
           </label>
           <label className={s.field}>
@@ -141,7 +142,7 @@ export default function GestionarFichas() {
                             {f.nombre}
                           </Link>
                           <span className={s.subText}>
-                            {f.programa}
+                            N° {f.numero} · {f.programa}
                             {esMia ? ' · a tu cargo' : ` · ${f.instructorName || 'Sin instructor'}`}
                           </span>
                         </td>

@@ -138,5 +138,4 @@
   }
 }
 
-.avatarBtn{padding:0;border:none;background:none;border-radius:var(--r-full);cursor:zoom-in;line-height:0;transition:transform var(--dur-fast) var(--ease-out)}
 .avatarBtn:hover{transform:scale(1.03)}

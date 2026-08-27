@@ -9,7 +9,7 @@ import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { getAllBugReports, displayNames } from '../../../data/mockData'
-import s from './ReportesFallas.module.css'
+import s from '../../../components/ListaBase/ListaBase.module.css'
 import { Bug, Eye } from 'phosphor-react'
 
 const ITEMS_POR_PAGINA = 8

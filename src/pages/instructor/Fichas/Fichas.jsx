@@ -8,7 +8,8 @@ import FormField from '../../../components/FormField/FormField'
 import Badge from '../../../components/Badge/Badge'
 import Alert from '../../../components/Alert/Alert'
 import Button from '../../../components/Button/Button'
-import { Input, Select } from '../../../components/Input/Input'
+import { Input, Select, Textarea } from '../../../components/Input/Input'
+import Actions from '../../../components/Actions/Actions'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
@@ -21,21 +22,14 @@ import {
   generarCodigoFicha,
   deleteFicha,
   getEstudiantesDeFicha,
+  REDES,
   displayNames,
 } from '../../../data/mockData'
 // Estilos reutilizados de las páginas originales (lista + formulario)
-import s from '../GestionarFichas/GestionarFichas.module.css'
-import c from '../CrearFicha/CrearFicha.module.css'
+import s from '../../../components/ListaBase/ListaBase.module.css'
+import c from '../../../components/FormularioBase/FormularioBase.module.css'
 
 const ITEMS_POR_PAGINA = 8
-
-const PROGRAMAS = [
-  'ADSO',
-  'Produccion Multimedia',
-  'Infraestructura Redes',
-  'Contabilidad y Finanzas',
-  'Otro',
-]
 
 export default function Fichas() {
   const { user } = useAuth()
@@ -61,6 +55,7 @@ export default function Fichas() {
       !q ||
       f.nombre.toLowerCase().includes(q) ||
       f.codigo.toLowerCase().includes(q) ||
+      (f.numero || '').toLowerCase().includes(q) ||
       (f.programa || '').toLowerCase().includes(q)
     const coincideEstado = filtroEstado === 'todos' || f.estado === filtroEstado
     return coincideQ && coincideEstado
@@ -93,7 +88,7 @@ export default function Fichas() {
 
   /* ---------- Creación ---------- */
   const [codigo, setCodigo] = useState(() => generarCodigoFicha())
-  const [form, setForm] = useState({ nombre: '', programa: '', horario: 'manana', descripcion: '' })
+  const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', descripcion: '' })
   const [errores, setErrores] = useState({})
 
   const onChange = (e) => {
@@ -102,14 +97,29 @@ export default function Fichas() {
     setErrores((err) => ({ ...err, [name]: undefined }))
   }
 
+  function alCambiarRed(e) {
+    const { value } = e.target
+    setForm((f) => ({ ...f, red: value, programa: '' }))
+    setErrores((err) => ({ ...err, red: undefined, programa: undefined }))
+  }
+
   const regenerarCodigo = () => setCodigo(generarCodigoFicha())
 
   const validar = () => {
     const err = {}
+    if (!form.red) err.red = 'Selecciona la red de conocimiento.'
+    if (!form.programa) err.programa = 'Selecciona el programa de formación.'
     if (!form.nombre.trim()) err.nombre = 'El nombre de la ficha es obligatorio.'
-    if (!form.programa) err.programa = 'Selecciona un programa de formación.'
+    const numero = form.numero.trim()
+    if (!numero) {
+      err.numero = 'El número de ficha es obligatorio.'
+    } else if (!/^\d{4,8}$/.test(numero)) {
+      err.numero = 'Solo dígitos (4 a 8 caracteres).'
+    }
     return err
   }
+
+  const programasDeRed = REDES.find((r) => r.nombre === form.red)?.programas || []
 
   const onSubmit = (e) => {
     e.preventDefault()
@@ -120,11 +130,12 @@ export default function Fichas() {
     }
     createFicha({
       nombre: form.nombre.trim(),
+      numero: form.numero.trim(),
       programa: form.programa,
       instructorName: user?.nombre || '',
       instructorId: Number(user?.id) || null,
     })
-    setForm({ nombre: '', programa: '', horario: 'manana', descripcion: '' })
+    setForm({ red: '', programa: '', nombre: '', numero: '', descripcion: '' })
     setErrores({})
     setCodigo(generarCodigoFicha())
     setCreando(false)
@@ -155,9 +166,32 @@ export default function Fichas() {
         {creando ? (
           <DataPanel title="Datos de la ficha" icon={<Books />}>
             <form className={c.form} onSubmit={onSubmit} noValidate>
+              <div className={c.grid2}>
+                <FormField label="Red de conocimiento" required error={errores.red}>
+                  <Select name="red" value={form.red} onChange={alCambiarRed}>
+                    <option value="">Selecciona una red…</option>
+                    {REDES.map((r) => (
+                      <option key={r.nombre} value={r.nombre}>
+                        {r.nombre}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+
+                <FormField label="Programa de formación" required error={errores.programa}>
+                  <Select name="programa" value={form.programa} onChange={onChange} disabled={!form.red}>
+                    <option value="">{form.red ? 'Selecciona un programa…' : 'Elige primero la red…'}</option>
+                    {programasDeRed.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              </div>
+
               <FormField label="Nombre de la ficha" required error={errores.nombre}>
-                <input
-                  className={c.input}
+                <Input
                   name="nombre"
                   value={form.nombre}
                   onChange={onChange}
@@ -166,15 +200,15 @@ export default function Fichas() {
                 />
               </FormField>
 
-              <FormField label="Programa de formación" required error={errores.programa}>
-                <select className={c.select} name="programa" value={form.programa} onChange={onChange}>
-                  <option value="">Selecciona un programa…</option>
-                  {PROGRAMAS.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
+              <FormField label="Número de ficha" required error={errores.numero} help="Solo dígitos, sin espacios. Ej. 3142101">
+                <Input
+                  name="numero"
+                  inputMode="numeric"
+                  value={form.numero}
+                  onChange={onChange}
+                  placeholder="Ej. 3142101"
+                  maxLength={8}
+                />
               </FormField>
 
               <FormField
@@ -183,22 +217,14 @@ export default function Fichas() {
               >
                 <div className={c.codigoRow}>
                   <code className={c.codigo}>{codigo}</code>
-                  <button type="button" className={`${c.btn} ${c.ghost}`} onClick={regenerarCodigo}>
+                  <Button type="button" variant="ghost" onClick={regenerarCodigo}>
                     <ArrowClockwise size={14} /> Regenerar
-                  </button>
+                  </Button>
                 </div>
               </FormField>
 
-              <FormField label="Horario" help={`Jornada seleccionada: ${form.horario === 'manana' ? 'Lunes a Viernes · Mañana (6:00–12:00)' : 'Lunes a Viernes · Tarde (12:00–18:00)'}`}>
-                <select className={c.select} name="horario" value={form.horario} onChange={onChange}>
-                  <option value="manana">Lunes a Viernes · Mañana (6:00–12:00)</option>
-                  <option value="tarde">Lunes a Viernes · Tarde (12:00–18:00)</option>
-                </select>
-              </FormField>
-
               <FormField label="Descripción" help="Opcional. Describe el enfoque o jornada de la ficha.">
-                <textarea
-                  className={c.textarea}
+                <Textarea
                   name="descripcion"
                   rows={4}
                   value={form.descripcion}
@@ -207,14 +233,14 @@ export default function Fichas() {
                 />
               </FormField>
 
-              <div className={c.formActions}>
-                <button type="submit" className={`${c.btn} ${c.primary}`}>
+              <Actions form>
+                <Button type="submit">
                   <CheckCircle size={14} /> Crear ficha
-                </button>
-                <button type="button" className={`${c.btn} ${c.secondary}`} onClick={() => setCreando(false)}>
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setCreando(false)}>
                   Cancelar
-                </button>
-              </div>
+                </Button>
+              </Actions>
             </form>
           </DataPanel>
         ) : (
@@ -234,7 +260,7 @@ export default function Fichas() {
                     setBusqueda(e.target.value)
                     setPagina(1)
                   }}
-                  placeholder="Nombre, código o programa…"
+                  placeholder="Nombre, código, número o programa…"
                 />
               </label>
               <label className={s.field}>
@@ -296,7 +322,7 @@ export default function Fichas() {
                               <Link to={`/instructor/detalle-ficha/${f.id}`} className={s.nameLink}>
                                 {f.nombre}
                               </Link>
-                              <span className={s.subText}>{f.programa}</span>
+                              <span className={s.subText}>N° {f.numero} · {f.programa}</span>
                             </td>
                             <td data-label="Aprendices">
                               <span className={s.count}>{estudiantes || f.aprendices}</span>

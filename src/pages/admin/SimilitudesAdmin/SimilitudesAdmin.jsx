@@ -9,7 +9,8 @@ import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { getAllSimilarities, displayNames } from '../../../data/mockData'
-import s from './SimilitudesAdmin.module.css'
+import s from '../../../components/ListaBase/ListaBase.module.css'
+import local from './SimilitudesAdmin.module.css'
 import { Eye, MagnifyingGlass } from 'phosphor-react'
 
 const ITEMS_POR_PAGINA = 8
@@ -101,16 +102,16 @@ export default function SimilitudesAdmin() {
                         </td>
                         <td>
                           <span
-                            className={`${s.pct} ${
-                              pct >= 60 ? s.pctHigh : pct >= 40 ? s.pctMid : s.pctLow
+                            className={`${local.pct} ${
+                              pct >= 60 ? local.pctHigh : pct >= 40 ? local.pctMid : local.pctLow
                             }`}
                           >
                             {pct}%
                           </span>
-                          <span className={s.barTrack} aria-hidden="true">
+                          <span className={local.barTrack} aria-hidden="true">
                             <span
-                              className={`${s.barFill} ${
-                                pct >= 60 ? s.fillHigh : pct >= 40 ? s.fillMid : s.fillLow
+                              className={`${local.barFill} ${
+                                pct >= 60 ? local.fillHigh : pct >= 40 ? local.fillMid : local.fillLow
                               }`}
                               style={{ width: `${Math.min(pct, 100)}%` }}
                             />

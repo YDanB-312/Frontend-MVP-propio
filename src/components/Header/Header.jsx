@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { findUserById } from '../../data/mockData'
+import { findUserById, displayNames } from '../../data/mockData'
 import s from './Header.module.css'
 
 const RUTA_NOTIFICACIONES = {
@@ -131,7 +131,7 @@ export default function Header({ titulo = '', usuario = null, notificaciones = 0
             </span>
             <span className={s.userInfo}>
               <span className={s.userName}>{usuario?.nombre}</span>
-              <span className={s.userRole}>{role}</span>
+              <span className={s.userRole}>{displayNames.userRole[role] || role}</span>
             </span>
           </div>
 

@@ -28,6 +28,8 @@ const ESTADO_VARIANT = {
   requiere_ajustes: 'warning',
 }
 
+const ROL_VARIANT = { aprendiz: 'info', instructor: 'primary', admin: 'warning' }
+
 function similitudInfo(similitudes, projectId) {
   const propias = similitudes.filter((x) => x.projectId1 === projectId || x.projectId2 === projectId)
   if (propias.length === 0) return null
@@ -100,7 +102,7 @@ export default function DetalleUsuario() {
               <h2 className={s.name}>{usuario.name}</h2>
               <p className={s.email}>{usuario.email}</p>
               <div className={s.tags}>
-                <Badge variant="primary">{displayNames.userRole[usuario.role] || usuario.role}</Badge>
+                <Badge variant={ROL_VARIANT[usuario.role] || 'primary'}>{displayNames.userRole[usuario.role] || usuario.role}</Badge>
                 {activo ? <Badge variant="success">Activo</Badge> : <Badge variant="danger">Inactivo</Badge>}
               </div>
               <Button
@@ -113,25 +115,15 @@ export default function DetalleUsuario() {
             </div>
             <dl className={s.details}>
               <div className={s.detail}>
-                <dt>Teléfono</dt>
-                <dd>{usuario.telefono || 'No registrado'}</dd>
-              </div>
-              <div className={s.detail}>
-                <dt>Documento</dt>
-                <dd>{usuario.documentoIdentidad || 'No registrado'}</dd>
-              </div>
-              <div className={s.detail}>
                 <dt>Ficha</dt>
                 <dd>{ficha ? `${ficha.codigo} — ${ficha.nombre}` : 'Sin ficha'}</dd>
               </div>
-              <div className={s.detail}>
-                <dt>{usuario.role === 'instructor' ? 'Área encargada' : 'Programa'}</dt>
-                <dd>
-                  {usuario.role === 'instructor'
-                    ? usuario.areaEncargada || 'No asignada'
-                    : usuario.programa || 'No asignado'}
-                </dd>
-              </div>
+              {usuario.role === 'aprendiz' && (
+                <div className={s.detail}>
+                  <dt>Programa</dt>
+                  <dd>{usuario.programa || 'No asignado'}</dd>
+                </div>
+              )}
             </dl>
           </div>
         </DataPanel>

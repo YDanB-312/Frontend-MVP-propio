@@ -53,36 +53,3 @@
 .actions {
   margin-top: var(--sp-2);
 }
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-6);
-  border: 1px solid transparent;
-  border-radius: var(--r-full);
-  font-family: var(--font);
-  font-size: var(--text-base);
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-normal) var(--ease-out);
-}
-
-.primary {
-  background: var(--grad-primary);
-  color: var(--c-on-primary);
-  box-shadow: var(--sh-md);
-}
-
-.secondary {
-  background: var(--c-surface);
-  color: var(--c-text);
-  border-color: var(--c-border);
-}
-
-.secondary:hover {
-  border-color: var(--c-primary);
-  color: var(--c-primary);
-}

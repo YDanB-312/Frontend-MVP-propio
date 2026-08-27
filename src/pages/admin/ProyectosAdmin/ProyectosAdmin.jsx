@@ -14,7 +14,7 @@ import {
   getAllSimilarities,
   displayNames,
 } from '../../../data/mockData'
-import s from './ProyectosAdmin.module.css'
+import s from '../../../components/ListaBase/ListaBase.module.css'
 
 const ITEMS_POR_PAGINA = 8
 

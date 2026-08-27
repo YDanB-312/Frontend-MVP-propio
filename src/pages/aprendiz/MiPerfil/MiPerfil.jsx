@@ -28,7 +28,6 @@ export default function MiPerfil() {
         ]}
         detalles={[
           { label: 'Rol', value: 'Aprendiz SENA' },
-          { label: 'Documento', value: perfil?.documentoIdentidad || 'No registrado' },
           { label: 'Ficha', value: ficha ? `${ficha.nombre} (${ficha.codigo})` : 'Sin ficha asignada' },
         ]}
       />

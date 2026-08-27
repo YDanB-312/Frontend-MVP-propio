@@ -1,20 +1,15 @@
-import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
-import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
-import Avatar from '../../../components/Avatar/Avatar'
-import Lightbox from '../../../components/Lightbox/Lightbox'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import StatCard from '../../../components/StatCard/StatCard'
+import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import { useAuth } from '../../../contexts/AuthContext'
 import { findUserById, findFichaById, getAllFichas } from '../../../data/mockData'
 import s from './DetalleInstructor.module.css'
-import { Books, CaretRight, ChalkboardTeacher, Envelope, GraduationCap, MagnifyingGlass, Phone } from 'phosphor-react'
+import { CaretRight, GraduationCap, MagnifyingGlass } from 'phosphor-react'
 
 export default function DetalleInstructor() {
-  const [fotoViendo, setFotoViendo] = useState(null)
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
 
@@ -44,35 +39,18 @@ export default function DetalleInstructor() {
   return (
     <DashboardLayout role="aprendiz" titulo="Mi Instructor">
       <div className={s.wrapper}>
-        <PageHeader
-          title="Mi Instructor"
-          subtitle="Conoce a quien acompaña tu proceso de formación"
-          icon={<ChalkboardTeacher />}
+        <PerfilBase
+          user={instructor}
+          role="instructor"
+          soloLectura
+          titulo="Mi Instructor"
+          subtitulo="Conoce a quien acompaña tu proceso de formación"
           breadcrumb={[
             { label: 'Dashboard', to: '/aprendiz/dashboard' },
             { label: 'Mi Instructor' },
           ]}
+          detalles={[{ label: 'Rol', value: 'Instructor SENA' }]}
         />
-
-        <section className={s.profileCard}>
-          {instructor.fotoPerfil ? (
-            <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: instructor.fotoPerfil, alt: instructor.name })}>
-              <Avatar name={instructor.name} src={instructor.fotoPerfil} size="lg" />
-            </button>
-          ) : (
-            <Avatar name={instructor.name} size="lg" />
-          )}
-          <div className={s.profileInfo}>
-            <h2 className={s.profileName}>{instructor.name}</h2>
-            <Badge variant="warning"><ChalkboardTeacher size={14} /> Instructor</Badge>
-            <p className={s.profileEmail}><Envelope size={14} /> {instructor.email}</p>
-            {instructor.telefono && <p className={s.profileMeta}><Phone size={14} /> {instructor.telefono}</p>}
-            {instructor.areaEncargada && (
-              <p className={s.profileMeta}><Books size={14} /> Área: {instructor.areaEncargada}</p>
-            )}
-          </div>
-<StatCard value={fichas.length} label={fichas.length === 1 ? 'Ficha a cargo' : 'Fichas a cargo'} centered />
-        </section>
 
         <DataPanel title={`Fichas de ${instructor.name.split(' ')[0]} (${fichas.length})`} icon={<GraduationCap />}>
           {fichas.length === 0 ? (
@@ -100,7 +78,6 @@ export default function DetalleInstructor() {
           )}
         </DataPanel>
       </div>
-          {fotoViendo && <Lightbox src={fotoViendo.src} alt={fotoViendo.alt} caption={fotoViendo.alt} onClose={() => setFotoViendo(null)} />}
-</DashboardLayout>
+    </DashboardLayout>
   )
 }

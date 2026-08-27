@@ -13,7 +13,7 @@ export default function PerfilAdmin() {
         user={user}
         role="admin"
         detalles={[
-          { label: 'Documento', value: perfil?.documentoIdentidad || 'No registrado' },
+          { label: 'Rol', value: 'Administrador SENA' },
           { label: 'Permisos', value: 'Control total de la plataforma' },
         ]}
       />

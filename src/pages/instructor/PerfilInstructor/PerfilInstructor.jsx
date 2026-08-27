@@ -12,10 +12,7 @@ export default function PerfilInstructor() {
       <PerfilBase
         user={user}
         role="instructor"
-        detalles={[
-          { label: 'Área encargada', value: perfil?.areaEncargada || 'No asignada' },
-          { label: 'Documento', value: perfil?.documentoIdentidad || 'No registrado' },
-        ]}
+        detalles={[{ label: 'Rol', value: 'Instructor SENA' }]}
       />
     </DashboardLayout>
   )

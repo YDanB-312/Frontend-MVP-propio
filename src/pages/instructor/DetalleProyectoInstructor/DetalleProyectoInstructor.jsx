@@ -12,11 +12,13 @@ import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import Tag from '../../../components/Tag/Tag'
 import { instructorVeProyecto } from '../../../data/mockData'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findProjectById,
   findUserById,
+  findFichaById,
   getSimilaritiesByProject,
   getObservaciones,
   addObservacion,
@@ -25,8 +27,9 @@ import {
   displayNames,
 } from '../../../data/mockData'
 import { agruparObservaciones } from '../../../utils/helpers'
-import s from './DetalleProyectoInstructor.module.css'
-import { ArrowCounterClockwise, ChartBar, ChatCircle, CheckCircle, ClipboardText, FileText, FolderOpen, GraduationCap, ListChecks, MagnifyingGlass, X, LockKey, Plus, Target, XCircle } from 'phosphor-react'
+import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
+import local from './DetalleProyectoInstructor.module.css'
+import { ArrowCounterClockwise, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, X, LockKey, Plus, XCircle } from 'phosphor-react'
 
 const ESTADO_VARIANT = {
   pendiente: 'warning',
@@ -43,22 +46,16 @@ const ACCIONES = {
     titulo: 'Aprobar propuesta',
     verbo: 'aprobar',
     texto: 'Sí, aprobar',
-    clase: s.success,
-    icono: null,
   },
   rechazado: {
     titulo: 'Rechazar propuesta',
     verbo: 'rechazar',
     texto: 'Sí, rechazar',
-    clase: s.danger,
-    icono: null,
   },
   requiere_ajustes: {
     titulo: 'Solicitar cambios',
     verbo: 'solicitar cambios a',
     texto: 'Sí, solicitar',
-    clase: s.warning,
-    icono: null,
   },
 }
 
@@ -73,6 +70,7 @@ export default function DetalleProyectoInstructor() {
 
   const proyecto = findProjectById(id)
   const estudiante = proyecto ? findUserById(proyecto.studentId) : null
+  const ficha = proyecto ? findFichaById(proyecto.fichaId) : null
   const similitudes = proyecto ? getSimilaritiesByProject(proyecto.id) : []
   const observaciones = proyecto ? getObservaciones(proyecto.id) : []
 
@@ -131,8 +129,8 @@ export default function DetalleProyectoInstructor() {
           subtitle={`Propuesta enviada el ${proyecto.createdAt} por ${proyecto.studentName}`}
           icon={<FolderOpen />}
           breadcrumb={[
-            { label: 'Dashboard', to: '/instructor/dashboard', icon: <ChartBar size={14} /> },
-            { label: 'Revisión de Propuestas', to: '/instructor/revision-propuestas', icon: <ClipboardText size={14} /> },
+            { label: 'Dashboard', to: '/instructor/dashboard' },
+            { label: 'Revisión de Propuestas', to: '/instructor/revision-propuestas' },
             { label: proyecto.title },
           ]}
         />
@@ -143,95 +141,106 @@ export default function DetalleProyectoInstructor() {
           </div>
         )}
 
-        <div className={s.actionsBar}>
-          <Badge variant={ESTADO_VARIANT[proyecto.estado] || 'neutral'} className={s.bigBadge}>
-            {displayNames.projectStatus[proyecto.estado] || proyecto.estado}
-          </Badge>
-          {enMiCargo && (
-          <Actions form>
-            <Button
-              type="button"
-              variant="success"
-              onClick={() => setModal(ACCIONES.aprobado)}
-            >
-              <CheckCircle size={14} /> Aprobar
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              onClick={() => setModal(ACCIONES.rechazado)}
-            >
-              <XCircle size={14} /> Rechazar
-            </Button>
-            <Button
-              type="button"
-              variant="warning"
-              onClick={() => setModal(ACCIONES.requiere_ajustes)}
-            >
-              <ArrowCounterClockwise size={14} /> Solicitar Cambios
-            </Button>
-          </Actions>
-          )}
-        </div>
+        <div className={s.grid}>
+        <div className={s.col}>
+        <DataPanel
+          title="Información de la propuesta"
+          icon={<FileText />}
+          action={
+            enMiCargo ? (
+              <Actions>
+                <Button type="button" variant="success" onClick={() => setModal(ACCIONES.aprobado)}>
+                  <CheckCircle size={14} /> Aprobar
+                </Button>
+                <Button type="button" variant="danger" onClick={() => setModal(ACCIONES.rechazado)}>
+                  <XCircle size={14} /> Rechazar
+                </Button>
+                <Button type="button" variant="warning" onClick={() => setModal(ACCIONES.requiere_ajustes)}>
+                  <ArrowCounterClockwise size={14} /> Solicitar Cambios
+                </Button>
+              </Actions>
+            ) : undefined
+          }
+        >
+          <div className={s.badgeRow}>
+            <Badge variant={ESTADO_VARIANT[proyecto.estado] || 'neutral'}>
+              {displayNames.projectStatus[proyecto.estado] || proyecto.estado}
+            </Badge>
+            {proyecto.areaAplicacion && <Badge variant="info">{proyecto.areaAplicacion}</Badge>}
+          </div>
 
-        <DataPanel title="Información de la propuesta" icon={<FileText />}>
-          <p className={s.description}>{proyecto.description}</p>
-
-          <dl className={s.grid}>
-            <div className={s.cell}>
-              <dt>Área de aplicación</dt>
-              <dd>{proyecto.areaAplicacion || '—'}</dd>
+          <dl className={s.detailList}>
+            <div className={s.detailRow}>
+              <dt>Fecha de envío</dt>
+              <dd>{proyecto.createdAt}</dd>
             </div>
-            <div className={s.cell}>
+            <div className={s.detailRow}>
+              <dt>Ficha</dt>
+              <dd>
+                {ficha ? (
+                  <Link to={`/instructor/detalle-ficha/${ficha.id}`} className={s.link}>
+                    {ficha.codigo} · {ficha.nombre}
+                  </Link>
+                ) : (
+                  `#${proyecto.fichaId}`
+                )}
+              </dd>
+            </div>
+            <div className={s.detailRow}>
               <dt>Tipo de proyecto</dt>
               <dd>{proyecto.projectType === 'pagina_web' ? 'Página Web' : 'Aplicación'}</dd>
             </div>
-            <div className={s.cell}>
+            <div className={s.detailRow}>
               <dt>Integrantes</dt>
               <dd>{(proyecto.integrantes || []).join(', ') || '—'}</dd>
             </div>
           </dl>
 
-          {keywords.length > 0 && (
-            <div className={s.keywords}>
-              {keywords.map((k) => (
-                <span key={k} className={s.keyword}>
-                  {k}
-                </span>
-              ))}
-            </div>
+          <h3 className={s.subTitle}>Descripción</h3>
+          <p className={s.paragraph}>{proyecto.description}</p>
+
+          {tieneObjetivosNuevos ? (
+            <>
+              <h3 className={s.subTitle}>Objetivo general</h3>
+              <p className={s.paragraph}>{proyecto.objetivoGeneral || 'Sin definir.'}</p>
+              {objetivosEsp.length > 0 && (
+                <>
+                  <h3 className={s.subTitle}>Objetivos específicos</h3>
+                  <ol className={s.objList}>
+                    {objetivosEsp.map((o) => (
+                      <li key={o}>{o}</li>
+                    ))}
+                  </ol>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <h3 className={s.subTitle}>Objetivos</h3>
+              <pre className={s.pre}>{proyecto.objectives || 'Sin objetivos definidos.'}</pre>
+            </>
           )}
 
-          <div className={s.blocks}>
-            {tieneObjetivosNuevos ? (
-              <>
-                <div className={s.block}>
-                  <h3 className={s.blockTitle}><Target size={14} /> Objetivo general</h3>
-                  <pre className={s.pre}>{proyecto.objetivoGeneral || 'Sin definir.'}</pre>
-                </div>
-                {objetivosEsp.length > 0 && (
-                  <div className={s.block}>
-                    <h3 className={s.blockTitle}><ListChecks size={14} /> Objetivos específicos</h3>
-                    <ol className={s.objList}>
-                      {objetivosEsp.map((o) => (
-                        <li key={o}>{o}</li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className={s.block}>
-                <h3 className={s.blockTitle}><Target size={14} /> Objetivos</h3>
-                <pre className={s.pre}>{proyecto.objectives || 'Sin objetivos definidos.'}</pre>
+          {keywords.length > 0 && (
+            <>
+              <h3 className={s.subTitle}>Palabras clave</h3>
+              <div className={s.chips}>
+                {keywords.map((k) => (
+                  <Tag key={k} variant="success">
+                    {k}
+                  </Tag>
+                ))}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </DataPanel>
+        </div>
+
+        <div className={s.col}>
 
         <DataPanel title="Información del aprendiz" icon={<GraduationCap />}>
           {estudiante ? (
-            <div className={s.studentCard}>
+            <div className={s.personCard}>
               {estudiante.fotoPerfil ? (
                 <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: estudiante.fotoPerfil, alt: estudiante.name })}>
                   <Avatar name={estudiante.name} src={estudiante.fotoPerfil} size="md" />
@@ -239,9 +248,9 @@ export default function DetalleProyectoInstructor() {
               ) : (
                 <Avatar name={estudiante.name} size="md" />
               )}
-              <div className={s.studentInfo}>
-                <span className={s.studentName}>{estudiante.name}</span>
-                <span className={s.studentEmail}>{estudiante.email}</span>
+              <div className={s.personInfo}>
+                <span className={s.personName}>{estudiante.name}</span>
+                <span className={s.personEmail}>{estudiante.email}</span>
               </div>
               <Button
                 as="link"
@@ -314,6 +323,8 @@ export default function DetalleProyectoInstructor() {
           </form>
         </DataPanel>
         )}
+        </div>
+        </div>
       </div>
 
       <ConfirmModal

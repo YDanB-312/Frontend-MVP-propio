@@ -2,9 +2,6 @@
   min-height: 100vh;
 }
 
-/* ========================================
-   HERO — tesis de la página
-   ======================================== */
 .hero {
   position: relative;
   overflow: hidden;
@@ -130,51 +127,6 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ========================================
-   BUTTONS
-   ======================================== */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-6);
-  border-radius: var(--r-full);
-  border: 1px solid transparent;
-  font-family: var(--font);
-  font-size: var(--text-base);
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-normal) var(--ease-out),
-    background var(--dur-normal) var(--ease-out);
-}
-
-.btnPrimary {
-  background: var(--grad-primary);
-  color: var(--c-on-primary);
-  box-shadow: var(--sh-md);
-}
-
-.btnPrimary:hover {
-  box-shadow: var(--sh-lg);
-}
-
-.btnSecondary {
-  background: var(--c-surface);
-  color: var(--c-text);
-  border-color: var(--c-border);
-  box-shadow: var(--sh-xs);
-}
-
-.btnSecondary:hover {
-  border-color: var(--c-primary);
-  color: var(--c-primary);
-}
-
-/* ========================================
-   SECTIONS — shared
-   ======================================== */
 .section {
   padding: var(--sp-20) var(--sp-4);
 }
@@ -222,9 +174,6 @@
   line-height: var(--leading-relaxed);
 }
 
-/* ========================================
-   FEATURES — cards
-   ======================================== */
 .grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -275,9 +224,6 @@
   color: var(--c-text-2);
 }
 
-/* ========================================
-   STEPS — pasos conectados
-   ======================================== */
 .steps {
   display: grid;
   grid-template-columns: 1fr;
@@ -331,9 +277,6 @@
   color: var(--c-text-2);
 }
 
-/* ========================================
-   CTA FINAL — mínimo
-   ======================================== */
 .ctaSection {
   padding: var(--sp-20) var(--sp-4);
   text-align: center;
@@ -357,9 +300,6 @@
   color: var(--c-text);
 }
 
-/* ========================================
-   RESPONSIVE
-   ======================================== */
 @media (min-width: 768px) {
   .hero {
     padding-top: var(--sp-32);

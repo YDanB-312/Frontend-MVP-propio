@@ -16,7 +16,7 @@ export default function PaginaNoEncontrada() {
           <p className={s.message}>
             Lo sentimos, la página que buscas no existe o fue movida. Verifica la dirección o vuelve al inicio.
           </p>
-          <Actions align="center" wrap>
+          <Actions align="center" wrap className={s.actions}>
             <Button as="link" to="/">
               Volver al inicio
             </Button>
