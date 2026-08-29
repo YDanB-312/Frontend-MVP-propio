@@ -22,7 +22,7 @@ import {
   displayNames,
 } from '../../../data/mockData'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
-import { ArrowRight, Books, ChartBar, CheckCircle, Code, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
+import { ArrowRight, Books, ChartBar, CheckCircle, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
 
 export default function DetalleFichaInstructor() {
   const { id } = useParams()

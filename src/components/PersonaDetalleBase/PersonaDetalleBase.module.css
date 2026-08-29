@@ -1,0 +1,108 @@
+/* ═══════════════════════════════════════════════
+   PersonaDetalleBase.module.css — shared CSS for
+   "persona" detail pages (companero / instructor)
+   that show a PerfilBase + a list of entities
+   (projects, fichas) inside a DataPanel.
+   ═══════════════════════════════════════════════ */
+
+/* ── Page wrapper ── */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+/* ── Empty / info text ── */
+.muted {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text-3);
+}
+
+/* ── Generic entity list ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── Generic row ── */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border-2);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease;
+}
+
+/* ── Row body (left side) ── */
+.rowInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-0_5);
+  min-width: 0;
+}
+
+.rowTitle {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--text-xs);
+  color: var(--c-text-3);
+}
+
+/* ── Row actions (right side) ── */
+.rowSide {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+/* ── Small code badge inside a row ── */
+.rowCodigo {
+  align-self: flex-start;
+  padding: var(--sp-0_5) var(--sp-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--c-primary-strong);
+  font-family: var(--mono);
+}
+
+/* ── Chevron affordance ── */
+.chevron {
+  font-size: var(--text-xl);
+  color: var(--c-text-3);
+}
+
+/* ── Hover feedback ── */
+.row:hover {
+  border-color: var(--c-primary);
+  background: var(--c-success-bg);
+}
+
+.row:hover .rowTitle {
+  color: var(--c-primary);
+}

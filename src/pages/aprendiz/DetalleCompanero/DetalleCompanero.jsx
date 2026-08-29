@@ -6,7 +6,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import { useAuth } from '../../../contexts/AuthContext'
 import { findUserById, findFichaById, getProjectsByStudent, displayNames } from '../../../data/mockData'
-import s from './DetalleCompanero.module.css'
+import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import { CalendarBlank, FolderOpen, Info, MagnifyingGlass } from 'phosphor-react'
 
 const ESTADO_VARIANT = {
@@ -78,13 +78,13 @@ export default function DetalleCompanero() {
             {proyectos.length === 0 ? (
               <p className={s.muted}>Este aprendiz aún no ha registrado propuestas.</p>
             ) : (
-              <ul className={s.projectList}>
+              <ul className={s.list}>
                 {proyectos.map((p) => (
                   <li key={p.id}>
-                    <Link to={`${base}/detalle-proyecto/${p.id}`} className={s.projectRow}>
-                      <span className={s.projectInfo}>
-                        <span className={s.projectTitle}>{p.title}</span>
-                        <span className={s.projectMeta}><CalendarBlank size={14} /> {p.createdAt}</span>
+                    <Link to={`${base}/detalle-proyecto/${p.id}`} className={s.row}>
+                      <span className={s.rowInfo}>
+                        <span className={s.rowTitle}>{p.title}</span>
+                        <span className={s.rowMeta}><CalendarBlank size={14} /> {p.createdAt}</span>
                       </span>
                       <Badge variant={ESTADO_VARIANT[p.estado] || 'neutral'}>
                         {displayNames.projectStatus[p.estado] || p.estado}

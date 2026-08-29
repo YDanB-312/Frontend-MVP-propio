@@ -14,7 +14,6 @@ import { CalendarBlank, FolderOpen, GraduationCap, MagnifyingGlass, Plus, Tray }
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   getProjectsByStudent,
-  getAllSimilarities,
   getSimilitudesValidas,
   getEstudiantesDeFicha,
   findFichaById,
@@ -88,7 +87,7 @@ export default function Propuestas() {
   const perfil = findUserById(user.id)
   const miFicha = useMemo(
     () => (perfil?.fichaId ? findFichaById(perfil.fichaId) : null),
-    [perfil?.fichaId]
+    [perfil]
   )
 
   const [form, setForm] = useState({
@@ -108,7 +107,7 @@ export default function Propuestas() {
       perfil?.fichaId
         ? getEstudiantesDeFicha(Number(perfil.fichaId)).filter((c) => c.id !== user.id)
         : [],
-    [perfil?.fichaId, user.id]
+    [perfil, user.id]
   )
 
   function alternarCompanero(id) {

@@ -16,7 +16,6 @@ import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { ArrowClockwise, Books, CheckCircle, Eye, Plus, Trash } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
-  getAllFichas,
   getFichasDelInstructor,
   createFicha,
   generarCodigoFicha,

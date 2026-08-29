@@ -13,10 +13,8 @@ import Avatar from '../../../components/Avatar/Avatar'
 import Alert from '../../../components/Alert/Alert'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
-  getProjectsByInstructor,
   getAllProjects,
   getAllFichas,
-  getAllSimilarities,
   getSimilitudesValidas,
   findUserById,
   findFichaById,

@@ -1,42 +1,5 @@
 import { test, expect, login } from './helpers'
-
-const RUTAS_POR_ROL = {
-  aprendiz: [
-    '/aprendiz/dashboard',
-    '/aprendiz/propuestas',
-    '/aprendiz/ficha',
-    '/aprendiz/similitudes',
-    '/aprendiz/alertas',
-    '/aprendiz/reportar-falla',
-    '/aprendiz/perfil',
-    '/aprendiz/detalle-proyecto/4',
-    '/aprendiz/detalle-proyecto/1',
-    '/aprendiz/detalle-ficha/1',
-    '/aprendiz/detalle-similitud/1',
-    '/aprendiz/perfil-companero/5',
-  ],
-  instructor: [
-    '/instructor/dashboard',
-    '/instructor/revision-propuestas',
-    '/instructor/similitudes',
-    '/instructor/fichas',
-    '/instructor/detalle-ficha/1',
-    '/instructor/directorio-ficha/1',
-    '/instructor/detalle-proyecto/4',
-    '/instructor/alertas',
-    '/instructor/reportar-falla',
-    '/instructor/perfil',
-  ],
-  admin: [
-    '/admin/dashboard',
-    '/admin/usuarios',
-    '/admin/proyectos',
-    '/admin/similitudes',
-    '/admin/reportes-fallas',
-    '/admin/notificaciones',
-    '/admin/perfil',
-  ],
-}
+import { RUTAS_POR_ROL } from './rutas'
 
 for (const [role, rutas] of Object.entries(RUTAS_POR_ROL)) {
   test.describe(`Cobertura: ${role}`, () => {

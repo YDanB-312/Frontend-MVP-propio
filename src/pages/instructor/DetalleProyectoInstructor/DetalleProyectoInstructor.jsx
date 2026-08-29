@@ -28,7 +28,6 @@ import {
 } from '../../../data/mockData'
 import { agruparObservaciones } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
-import local from './DetalleProyectoInstructor.module.css'
 import { ArrowCounterClockwise, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, X, LockKey, Plus, XCircle } from 'phosphor-react'
 
 const ESTADO_VARIANT = {

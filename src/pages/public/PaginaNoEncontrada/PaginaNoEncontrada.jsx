@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'

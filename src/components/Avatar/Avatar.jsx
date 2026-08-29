@@ -3,8 +3,8 @@ import s from './Avatar.module.css'
 const SIZES = { sm: s.sm, md: s.md, lg: s.lg, xl: s.xl }
 
 const PALETTE = [
-  '#39a900', '#0e7490', '#d97706', '#dc2626', '#7c3aed',
-  '#1b89a8', '#db2777', '#57ad1e', '#ea580c', '#4f46e5',
+  '#2a7c00', '#0b5d75', '#b45309', '#b91c1c', '#6d28d9',
+  '#0e7490', '#be185d', '#3f7d0d', '#c2410c', '#4338ca',
 ]
 
 function hashName(name) {

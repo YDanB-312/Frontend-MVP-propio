@@ -1,0 +1,18 @@
+{
+  "name": "ProyecTwin - SENA",
+  "short_name": "ProyecTwin",
+  "description": "Plataforma de análisis de similitud para proyectos formativos de aprendices del SENA.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#002855",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/images/Logo-ProyecTwin.png",
+      "sizes": "656x380",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

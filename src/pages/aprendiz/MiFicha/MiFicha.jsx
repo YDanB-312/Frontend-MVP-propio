@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import {
-  CheckCircle, GraduationCap, Key, MagnifyingGlass, SignOut, ThumbsUp, Users, Warning,
+  GraduationCap, Key, MagnifyingGlass, SignOut, ThumbsUp, Users, Warning,
 } from 'phosphor-react'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import Badge from '../../../components/Badge/Badge'
@@ -11,7 +11,6 @@ import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import Button from '../../../components/Button/Button'
 import Actions from '../../../components/Actions/Actions'
-import { Input } from '../../../components/Input/Input'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findUserById,

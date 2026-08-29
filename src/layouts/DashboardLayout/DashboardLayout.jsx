@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import {
-  House, FolderOpen, PlusCircle, Bell, Bug, UserCircle,
+  House, FolderOpen, Bell, Bug, UserCircle,
   ClipboardText, BookOpen, UsersThree, MagnifyingGlass, GraduationCap
 } from 'phosphor-react'
 import { getUnreadCount } from '../../data/mockData'

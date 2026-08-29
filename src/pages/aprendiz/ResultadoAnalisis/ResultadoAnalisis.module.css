@@ -1,4 +1,4 @@
-.wrapper {
+﻿.wrapper {
   display: flex;
   flex-direction: column;
   gap: var(--sp-6);
@@ -308,7 +308,7 @@
 }
 
 .matchPctMid {
-  color: var(--amber-600, var(--c-warning));
+  color: var(--c-warning-text);
 }
 
 .matchPctLow {
@@ -345,7 +345,7 @@
 }
 
 .recoItem::before {
-  content: '✓';
+  content: 'âœ“';
   position: absolute;
   left: 0;
   top: 2px;

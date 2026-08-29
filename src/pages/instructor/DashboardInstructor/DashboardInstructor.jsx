@@ -8,7 +8,7 @@ import QuickActions from '../../../components/QuickActions/QuickActions'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
-import { getProjectsByInstructor, getAllFichas, getPendingProjects, getUnreadCount, getAllSimilarities, getSimilitudesValidas, displayNames } from '../../../data/mockData'
+import { getProjectsByInstructor, getAllFichas, getPendingProjects, getUnreadCount, getSimilitudesValidas, displayNames } from '../../../data/mockData'
 import s from '../../../components/Dashboard/Dashboard.module.css'
 
 const ESTADO_VARIANT = { pendiente: 'warning', en_revision: 'info', aprobado: 'success', rechazado: 'danger', requiere_ajustes: 'warning' }

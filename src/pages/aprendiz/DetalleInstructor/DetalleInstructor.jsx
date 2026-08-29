@@ -6,7 +6,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import { useAuth } from '../../../contexts/AuthContext'
 import { findUserById, findFichaById, getAllFichas } from '../../../data/mockData'
-import s from './DetalleInstructor.module.css'
+import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import { CaretRight, GraduationCap, MagnifyingGlass } from 'phosphor-react'
 
 export default function DetalleInstructor() {
@@ -56,15 +56,15 @@ export default function DetalleInstructor() {
           {fichas.length === 0 ? (
             <p className={s.muted}>Este instructor no tiene fichas asignadas actualmente.</p>
           ) : (
-            <ul className={s.fichaList}>
+            <ul className={s.list}>
               {fichas.map((f) => (
                 <li key={f.id}>
-                  <Link to={`/aprendiz/detalle-ficha/${f.id}`} className={s.fichaRow}>
-                    <span className={s.fichaInfo}>
-                      <span className={s.fichaNombre}>{f.nombre}</span>
-                      <span className={`${s.fichaCodigo} ${s.mono}`}>{f.codigo}</span>
+                  <Link to={`/aprendiz/detalle-ficha/${f.id}`} className={s.row}>
+                    <span className={s.rowInfo}>
+                      <span className={s.rowTitle}>{f.nombre}</span>
+                      <span className={s.rowCodigo}>{f.codigo}</span>
                     </span>
-                    <span className={s.fichaSide}>
+                    <span className={s.rowSide}>
                       <Badge variant="info">{f.programa}</Badge>
                       <Badge variant={f.estado === 'activo' ? 'success' : 'danger'}>
                         {f.estado === 'activo' ? 'Activa' : 'Inactiva'}

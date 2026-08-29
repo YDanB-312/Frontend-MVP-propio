@@ -267,6 +267,7 @@ export default function PerfilBase({
                     type="file"
                     accept="image/*"
                     className={s.fotoInput}
+                    aria-label="Cambiar foto de perfil"
                     onChange={alElegirFoto}
                     disabled={subiendoFoto}
                   />

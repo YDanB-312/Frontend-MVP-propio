@@ -18,7 +18,8 @@ import {
   setUserActive,
   displayNames,
 } from '../../../data/mockData'
-import s from './DetalleUsuario.module.css'
+import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
+import local from './DetalleUsuario.module.css'
 
 const ESTADO_VARIANT = {
   pendiente: 'warning',
@@ -52,7 +53,7 @@ export default function DetalleUsuario() {
   if (!usuario) {
     return (
       <DashboardLayout role="admin" titulo="Detalle de Usuario">
-        <div className={s.page}>
+        <div className={local.page}>
           <EmptyState
             icon={<MagnifyingGlass />}
             title="Usuario no encontrado"
@@ -90,18 +91,18 @@ export default function DetalleUsuario() {
         />
 
         <DataPanel title="Perfil del usuario" icon={<IdentificationCard />}>
-          <div className={s.profile}>
+          <div className={local.profile}>
             {usuario.fotoPerfil ? (
-              <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: usuario.fotoPerfil, alt: usuario.name })}>
+              <button type="button" className={local.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: usuario.fotoPerfil, alt: usuario.name })}>
                 <Avatar name={usuario.name} src={usuario.fotoPerfil} size="lg" />
               </button>
             ) : (
               <Avatar name={usuario.name} size="lg" />
             )}
-            <div className={s.profileInfo}>
-              <h2 className={s.name}>{usuario.name}</h2>
-              <p className={s.email}>{usuario.email}</p>
-              <div className={s.tags}>
+            <div className={local.profileInfo}>
+              <h2 className={local.name}>{usuario.name}</h2>
+              <p className={local.email}>{usuario.email}</p>
+              <div className={local.tags}>
                 <Badge variant={ROL_VARIANT[usuario.role] || 'primary'}>{displayNames.userRole[usuario.role] || usuario.role}</Badge>
                 {activo ? <Badge variant="success">Activo</Badge> : <Badge variant="danger">Inactivo</Badge>}
               </div>
@@ -113,8 +114,8 @@ export default function DetalleUsuario() {
                 {activo ? <><Pause size={14} /> Desactivar cuenta</> : <><Play size={14} /> Activar cuenta</>}
               </Button>
             </div>
-            <dl className={s.details}>
-              <div className={s.detail}>
+            <dl className={local.details}>
+              <div className={local.detail}>
                 <dt>Ficha</dt>
                 <dd>{ficha ? `${ficha.codigo} — ${ficha.nombre}` : 'Sin ficha'}</dd>
               </div>
@@ -137,15 +138,15 @@ export default function DetalleUsuario() {
                 message="Este aprendiz aún no ha registrado ninguna propuesta."
               />
             ) : (
-              <ul className={s.projectList}>
+              <ul className={s.list}>
                 {proyectos.map((p) => {
                   const info = similitudInfo(similitudes, p.id)
                   return (
                     <li key={p.id}>
-                      <Link to={`/admin/detalle-proyecto/${p.id}`} className={s.projectRow}>
-                        <span className={s.projectInfo}>
-                          <span className={s.projectTitle}>{p.title}</span>
-                          <span className={s.projectMeta}>Enviado el {p.createdAt}</span>
+                      <Link to={`/admin/detalle-proyecto/${p.id}`} className={s.row}>
+                        <span className={s.rowInfo}>
+                          <span className={s.rowTitle}>{p.title}</span>
+                          <span className={s.rowMeta}>Enviado el {p.createdAt}</span>
                         </span>
                         {info && (
                           <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>

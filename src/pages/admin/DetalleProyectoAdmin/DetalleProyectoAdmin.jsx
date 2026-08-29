@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, ChartBar, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, ListChecks, MagnifyingGlass, Plus, Target, Trash, XCircle } from 'phosphor-react'
+import { ArrowRight, ChartBar, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, ListChecks, MagnifyingGlass, Plus, Target, Trash, X, XCircle } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'

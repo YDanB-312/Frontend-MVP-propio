@@ -1,4 +1,4 @@
-.wrapper{display:flex;flex-direction:column;gap:var(--sp-5)}
+﻿.wrapper{display:flex;flex-direction:column;gap:var(--sp-5)}
 .score{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-6);background:var(--c-surface);border-left:5px solid transparent;border-radius:var(--r-md);box-shadow:var(--sh-card)}
 .score.high{border-left-color:var(--c-danger)}
 .score.mid{border-left-color:var(--amber-500,var(--c-warning))}
@@ -29,10 +29,25 @@
 .otrasMeta{display:inline-flex;align-items:center;gap:var(--sp-1);font-size:var(--text-xs);color:var(--c-text-3)}
 .otrasPct{flex:0 0 auto;font-family:var(--mono);font-size:var(--text-sm);font-weight:800;font-variant-numeric:tabular-nums}
 .pctHigh{color:var(--c-danger)}
-.pctMid{color:var(--amber-600,var(--c-warning))}
+.pctMid{color:var(--c-warning-text)}
 .pctLow{color:var(--c-success)}
 .otrasChevron{flex:0 0 auto;color:var(--c-text-3)}
 .backRow{display:flex;justify-content:flex-start}
 .backLink{display:inline-flex;align-items:center;gap:var(--sp-1_5);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-md);font-size:var(--text-sm);font-weight:600;color:var(--c-text-2);text-decoration:none;transition:all var(--dur-fast) var(--ease-out)}
 .backLink:hover{background:var(--c-surface-alt);color:var(--c-text)}
 @media(max-width:768px){.grid{grid-template-columns:1fr}.scoreHead{gap:var(--sp-3)}}
+
+/* Shared hint text (actions / estado panels) */
+.hint{margin:0;font-size:var(--text-sm);line-height:var(--leading-relaxed);color:var(--c-text-2);margin-bottom:var(--sp-4)}
+
+/* Observations flat list (aprendiz + admin detail pages) */
+.obsForm{display:flex;flex-direction:column;gap:var(--sp-3);margin-bottom:var(--sp-5)}
+.obsControls{display:flex;flex-direction:column;gap:var(--sp-3)}
+.obsForm .btn{align-self:flex-start}
+.obsList{display:flex;flex-direction:column;gap:var(--sp-3);margin:0;padding:0;list-style:none}
+.obsItem{background:var(--c-surface-alt);border:1px solid var(--c-border-2);border-left:3px solid var(--c-primary);border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-4)}
+.obsHead,.obsHeader{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-1)}
+.obsTag{flex-shrink:0}
+.obsAutor{font-size:var(--text-sm);font-weight:700;color:var(--c-text)}
+.obsFecha{margin-left:auto;font-size:var(--text-xs);color:var(--c-text-3)}
+.obsTexto{margin:0;font-size:var(--text-sm);line-height:var(--leading-relaxed);color:var(--c-text-2)}

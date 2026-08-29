@@ -10,7 +10,6 @@ import {
   getNotificationsByUser,
   markNotificationAsRead,
   markAllNotificationsAsRead,
-  displayNames,
 } from '../../data/mockData'
 import s from './AlertasBase.module.css'
 
@@ -22,7 +21,7 @@ const TIPO_CONFIG = {
   sistema: { icon: <GearSix size={18} />, label: 'Sistema', variant: 'primary' },
 }
 
-export default function AlertasBase({ role, titulo, subtitle, detallePath, emptyActionLabel, emptyActionTo }) {
+export default function AlertasBase({ titulo, subtitle, detallePath, emptyActionLabel, emptyActionTo }) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [, setTick] = useState(0)

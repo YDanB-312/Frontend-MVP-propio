@@ -7,7 +7,7 @@ import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
-import { findProjectById, findSimilarityById, getAllSimilarities, getSimilitudesValidas, displayNames } from '../../../data/mockData'
+import { findProjectById, findSimilarityById, getSimilitudesValidas, displayNames } from '../../../data/mockData'
 import s from './ResultadoAnalisis.module.css'
 
 const CIRCUNFERENCIA = 2 * Math.PI * 54

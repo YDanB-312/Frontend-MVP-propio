@@ -7,7 +7,7 @@ import DataPanel from '../../../components/DataPanel/DataPanel'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import { findSimilarityById, updateSimilarityEstado } from '../../../data/mockData'
-import s from './DetalleSimilitudInstructor.module.css'
+import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
 
 export default function DetalleSimilitudInstructor() {
   const { id } = useParams()

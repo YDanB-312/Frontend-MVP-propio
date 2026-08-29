@@ -7,7 +7,7 @@ import Badge from '../Badge/Badge'
 import Tag from '../Tag/Tag'
 import EmptyState from '../EmptyState/EmptyState'
 import { useAuth } from '../../contexts/AuthContext'
-import { findProjectById, getAllSimilarities, getSimilitudesValidas, getFichasDelInstructor, displayNames } from '../../data/mockData'
+import { findProjectById, getSimilitudesValidas, getFichasDelInstructor, displayNames } from '../../data/mockData'
 import s from './DetalleSimilitudBase.module.css'
 
 const SIM_VARIANT = { pendiente: 'warning', revisada: 'info', resuelta: 'success' }
@@ -32,6 +32,12 @@ export default function DetalleSimilitudBase({
 }) {
   const navigate = useNavigate()
   const ruta = RUTA_POR_ROL[role] || RUTA_POR_ROL.aprendiz
+  const { user } = useAuth()
+  const esInstructor = role === 'instructor'
+  const misFichasIds = useMemo(() => {
+    if (!esInstructor || !user?.id) return null
+    return new Set(getFichasDelInstructor(Number(user.id)).map((f) => f.id))
+  }, [esInstructor, user.id])
 
   const proyecto1 = useMemo(() => (similitud ? findProjectById(similitud.projectId1) : null), [similitud])
   const proyecto2 = useMemo(() => (similitud ? findProjectById(similitud.projectId2) : null), [similitud])
@@ -78,13 +84,6 @@ export default function DetalleSimilitudBase({
   ]
 
   // El botón "Ver proyecto" solo para propuestas de fichas a cargo del instructor
-  const { user } = useAuth()
-  const esInstructor = role === 'instructor'
-  const misFichasIds = useMemo(() => {
-    if (!esInstructor || !user?.id) return null
-    return new Set(getFichasDelInstructor(Number(user.id)).map((f) => f.id))
-  }, [esInstructor, user?.id])
-
   function puedeVerProyecto(pid) {
     if (!esInstructor || !misFichasIds) return true
     return misFichasIds.has(Number(pid))

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import Avatar from '../../../components/Avatar/Avatar'
@@ -9,7 +9,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { findFichaById, getEstudiantesDeFicha, instructorVeFicha } from '../../../data/mockData'
 import s from './DirectorioFichaInstructor.module.css'
-import { ArrowRight, Books, ChartBar, MagnifyingGlass, Users } from 'phosphor-react'
+import { ArrowRight, Books, ChartBar, LockKey, MagnifyingGlass, Users } from 'phosphor-react'
 
 export default function DirectorioFichaInstructor() {
   const { id } = useParams()

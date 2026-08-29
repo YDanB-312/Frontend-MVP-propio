@@ -1,4 +1,4 @@
-.pct {
+﻿.pct {
   display: block;
   font-family: var(--mono);
   font-size: var(--text-sm);
@@ -7,7 +7,7 @@
 }
 
 .pctHigh { color: var(--c-danger); }
-.pctMid { color: var(--c-warning); }
+.pctMid { color: var(--c-warning-text); }
 .pctLow { color: var(--c-info); }
 
 .barTrack {

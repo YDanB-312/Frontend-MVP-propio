@@ -24,11 +24,11 @@
 .dangerGhost{background:transparent;color:var(--c-danger);border:1px solid var(--c-danger)}
 .dangerGhost:hover{background:var(--c-danger-bg)}
 
-.success{background:var(--c-success);color:#fff}
+.success{background:var(--c-success);color:var(--c-on-success)}
 .success:hover{background:var(--c-success-hover)}
 
 .warning{background:var(--c-warning);color:#000}
 .warning:hover{background:var(--c-warning-hover)}
 
-.info{background:var(--c-info);color:#fff}
+.info{background:var(--c-info);color:var(--c-on-info)}
 .info:hover{background:var(--c-info-hover)}

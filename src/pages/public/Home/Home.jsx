@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { Brain, FolderOpen, ChartBar, CheckCircle } from 'phosphor-react'
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
 import Button from '../../../components/Button/Button'

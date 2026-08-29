@@ -14,7 +14,6 @@ import { useAuth } from '../../../contexts/AuthContext'
 import {
   findProjectById,
   findFichaById,
-  getAllSimilarities,
   getSimilitudesValidas,
   getObservaciones,
   addObservacion,

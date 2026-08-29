@@ -1,4 +1,4 @@
-/* ── Shared layout for DetalleProyecto ×3 (aprendiz · instructor · admin) ── */
+﻿/* â”€â”€ Shared layout for DetalleProyecto Ã—3 (aprendiz Â· instructor Â· admin) â”€â”€ */
 
 /* Page wrapper */
 .page {
@@ -134,7 +134,7 @@
   color: var(--c-text-3);
 }
 
-/* ── Similarity list (instructor + admin) ── */
+/* â”€â”€ Similarity list (instructor + admin) â”€â”€ */
 .simList {
   display: flex;
   flex-direction: column;
@@ -185,10 +185,10 @@
 }
 
 .pctHigh { color: var(--c-danger); }
-.pctMid { color: var(--c-warning); }
+.pctMid { color: var(--c-warning-text); }
 .pctLow { color: var(--c-info); }
 
-/* ── Person/Student card (instructor + admin) ── */
+/* â”€â”€ Person/Student card (instructor + admin) â”€â”€ */
 .personCard {
   display: flex;
   align-items: center;
@@ -229,7 +229,7 @@
   transform: scale(1.03);
 }
 
-/* ── Response chip (instructor + admin) ── */
+/* â”€â”€ Response chip (instructor + admin) â”€â”€ */
 .respondiendoChip {
   display: inline-flex;
   align-items: center;
@@ -260,14 +260,14 @@
   background: var(--c-chip-hover);
 }
 
-/* ── Observation form ── */
+/* â”€â”€ Observation form â”€â”€ */
 .obsForm {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
 }
 
-/* ── Admin info grid (cell-based metadata) ── */
+/* â”€â”€ Admin info grid (cell-based metadata) â”€â”€ */
 .infoGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -295,7 +295,7 @@
   color: var(--c-text);
 }
 
-/* ── Admin description text ── */
+/* â”€â”€ Admin description text â”€â”€ */
 .description {
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
@@ -303,7 +303,7 @@
   margin-bottom: var(--sp-5);
 }
 
-/* ── Admin actions bar ── */
+/* â”€â”€ Admin actions bar â”€â”€ */
 .actionsBar {
   display: flex;
   flex-direction: column;
@@ -320,7 +320,7 @@
   align-self: flex-start;
 }
 
-/* ── Admin objective blocks ── */
+/* â”€â”€ Admin objective blocks â”€â”€ */
 .blocks {
   display: grid;
   grid-template-columns: 1fr;
@@ -333,7 +333,7 @@
   margin-bottom: var(--sp-2);
 }
 
-/* ── Responsive breakpoints ── */
+/* â”€â”€ Responsive breakpoints â”€â”€ */
 @media (min-width: 768px) {
   .actionsBar {
     flex-direction: row;

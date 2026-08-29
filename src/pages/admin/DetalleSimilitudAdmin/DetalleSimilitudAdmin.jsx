@@ -16,7 +16,7 @@ import {
   getObservaciones,
   addObservacion,
 } from '../../../data/mockData'
-import s from './DetalleSimilitudAdmin.module.css'
+import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
 
 export default function DetalleSimilitudAdmin() {
   const { id } = useParams()

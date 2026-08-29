@@ -5,7 +5,7 @@ import DetalleSimilitudBase from '../../../components/DetalleSimilitudBase/Detal
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import { useAuth } from '../../../contexts/AuthContext'
 import { findSimilarityById, findProjectById, getObservaciones } from '../../../data/mockData'
-import s from './DetalleSimilitud.module.css'
+import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
 
 export default function DetalleSimilitud() {
   const { id } = useParams()

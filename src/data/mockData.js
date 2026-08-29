@@ -258,11 +258,6 @@ function guardar() {
 
 state = cargar()
 
-function resetMockData() {
-  state = JSON.parse(JSON.stringify(ESTADO_INICIAL))
-  guardar()
-}
-
 // ---------------------------------------------------------------- Usuarios
 export function getAllUsers() {
   return state.users
