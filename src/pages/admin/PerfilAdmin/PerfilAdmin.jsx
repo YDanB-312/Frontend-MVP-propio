@@ -10,10 +10,7 @@ export default function PerfilAdmin() {
       <PerfilBase
         user={user}
         role="admin"
-        detalles={[
-          { label: 'Rol', value: 'Administrador SENA' },
-          { label: 'Permisos', value: 'Control total de la plataforma' },
-        ]}
+        detalles={[{ label: 'Rol', value: 'Administrador SENA' }]}
       />
     </DashboardLayout>
   )

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   House, FolderOpen, Bell, Bug, UserCircle,
-  ClipboardText, BookOpen, UsersThree, MagnifyingGlass, GraduationCap
+  ClipboardText, BookOpen, UsersThree, MagnifyingGlass, GraduationCap, ShareNetwork
 } from 'phosphor-react'
 import { getUnreadCount } from '../../data/mockData'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
@@ -33,6 +33,7 @@ const LINKS = {
   admin: [
     { to: '/admin/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
     { to: '/admin/usuarios', icon: <UsersThree size={20} weight="regular" />, label: 'Usuarios' },
+    { to: '/admin/redes-conocimiento', icon: <ShareNetwork size={20} weight="regular" />, label: 'Redes de Conocimiento' },
     { to: '/admin/proyectos', icon: <FolderOpen size={20} weight="regular" />, label: 'Proyectos' },
     { to: '/admin/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes' },
     { to: '/admin/reportes-fallas', icon: <Bug size={20} weight="regular" />, label: 'Reportes de Fallas' },

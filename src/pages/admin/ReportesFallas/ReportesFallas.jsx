@@ -22,10 +22,21 @@ const ESTADO_VARIANT = {
   rechazado: 'danger',
 }
 
+const PRIORIDAD_META = {
+  baja: { label: 'Baja', variant: 'neutral' },
+  media: { label: 'Media', variant: 'warning' },
+  alta: { label: 'Alta', variant: 'danger' },
+  critica: { label: 'Crítica', variant: 'danger' },
+}
+
 const PRIORIDAD_POR_TIPO = {
   sistema: { label: 'Alta', variant: 'danger' },
   proyecto: { label: 'Media', variant: 'warning' },
   datos: { label: 'Media', variant: 'warning' },
+  bug_ui: { label: 'Media', variant: 'warning' },
+  error_datos: { label: 'Alta', variant: 'danger' },
+  rendimiento: { label: 'Alta', variant: 'danger' },
+  seguridad: { label: 'Crítica', variant: 'danger' },
   otro: { label: 'Baja', variant: 'neutral' },
 }
 
@@ -102,7 +113,7 @@ export default function ReportesFallas() {
                 </thead>
                 <tbody>
                   {paginados.map((r) => {
-                    const prioridad = PRIORIDAD_POR_TIPO[r.tipo] || PRIORIDAD_POR_TIPO.otro
+                    const prioridad = (r.prioridad && PRIORIDAD_META[r.prioridad]) || PRIORIDAD_POR_TIPO[r.tipo] || PRIORIDAD_META.media
                     return (
                       <tr key={r.id}>
                         <td>

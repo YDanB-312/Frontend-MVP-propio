@@ -13,14 +13,15 @@ import Actions from '../../../components/Actions/Actions'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { ArrowClockwise, Books, CheckCircle, Eye, Plus, Trash } from 'phosphor-react'
+import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   getFichasDelInstructor,
   createFicha,
-  generarCodigoFicha,
+  generarCodigoFichaUnico,
   deleteFicha,
   getEstudiantesDeFicha,
+  getProjectsByFicha,
   REDES,
   displayNames,
 } from '../../../data/mockData'
@@ -86,7 +87,7 @@ export default function Fichas() {
   }
 
   /* ---------- Creación ---------- */
-  const [codigo, setCodigo] = useState(() => generarCodigoFicha())
+  const [codigo, setCodigo] = useState(() => generarCodigoFichaUnico())
   const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', descripcion: '' })
   const [errores, setErrores] = useState({})
 
@@ -102,7 +103,7 @@ export default function Fichas() {
     setErrores((err) => ({ ...err, red: undefined, programa: undefined }))
   }
 
-  const regenerarCodigo = () => setCodigo(generarCodigoFicha())
+  const regenerarCodigo = () => setCodigo(generarCodigoFichaUnico())
 
   const validar = () => {
     const err = {}
@@ -133,10 +134,11 @@ export default function Fichas() {
       programa: form.programa,
       instructorName: user?.nombre || '',
       instructorId: Number(user?.id) || null,
+      codigo,
     })
     setForm({ red: '', programa: '', nombre: '', numero: '', descripcion: '' })
     setErrores({})
-    setCodigo(generarCodigoFicha())
+    setCodigo(generarCodigoFichaUnico())
     setCreando(false)
     refrescar()
     mostrarCreada()
@@ -153,6 +155,16 @@ export default function Fichas() {
               : 'Consulta las fichas de formación, revisa sus aprendices y administra su información.'
           }
           icon={creando ? <Plus /> : <Books />}
+          breadcrumb={
+            creando
+              ? [
+                  { label: 'Dashboard', to: '/instructor/dashboard', icon: <ChartBar size={14} /> },
+                  { label: 'Fichas', icon: <Books size={14} />, onClick: () => setCreando(false) },
+                  { label: 'Nueva ficha' },
+                ]
+              : []
+          }
+          onBack={creando ? () => setCreando(false) : undefined}
           actions={
             !creando ? (
               <Button type="button" onClick={abrirCreacion}>
@@ -327,7 +339,7 @@ export default function Fichas() {
                               <span className={s.count}>{estudiantes || f.aprendices}</span>
                             </td>
                             <td data-label="Propuestas">
-                              <span className={s.count}>{f.proyectos}</span>
+                              <span className={s.count}>{getProjectsByFicha(f.id).length}</span>
                             </td>
                             <td data-label="Estado">
                               <Badge variant={f.estado === 'activo' ? 'success' : 'neutral'}>

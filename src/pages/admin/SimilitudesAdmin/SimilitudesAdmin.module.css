@@ -28,3 +28,10 @@
 .fillHigh { background: linear-gradient(90deg, var(--c-warning), var(--c-danger)); }
 .fillMid { background: linear-gradient(90deg, var(--c-info), var(--c-warning)); }
 .fillLow { background: linear-gradient(90deg, var(--c-success), var(--c-info)); }
+
+.estadoPair {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1_5);
+  align-items: center;
+}

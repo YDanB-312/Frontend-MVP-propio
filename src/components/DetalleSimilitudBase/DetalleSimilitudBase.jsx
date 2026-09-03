@@ -7,13 +7,11 @@ import Badge from '../Badge/Badge'
 import Tag from '../Tag/Tag'
 import EmptyState from '../EmptyState/EmptyState'
 import { useAuth } from '../../contexts/AuthContext'
-import { findProjectById, getSimilitudesValidas, getFichasDelInstructor, displayNames } from '../../data/mockData'
+import { findProjectById, findFichaById, getSimilitudesValidas, getFichasDelInstructor, displayNames } from '../../data/mockData'
 import s from './DetalleSimilitudBase.module.css'
 
-const SIM_VARIANT = { pendiente: 'warning', revisada: 'info', resuelta: 'success' }
-
 const ESTADO_PROYECTO_VARIANT = (estado) =>
-  estado === 'aprobado' ? 'success' : estado === 'rechazado' ? 'danger' : estado === 'en_revision' ? 'info' : 'warning'
+  estado === 'aprobado' ? 'success' : estado === 'rechazado' ? 'danger' : estado === 'pendiente' ? 'warning' : 'neutral'
 
 const RUTA_POR_ROL = {
   aprendiz: { volver: '/aprendiz/propuestas', label: 'Mis Propuestas' },
@@ -34,10 +32,14 @@ export default function DetalleSimilitudBase({
   const ruta = RUTA_POR_ROL[role] || RUTA_POR_ROL.aprendiz
   const { user } = useAuth()
   const esInstructor = role === 'instructor'
-  const misFichasIds = useMemo(() => {
-    if (!esInstructor || !user?.id) return null
-    return new Set(getFichasDelInstructor(Number(user.id)).map((f) => f.id))
-  }, [esInstructor, user.id])
+  const { misFichasIds, misProgramas } = useMemo(() => {
+    if (!esInstructor || !user?.id) return { misFichasIds: null, misProgramas: null }
+    const fichas = getFichasDelInstructor(Number(user?.id))
+    return {
+      misFichasIds: new Set(fichas.map((f) => f.id)),
+      misProgramas: new Set(fichas.map((f) => f.programa).filter(Boolean)),
+    }
+  }, [esInstructor, user?.id])
 
   const proyecto1 = useMemo(() => (similitud ? findProjectById(similitud.projectId1) : null), [similitud])
   const proyecto2 = useMemo(() => (similitud ? findProjectById(similitud.projectId2) : null), [similitud])
@@ -59,10 +61,28 @@ export default function DetalleSimilitudBase({
         otroPid = x.projectId1 === idB ? x.projectId2 : x.projectId1
       }
       if (!origen || vistas.has(x.id)) continue
+      // Intructor: solo otras coincidencias de su programa (consistencia intra-programa)
+      if (esInstructor && misProgramas) {
+        const otroProy = findProjectById(otroPid)
+        const progOtro = otroProy ? findFichaById(Number(otroProy.fichaId))?.programa : null
+        const enFicha = otroProy ? misFichasIds.has(Number(otroProy.fichaId)) : false
+        const enPrograma = progOtro ? misProgramas.has(progOtro) : false
+        if (!enFicha && !enPrograma) continue
+      }
       vistas.set(x.id, { ...x, origen, otroPid })
     }
     return [...vistas.values()].sort((a, b) => b.similitud - a.similitud)
-  }, [similitud, proyecto1, proyecto2])
+  }, [similitud, proyecto1, proyecto2, esInstructor, misFichasIds, misProgramas])
+
+  // Guard instructor (opción 1): bloquear si el par no es de su programa/fichas (hooks antes de returns)
+  const noAutorizado = useMemo(() => {
+    if (!esInstructor || !similitud || !misProgramas || !proyecto1 || !proyecto2) return false
+    const prog1 = findFichaById(Number(proyecto1.fichaId))?.programa
+    const prog2 = findFichaById(Number(proyecto2.fichaId))?.programa
+    const enFicha = misFichasIds.has(Number(proyecto1.fichaId)) || misFichasIds.has(Number(proyecto2.fichaId))
+    const enPrograma = (prog1 && misProgramas.has(prog1)) || (prog2 && misProgramas.has(prog2))
+    return !enFicha && !enPrograma
+  }, [esInstructor, similitud, misProgramas, misFichasIds, proyecto1, proyecto2])
 
   if (!similitud) {
     return (
@@ -76,6 +96,18 @@ export default function DetalleSimilitudBase({
     )
   }
 
+  if (noAutorizado) {
+    return (
+      <EmptyState
+        icon={<MagnifyingGlass />}
+        title="Similitud no autorizada"
+        message="No tienes acceso a esta similitud porque no pertenece a tu programa. Solo puedes ver similitudes de propuestas del mismo programa que tus fichas."
+        actionLabel={`Volver a ${ruta.label.toLowerCase()}`}
+        onAction={() => navigate(ruta.volver)}
+      />
+    )
+  }
+
   const pct = Math.round((similitud.similitud || 0) * 100)
   const nivelClase = pct >= 60 ? s.high : pct >= 40 ? s.mid : s.low
   const proyectos = [
@@ -83,10 +115,17 @@ export default function DetalleSimilitudBase({
     { p: proyecto2, tag: 'B' },
   ]
 
-  // El botón "Ver proyecto" solo para propuestas de fichas a cargo del instructor
+  // Ver proyecto: propio de la ficha o mismo programa exacto (ADSO solo con ADSO, etc.)
+  // Las similitudes solo se forman intra-programa, por lo que un par de otra ficha
+  // con el mismo programa debe ser visible aunque no esté a cargo del instructor.
   function puedeVerProyecto(pid) {
     if (!esInstructor || !misFichasIds) return true
-    return misFichasIds.has(Number(pid))
+    const proyecto = findProjectById(pid)
+    if (!proyecto) return false
+    const fichaId = Number(proyecto.fichaId)
+    if (misFichasIds.has(fichaId)) return true
+    const programa = findFichaById(fichaId)?.programa
+    return programa != null && misProgramas.has(programa)
   }
 
   const crumbPrevio =
@@ -111,9 +150,6 @@ export default function DetalleSimilitudBase({
           <span className={s.pctBig}>{pct}%</span>
           <div className={s.scoreInfo}>
             <p className={s.scoreLabel}>Índice de similitud</p>
-            <Badge variant={SIM_VARIANT[similitud.estado] || 'neutral'}>
-              {displayNames.similarityStatus[similitud.estado] || similitud.estado}
-            </Badge>
           </div>
         </div>
         <div className={s.barTrack}>
@@ -177,9 +213,6 @@ export default function DetalleSimilitudBase({
                     >
                       {pctX}%
                     </span>
-                    <Badge variant={SIM_VARIANT[x.estado] || 'neutral'}>
-                      {displayNames.similarityStatus[x.estado] || x.estado}
-                    </Badge>
                     <ArrowRight size={14} className={s.otrasChevron} />
                   </Link>
                 </li>

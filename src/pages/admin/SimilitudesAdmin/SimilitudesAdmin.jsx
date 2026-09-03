@@ -7,25 +7,33 @@ import Button from '../../../components/Button/Button'
 import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import { getAllSimilarities, displayNames } from '../../../data/mockData'
+import { findProjectById, getSimilitudesValidas, displayNames } from '../../../data/mockData'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesAdmin.module.css'
 import { Eye, MagnifyingGlass } from 'phosphor-react'
 
 const ITEMS_POR_PAGINA = 8
 
-const SIM_VARIANT = { pendiente: 'warning', revisada: 'info', resuelta: 'success' }
+const PROY_VARIANT = {
+  pendiente: 'warning',
+  aprobado: 'success',
+  rechazado: 'danger',
+}
 
 export default function SimilitudesAdmin() {
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
-  const similitudes = getAllSimilarities()
+  const similitudes = getSimilitudesValidas()
 
   const filtradas =
     filtroEstado === 'todos'
       ? similitudes
-      : similitudes.filter((x) => x.estado === filtroEstado)
+      : similitudes.filter((x) => {
+          const p1 = findProjectById(x.projectId1)
+          const p2 = findProjectById(x.projectId2)
+          return p1?.estado === filtroEstado || p2?.estado === filtroEstado
+        })
 
   const paginadas = filtradas.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
@@ -41,9 +49,9 @@ export default function SimilitudesAdmin() {
           icon={<MagnifyingGlass />}
         />
 
-        <FilterBar title="Filtrar por estado">
+        <FilterBar title="Filtrar por estado de la propuesta">
           <label className={s.field}>
-            <span className={s.label}>Estado</span>
+            <span className={s.label}>Estado de la propuesta</span>
             <Select
               value={filtroEstado}
               onChange={(e) => {
@@ -52,9 +60,9 @@ export default function SimilitudesAdmin() {
               }}
             >
               <option value="todos">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="revisada">Revisada</option>
-              <option value="resuelta">Resuelta</option>
+              <option value="pendiente">{displayNames.projectStatus.pendiente}</option>
+              <option value="aprobado">{displayNames.projectStatus.aprobado}</option>
+              <option value="rechazado">{displayNames.projectStatus.rechazado}</option>
             </Select>
           </label>
           <p className={s.info}>
@@ -69,7 +77,7 @@ export default function SimilitudesAdmin() {
             message={
               similitudes.length === 0
                 ? 'No se han detectado similitudes entre proyectos.'
-                : 'No hay similitudes con el estado seleccionado.'
+                : 'No hay similitudes con el estado de propuesta seleccionado.'
             }
           />
         ) : (
@@ -81,7 +89,7 @@ export default function SimilitudesAdmin() {
                     <th>Propuesta A</th>
                     <th>Propuesta B</th>
                     <th>Similitud</th>
-                    <th>Estado</th>
+                    <th>Estado (A · B)</th>
                     <th>Fecha</th>
                     <th className={s.colActions}>Acciones</th>
                   </tr>
@@ -89,6 +97,10 @@ export default function SimilitudesAdmin() {
                 <tbody>
                   {paginadas.map((sim) => {
                     const pct = Math.round((sim.similitud || 0) * 100)
+                    const pA = findProjectById(sim.projectId1)
+                    const pB = findProjectById(sim.projectId2)
+                    const estadoA = pA?.estado || '—'
+                    const estadoB = pB?.estado || '—'
                     return (
                       <tr key={sim.id}>
                         <td>
@@ -117,9 +129,14 @@ export default function SimilitudesAdmin() {
                           </span>
                         </td>
                         <td>
-                          <Badge variant={SIM_VARIANT[sim.estado] || 'neutral'}>
-                            {displayNames.similarityStatus[sim.estado] || sim.estado}
-                          </Badge>
+                          <span className={local.estadoPair}>
+                            <Badge variant={PROY_VARIANT[estadoA] || 'neutral'}>
+                              A: {displayNames.projectStatus[estadoA] || estadoA}
+                            </Badge>
+                            <Badge variant={PROY_VARIANT[estadoB] || 'neutral'}>
+                              B: {displayNames.projectStatus[estadoB] || estadoB}
+                            </Badge>
+                          </span>
                         </td>
                         <td className={s.date}>{sim.createdAt}</td>
                         <td className={s.colActions}>

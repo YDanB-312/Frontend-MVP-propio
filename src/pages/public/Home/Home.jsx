@@ -28,7 +28,7 @@ const PASOS = [
   {
     numero: '01',
     title: 'Crea tu cuenta',
-    description: 'Regístrate como aprendiz o instructor con tu correo institucional del SENA en menos de un minuto.',
+    description: 'Regístrate como aprendiz o instructor con tu correo electrónico en menos de un minuto.',
   },
   {
     numero: '02',

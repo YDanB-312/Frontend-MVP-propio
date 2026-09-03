@@ -74,7 +74,7 @@
 }
 
 .table tbody tr:hover {
-  background: var(--c-info-bg);
+  background: var(--c-border);
 }
 
 .table tbody tr:last-child td {

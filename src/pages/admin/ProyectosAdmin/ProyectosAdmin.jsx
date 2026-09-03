@@ -19,15 +19,9 @@ import s from '../../../components/ListaBase/ListaBase.module.css'
 const ITEMS_POR_PAGINA = 8
 
 const ESTADO_VARIANT = {
-  borrador: 'neutral',
   pendiente: 'warning',
-  en_revision: 'info',
   aprobado: 'success',
   rechazado: 'danger',
-  requiere_ajustes: 'warning',
-  en_progreso: 'info',
-  completado: 'success',
-  cancelado: 'danger',
 }
 
 export default function ProyectosAdmin() {
@@ -93,11 +87,9 @@ export default function ProyectosAdmin() {
               }}
             >
               <option value="todos">Todos</option>
-              {Object.entries(displayNames.projectStatus).map(([valor, etiqueta]) => (
-                <option key={valor} value={valor}>
-                  {etiqueta}
-                </option>
-              ))}
+              <option value="pendiente">{displayNames.projectStatus.pendiente}</option>
+              <option value="aprobado">{displayNames.projectStatus.aprobado}</option>
+              <option value="rechazado">{displayNames.projectStatus.rechazado}</option>
             </Select>
           </label>
           <p className={s.info}>

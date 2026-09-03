@@ -2,12 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, CalendarBlank, CaretRight, CheckCircle, MagnifyingGlass, PushPin, User } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
-import Badge from '../../../components/Badge/Badge'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
-import { findProjectById, findSimilarityById, getSimilitudesValidas, displayNames } from '../../../data/mockData'
+import { findProjectById, findSimilarityById, getSimilitudesValidas } from '../../../data/mockData'
 import s from './ResultadoAnalisis.module.css'
 
 const CIRCUNFERENCIA = 2 * Math.PI * 54
@@ -89,8 +88,6 @@ export default function ResultadoAnalisis() {
   const total = propias.length
   const pctMax = Math.round(maxima.similitud * 100)
   const nivel = pctMax >= 70 ? 'alta' : pctMax >= 40 ? 'media' : 'baja'
-  const estadoSim =
-    maxima.estado === 'revisada' ? 'info' : maxima.estado === 'resuelta' ? 'success' : 'warning'
 
   const recomendaciones =
     nivel === 'alta'
@@ -143,9 +140,6 @@ export default function ResultadoAnalisis() {
           </div>
           <div className={s.scoreInfo}>
             <p className={s.nivel}>Coincidencia {nivel}</p>
-            <Badge variant={estadoSim}>
-              {displayNames.similarityStatus[maxima.estado] || maxima.estado}
-            </Badge>
             <p className={s.nivelDesc}>
               {total === 1
                 ? 'Se detectó una coincidencia para tu proyecto.'
@@ -189,9 +183,6 @@ export default function ResultadoAnalisis() {
                       >
                         {pct}%
                       </span>
-                      <Badge variant={sim.estado === 'revisada' ? 'info' : sim.estado === 'resuelta' ? 'success' : 'warning'}>
-                        {displayNames.similarityStatus[sim.estado] || sim.estado}
-                      </Badge>
                       <CaretRight size={16} className={s.matchChevron} />
                     </span>
                   </Link>

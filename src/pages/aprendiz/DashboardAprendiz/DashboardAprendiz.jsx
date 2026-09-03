@@ -16,8 +16,9 @@ import { useAuth } from '../../../contexts/AuthContext'
 import s from '../../../components/Dashboard/Dashboard.module.css'
 
 const ESTADO_VARIANT = {
-  aprobado: 'success', completado: 'success', pendiente: 'warning', requiere_ajustes: 'warning',
-  en_revision: 'info', en_progreso: 'primary', rechazado: 'danger', cancelado: 'danger', borrador: 'neutral',
+  pendiente: 'warning',
+  aprobado: 'success',
+  rechazado: 'danger',
 }
 
 function similitudInfo(similitudes, projectId) {

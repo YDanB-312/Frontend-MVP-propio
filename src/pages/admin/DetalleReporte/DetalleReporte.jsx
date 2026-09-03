@@ -27,6 +27,24 @@ const ESTADO_VARIANT = {
   rechazado: 'danger',
 }
 
+const PRIORIDAD_META = {
+  baja: { label: 'Baja', variant: 'neutral' },
+  media: { label: 'Media', variant: 'warning' },
+  alta: { label: 'Alta', variant: 'danger' },
+  critica: { label: 'Crítica', variant: 'danger' },
+}
+
+const PRIORIDAD_POR_TIPO = {
+  sistema: { label: 'Alta', variant: 'danger' },
+  proyecto: { label: 'Media', variant: 'warning' },
+  datos: { label: 'Media', variant: 'warning' },
+  bug_ui: { label: 'Media', variant: 'warning' },
+  error_datos: { label: 'Alta', variant: 'danger' },
+  rendimiento: { label: 'Alta', variant: 'danger' },
+  seguridad: { label: 'Crítica', variant: 'danger' },
+  otro: { label: 'Baja', variant: 'neutral' },
+}
+
 const ESTADOS = ['pendiente', 'en_revision', 'resuelto', 'cerrado', 'rechazado']
 
 export default function DetalleReporte() {
@@ -41,6 +59,7 @@ export default function DetalleReporte() {
 
   const reporte = findBugReportById(id)
   const reportante = reporte && reporte.reporterId ? findUserById(reporte.reporterId) : null
+  const prioridadInfo = reporte ? ((reporte.prioridad && PRIORIDAD_META[reporte.prioridad]) || PRIORIDAD_POR_TIPO[reporte.tipo] || PRIORIDAD_META.media) : null
 
   if (!reporte) {
     return (
@@ -110,6 +129,12 @@ export default function DetalleReporte() {
             <div className={s.cell}>
               <dt>Tipo</dt>
               <dd>{displayNames.bugReportType[reporte.tipo] || reporte.tipo}</dd>
+            </div>
+            <div className={s.cell}>
+              <dt>Prioridad</dt>
+              <dd>
+                <Badge variant={prioridadInfo.variant}>{prioridadInfo.label}</Badge>
+              </dd>
             </div>
             <div className={s.cell}>
               <dt>Fecha del reporte</dt>

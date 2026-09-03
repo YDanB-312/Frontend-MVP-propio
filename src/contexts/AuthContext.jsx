@@ -26,10 +26,7 @@ export function AuthProvider({ children }) {
     const email = (correo || '').trim().toLowerCase()
     const encontrado = findUserByEmail(email)
     if (!encontrado || !validateCredentials(email, password)) {
-      return { exito: false, mensaje: 'Credenciales incorrectas o usuario inactivo. Verifica tus datos.' }
-    }
-    if (encontrado.estado !== 1) {
-      return { exito: false, mensaje: 'Credenciales incorrectas o usuario inactivo. Verifica tus datos.' }
+      return { exito: false, mensaje: 'Credenciales incorrectas. Verifica tus datos.' }
     }
 
     const sesion = { id: encontrado.id, correo: encontrado.email, nombre: encontrado.name, rol: encontrado.role }
@@ -48,7 +45,6 @@ export function AuthProvider({ children }) {
       name: `${nombre.trim()} ${apellido.trim()}`.trim(),
       email,
       role: rol,
-      estado: 1,
       password,
     })
     return { exito: true, email }

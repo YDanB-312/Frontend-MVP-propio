@@ -10,15 +10,9 @@ import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.
 import { CalendarBlank, FolderOpen, Info, MagnifyingGlass } from 'phosphor-react'
 
 const ESTADO_VARIANT = {
-  aprobado: 'success',
-  completado: 'success',
   pendiente: 'warning',
-  requiere_ajustes: 'warning',
-  en_revision: 'info',
-  en_progreso: 'primary',
+  aprobado: 'success',
   rechazado: 'danger',
-  cancelado: 'danger',
-  borrador: 'neutral',
 }
 
 export default function DetalleCompanero() {

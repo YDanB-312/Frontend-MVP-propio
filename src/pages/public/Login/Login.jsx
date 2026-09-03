@@ -82,7 +82,7 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="nombre.correo@soy.sena.edu.co"
+              placeholder="tu.correo@ejemplo.com"
               autoComplete="email"
               autoFocus
             />

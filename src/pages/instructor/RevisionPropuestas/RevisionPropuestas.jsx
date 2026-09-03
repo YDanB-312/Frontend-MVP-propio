@@ -30,10 +30,8 @@ const ITEMS_POR_PAGINA = 8
 
 const ESTADO_VARIANT = {
   pendiente: 'warning',
-  en_revision: 'info',
   aprobado: 'success',
   rechazado: 'danger',
-  requiere_ajustes: 'warning',
 }
 
 function similitudInfo(similitudes, projectId) {
@@ -124,10 +122,8 @@ export default function RevisionPropuestas() {
             >
               <option value="todos">Todos</option>
               <option value="pendiente">Pendiente</option>
-              <option value="en_revision">En Revisión</option>
               <option value="aprobado">Aprobado</option>
               <option value="rechazado">Rechazado</option>
-              <option value="requiere_ajustes">Requiere Ajustes</option>
             </Select>
           </label>
           <p className={s.info}>

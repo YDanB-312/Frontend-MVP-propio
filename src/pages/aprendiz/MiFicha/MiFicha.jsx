@@ -17,6 +17,7 @@ import {
   findFichaById,
   findFichaByCodigo,
   getEstudiantesDeFicha,
+  getProjectsByFicha,
   joinFicha,
   leaveFicha,
 } from '../../../data/mockData'
@@ -52,7 +53,7 @@ export default function MiFicha() {
     setBuscando(false)
 
     if (!resultado) {
-      setError(`No encontramos una ficha con el código "${codigo.trim().toUpperCase()}".`)
+      setError(`No encontramos una ficha con el código "${codigo.trim().toLowerCase()}".`)
       return
     }
     if (resultado.estado === 'inactivo') {
@@ -103,10 +104,10 @@ export default function MiFicha() {
               className={`${su.input} ${su.mono}`}
               value={codigo}
               onChange={(e) => {
-                setCodigo(e.target.value.toUpperCase())
+                setCodigo(e.target.value.toLowerCase())
                 setError('')
               }}
-              placeholder="FT-X7K2MN"
+              placeholder="abc-defg"
               autoFocus
             />
             <Button type="submit" disabled={buscando}>
@@ -146,7 +147,7 @@ export default function MiFicha() {
               </div>
               <div className={su.infoRow}>
                 <dt>Aprendices</dt>
-                <dd>{encontrada.aprendices}</dd>
+                <dd>{getEstudiantesDeFicha(encontrada.id).length || encontrada.aprendices}</dd>
               </div>
               <div className={su.infoRow}>
                 <dt>Creada</dt>
@@ -241,7 +242,7 @@ export default function MiFicha() {
           </div>
           <div className={sd.infoItem}>
             <dt>Proyectos</dt>
-            <dd>{ficha.proyectos}</dd>
+            <dd>{getProjectsByFicha(ficha.id).length}</dd>
           </div>
           <div className={sd.infoItem}>
             <dt>Fecha de creación</dt>

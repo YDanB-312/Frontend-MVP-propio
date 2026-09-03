@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
-import Badge from '../../../components/Badge/Badge'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import { Textarea } from '../../../components/Input/Input'
@@ -12,7 +11,6 @@ import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import Tag from '../../../components/Tag/Tag'
 import { instructorVeProyecto } from '../../../data/mockData'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
@@ -28,17 +26,8 @@ import {
 } from '../../../data/mockData'
 import { agruparObservaciones } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
-import { ArrowCounterClockwise, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, X, LockKey, Plus, XCircle } from 'phosphor-react'
-
-const ESTADO_VARIANT = {
-  pendiente: 'warning',
-  en_revision: 'info',
-  aprobado: 'success',
-  rechazado: 'danger',
-  requiere_ajustes: 'warning',
-}
-
-const SIM_VARIANT = { pendiente: 'warning', revisada: 'info', resuelta: 'success' }
+import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
+import { ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, X, LockKey, Plus, XCircle } from 'phosphor-react'
 
 const ACCIONES = {
   aprobado: {
@@ -50,11 +39,6 @@ const ACCIONES = {
     titulo: 'Rechazar propuesta',
     verbo: 'rechazar',
     texto: 'Sí, rechazar',
-  },
-  requiere_ajustes: {
-    titulo: 'Solicitar cambios',
-    verbo: 'solicitar cambios a',
-    texto: 'Sí, solicitar',
   },
 }
 
@@ -112,20 +96,19 @@ export default function DetalleProyectoInstructor() {
     e.preventDefault()
     const texto = textoObs.trim()
     if (!texto) return
-    addObservacion(proyecto.id, `${user?.nombre || 'Instructor'} | Instructor`, texto)
+    addObservacion(proyecto.id, `${user?.nombre || 'Instructor'} | Instructor`, texto, respondiendoA?.id || null)
     setTextoObs('')
+    setRespondiendoA(null)
   }
 
-  const keywords = (proyecto.keywords || '').split(',').map((k) => k.trim()).filter(Boolean)
-  const objetivosEsp = (proyecto.objetivosEspecificos || '').split('\n').map((l) => l.trim()).filter(Boolean)
-  const tieneObjetivosNuevos = proyecto.objetivoGeneral || objetivosEsp.length > 0
+
 
   return (
     <DashboardLayout role="instructor" titulo="Detalle de Propuesta">
       <div className={s.page}>
         <PageHeader
           title={proyecto.title}
-          subtitle={`Propuesta enviada el ${proyecto.createdAt} por ${proyecto.studentName}`}
+          subtitle={`Enviado el ${proyecto.createdAt} por ${proyecto.studentName}`}
           icon={<FolderOpen />}
           breadcrumb={[
             { label: 'Dashboard', to: '/instructor/dashboard' },
@@ -143,7 +126,7 @@ export default function DetalleProyectoInstructor() {
         <div className={s.grid}>
         <div className={s.col}>
         <DataPanel
-          title="Información de la propuesta"
+          title="Información del proyecto"
           icon={<FileText />}
           action={
             enMiCargo ? (
@@ -154,84 +137,11 @@ export default function DetalleProyectoInstructor() {
                 <Button type="button" variant="danger" onClick={() => setModal(ACCIONES.rechazado)}>
                   <XCircle size={14} /> Rechazar
                 </Button>
-                <Button type="button" variant="warning" onClick={() => setModal(ACCIONES.requiere_ajustes)}>
-                  <ArrowCounterClockwise size={14} /> Solicitar Cambios
-                </Button>
               </Actions>
             ) : undefined
           }
         >
-          <div className={s.badgeRow}>
-            <Badge variant={ESTADO_VARIANT[proyecto.estado] || 'neutral'}>
-              {displayNames.projectStatus[proyecto.estado] || proyecto.estado}
-            </Badge>
-            {proyecto.areaAplicacion && <Badge variant="info">{proyecto.areaAplicacion}</Badge>}
-          </div>
-
-          <dl className={s.detailList}>
-            <div className={s.detailRow}>
-              <dt>Fecha de envío</dt>
-              <dd>{proyecto.createdAt}</dd>
-            </div>
-            <div className={s.detailRow}>
-              <dt>Ficha</dt>
-              <dd>
-                {ficha ? (
-                  <Link to={`/instructor/detalle-ficha/${ficha.id}`} className={s.link}>
-                    {ficha.codigo} · {ficha.nombre}
-                  </Link>
-                ) : (
-                  `#${proyecto.fichaId}`
-                )}
-              </dd>
-            </div>
-            <div className={s.detailRow}>
-              <dt>Tipo de proyecto</dt>
-              <dd>{proyecto.projectType === 'pagina_web' ? 'Página Web' : 'Aplicación'}</dd>
-            </div>
-            <div className={s.detailRow}>
-              <dt>Integrantes</dt>
-              <dd>{(proyecto.integrantes || []).join(', ') || '—'}</dd>
-            </div>
-          </dl>
-
-          <h3 className={s.subTitle}>Descripción</h3>
-          <p className={s.paragraph}>{proyecto.description}</p>
-
-          {tieneObjetivosNuevos ? (
-            <>
-              <h3 className={s.subTitle}>Objetivo general</h3>
-              <p className={s.paragraph}>{proyecto.objetivoGeneral || 'Sin definir.'}</p>
-              {objetivosEsp.length > 0 && (
-                <>
-                  <h3 className={s.subTitle}>Objetivos específicos</h3>
-                  <ol className={s.objList}>
-                    {objetivosEsp.map((o) => (
-                      <li key={o}>{o}</li>
-                    ))}
-                  </ol>
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              <h3 className={s.subTitle}>Objetivos</h3>
-              <pre className={s.pre}>{proyecto.objectives || 'Sin objetivos definidos.'}</pre>
-            </>
-          )}
-
-          {keywords.length > 0 && (
-            <>
-              <h3 className={s.subTitle}>Palabras clave</h3>
-              <div className={s.chips}>
-                {keywords.map((k) => (
-                  <Tag key={k} variant="success">
-                    {k}
-                  </Tag>
-                ))}
-              </div>
-            </>
-          )}
+          <InformacionProyecto proyecto={proyecto} ficha={ficha} fichaHref={ficha ? `/instructor/detalle-ficha/${ficha.id}` : null} />
         </DataPanel>
         </div>
 
@@ -283,9 +193,6 @@ export default function DetalleProyectoInstructor() {
                         <span className={`${s.pct} ${pct >= 60 ? s.pctHigh : pct >= 40 ? s.pctMid : s.pctLow}`}>
                           {pct}%
                         </span>
-                        <Badge variant={SIM_VARIANT[sim.estado] || 'neutral'}>
-                          {displayNames.similarityStatus[sim.estado] || sim.estado}
-                        </Badge>
                       </span>
                     </Link>
                   </li>

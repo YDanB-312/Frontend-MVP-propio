@@ -8,7 +8,7 @@ import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
-import { findFichaByCodigo, joinFicha } from '../../../data/mockData'
+import { findFichaByCodigo, getEstudiantesDeFicha, joinFicha } from '../../../data/mockData'
 import s from './UnirseFicha.module.css'
 import { CheckCircle, GraduationCap, Key, MagnifyingGlass, ThumbsUp, Warning } from 'phosphor-react'
 
@@ -37,7 +37,7 @@ export default function UnirseFicha() {
     setBuscando(false)
 
     if (!encontrada) {
-      setError(`No encontramos una ficha con el código "${codigo.trim().toUpperCase()}".`)
+      setError(`No encontramos una ficha con el código "${codigo.trim().toLowerCase()}".`)
       return
     }
     if (encontrada.estado === 'inactivo') {
@@ -112,10 +112,10 @@ export default function UnirseFicha() {
                   className={`${s.input} ${s.mono}`}
                   value={codigo}
                   onChange={(e) => {
-                    setCodigo(e.target.value.toUpperCase())
+                    setCodigo(e.target.value.toLowerCase())
                     setError('')
                   }}
-                  placeholder="FT-X7K2MN"
+                  placeholder="abc-defg"
                   autoFocus
                 />
                 <Button type="submit" disabled={buscando}>
@@ -155,7 +155,7 @@ export default function UnirseFicha() {
                   </div>
                   <div className={s.infoRow}>
                     <dt>Aprendices</dt>
-                    <dd>{ficha.aprendices}</dd>
+                    <dd>{getEstudiantesDeFicha(ficha.id).length || ficha.aprendices}</dd>
                   </div>
                   <div className={s.infoRow}>
                     <dt>Creada</dt>

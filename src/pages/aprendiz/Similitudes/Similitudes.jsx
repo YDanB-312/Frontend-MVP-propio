@@ -3,19 +3,15 @@ import { Link } from 'react-router-dom'
 import { CaretRight, MagnifyingGlass } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
-import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findProjectById,
-  getAllSimilarities,
+  getSimilitudesValidas,
   getProjectsByStudent,
-  displayNames,
 } from '../../../data/mockData'
 // Estilos reutilizados de vistas existentes (filas de coincidencias + porcentajes)
 import ra from '../ResultadoAnalisis/ResultadoAnalisis.module.css'
-
-const SIM_VARIANT = { pendiente: 'warning', revisada: 'info', resuelta: 'success' }
 
 export default function Similitudes() {
   const { user } = useAuth()
@@ -25,15 +21,8 @@ export default function Similitudes() {
 
   const sims = useMemo(
     () =>
-      getAllSimilarities()
+      getSimilitudesValidas()
         .filter((x) => idsPropios.has(x.projectId1) || idsPropios.has(x.projectId2))
-        // Regla: solo coincidencias contra propuestas APROBADAS (en producción)
-        .filter((x) => {
-          const propioPid = idsPropios.has(x.projectId1) ? x.projectId1 : x.projectId2
-          const otroPid = propioPid === x.projectId1 ? x.projectId2 : x.projectId1
-          const otro = findProjectById(otroPid)
-          return otro?.estado === 'aprobado'
-        })
         .sort((a, b) => b.similitud - a.similitud),
     [idsPropios]
   )
@@ -77,9 +66,6 @@ export default function Similitudes() {
                     >
                       {pct}%
                     </span>
-                    <Badge variant={SIM_VARIANT[x.estado] || 'neutral'}>
-                      {displayNames.similarityStatus[x.estado] || x.estado}
-                    </Badge>
                     <CaretRight size={16} />
                   </Link>
                 </div>

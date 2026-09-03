@@ -9,10 +9,11 @@ export default function ReportarFallaAprendiz() {
   const handleSubmit = (form) => {
     createBugReport({
       titulo: form.titulo,
-      descripcion: `[Prioridad: ${form.prioridad}] ${form.descripcion}`,
+      descripcion: form.descripcion,
       tipo: form.tipo,
-      reporterId: user.id,
-      reporterName: user.nombre,
+      prioridad: form.prioridad,
+      reporterId: Number(user?.id),
+      reporterName: user?.nombre || 'Aprendiz',
     })
   }
 

@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { ArrowCounterClockwise, ChatCircle, CheckCircle, Eye, Plus, Scales } from 'phosphor-react'
+import { ChatCircle, Plus } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DetalleSimilitudBase from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase'
 import DataPanel from '../../../components/DataPanel/DataPanel'
-import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import { Select, Textarea } from '../../../components/Input/Input'
 import Tag from '../../../components/Tag/Tag'
@@ -12,7 +11,6 @@ import { useAuth } from '../../../contexts/AuthContext'
 import {
   findSimilarityById,
   findProjectById,
-  updateSimilarityEstado,
   getObservaciones,
   addObservacion,
 } from '../../../data/mockData'
@@ -40,11 +38,6 @@ export default function DetalleSimilitudAdmin() {
   const proyectoB = findProjectById(similitud.projectId2)
   const observaciones = [...getObservaciones(similitud.projectId1), ...getObservaciones(similitud.projectId2)]
 
-  const cambiarEstado = (estado) => {
-    updateSimilarityEstado(similitud.id, estado)
-    refrescar()
-  }
-
   const agregarObservacion = (e) => {
     e.preventDefault()
     const texto = textoObs.trim()
@@ -54,40 +47,6 @@ export default function DetalleSimilitudAdmin() {
     setTextoObs('')
     refrescar()
   }
-
-  const acciones = (
-    <DataPanel title="Actualizar estado del análisis" icon={<Scales />}>
-      <p className={s.hint}>
-        Cambia el estado del análisis según el seguimiento dado a los proyectos involucrados.
-      </p>
-      <Actions form>
-        <Button
-          type="button"
-          variant="info"
-          onClick={() => cambiarEstado('revisada')}
-          disabled={similitud.estado === 'revisada'}
-        >
-          <Eye size={14} /> Marcar como revisada
-        </Button>
-        <Button
-          type="button"
-          variant="success"
-          onClick={() => cambiarEstado('resuelta')}
-          disabled={similitud.estado === 'resuelta'}
-        >
-          <CheckCircle size={14} /> Marcar como resuelta
-        </Button>
-        <Button
-          type="button"
-          variant="warning"
-          onClick={() => cambiarEstado('pendiente')}
-          disabled={similitud.estado === 'pendiente'}
-        >
-          <ArrowCounterClockwise size={14} /> Volver a pendiente
-        </Button>
-      </Actions>
-    </DataPanel>
-  )
 
   const observacionesPanel = (
     <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
@@ -140,7 +99,6 @@ export default function DetalleSimilitudAdmin() {
       <DetalleSimilitudBase
         similitud={similitud}
         role="admin"
-        actions={acciones}
       >
         {observacionesPanel}
       </DetalleSimilitudBase>

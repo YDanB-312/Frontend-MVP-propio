@@ -1,18 +1,18 @@
 import { Link, useParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
-import Badge from '../../../components/Badge/Badge'
+import DataPanel from '../../../components/DataPanel/DataPanel'
 import Avatar from '../../../components/Avatar/Avatar'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import { findFichaById, getEstudiantesDeFicha, getRedDePrograma } from '../../../data/mockData'
+import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
+import { findFichaById, getEstudiantesDeFicha, getProjectsByFicha } from '../../../data/mockData'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
-import { GraduationCap, MagnifyingGlass, Users } from 'phosphor-react'
+import { GraduationCap, IdentificationCard, MagnifyingGlass, Users } from 'phosphor-react'
 
 export default function DetalleFicha() {
   const { id } = useParams()
   const ficha = findFichaById(id)
   const estudiantes = ficha ? getEstudiantesDeFicha(ficha.id) : []
-  const red = ficha ? getRedDePrograma(ficha.programa) : null
 
   if (!ficha) {
     return (
@@ -41,57 +41,14 @@ export default function DetalleFicha() {
           ]}
         />
 
-        <section className={s.infoCard}>
-          <header className={s.infoHeader}>
-            <span className={s.infoIcon} aria-hidden="true"><GraduationCap size={22} /></span>
-            <div>
-              <h2 className={s.infoTitle}>{ficha.nombre}</h2>
-              <span className={`${s.infoCodigo} ${s.mono}`}>{ficha.codigo}</span>
-            </div>
-            <Badge variant={ficha.estado === 'activo' ? 'success' : 'danger'}>
-              {ficha.estado === 'activo' ? 'Activa' : 'Inactiva'}
-            </Badge>
-          </header>
-
-          <dl className={s.infoGrid}>
-            <div className={s.infoItem}>
-              <dt>Número de ficha</dt>
-              <dd>N° {ficha.numero}</dd>
-            </div>
-            <div className={s.infoItem}>
-              <dt>Red de conocimiento</dt>
-              <dd>{red || '—'}</dd>
-            </div>
-            <div className={s.infoItem}>
-              <dt>Programa</dt>
-              <dd>{ficha.programa}</dd>
-            </div>
-            <div className={s.infoItem}>
-              <dt>Instructor</dt>
-              <dd>
-                {ficha.instructorId ? (
-                  <Link to={`/aprendiz/perfil-instructor?id=${ficha.instructorId}`} className={s.link}>
-                    {ficha.instructorName}
-                  </Link>
-                ) : (
-                  ficha.instructorName
-                )}
-              </dd>
-            </div>
-            <div className={s.infoItem}>
-              <dt>Aprendices</dt>
-              <dd>{estudiantes.length || ficha.aprendices}</dd>
-            </div>
-            <div className={s.infoItem}>
-              <dt>Proyectos</dt>
-              <dd>{ficha.proyectos}</dd>
-            </div>
-            <div className={s.infoItem}>
-              <dt>Fecha de creación</dt>
-              <dd>{ficha.createdAt}</dd>
-            </div>
-          </dl>
-        </section>
+        <DataPanel title="Información de la ficha" icon={<IdentificationCard />}>
+          <InformacionFicha
+            ficha={ficha}
+            estudiantesCount={estudiantes.length || ficha.aprendices || 0}
+            proyectosCount={getProjectsByFicha(ficha.id).length}
+            instructorHref={ficha.instructorId ? `/aprendiz/perfil-instructor?id=${ficha.instructorId}` : undefined}
+          />
+        </DataPanel>
 
         {estudiantes.length === 0 ? (
           <EmptyState
@@ -100,8 +57,7 @@ export default function DetalleFicha() {
             message="Aún no hay aprendices vinculados a esta ficha."
           />
         ) : (
-          <>
-            <h3 className={s.sectionTitle}>Integrantes de la ficha ({estudiantes.length})</h3>
+          <DataPanel title={`Integrantes de la ficha (${estudiantes.length})`} icon={<Users />}>
             <ul className={s.studentsGrid}>
               {estudiantes.map((est) => (
                 <li key={est.id}>
@@ -115,7 +71,7 @@ export default function DetalleFicha() {
                 </li>
               ))}
             </ul>
-          </>
+          </DataPanel>
         )}
       </div>
     </DashboardLayout>

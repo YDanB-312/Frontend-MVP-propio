@@ -10,7 +10,7 @@ import Button from '../../../components/Button/Button'
 import Actions from '../../../components/Actions/Actions'
 import { Input, Select, Textarea } from '../../../components/Input/Input'
 import FormField from '../../../components/FormField/FormField'
-import { CalendarBlank, FolderOpen, GraduationCap, MagnifyingGlass, Plus, Tray } from 'phosphor-react'
+import { CalendarBlank, ChartBar, FolderOpen, GraduationCap, MagnifyingGlass, Plus, Tray } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   getProjectsByStudent,
@@ -29,15 +29,9 @@ import n from '../../../components/FormularioBase/FormularioBase.module.css'
 const ITEMS_POR_PAGINA = 6
 
 const ESTADO_VARIANT = {
-  aprobado: 'success',
-  completado: 'success',
   pendiente: 'warning',
-  requiere_ajustes: 'warning',
-  en_revision: 'info',
-  en_progreso: 'primary',
+  aprobado: 'success',
   rechazado: 'danger',
-  cancelado: 'danger',
-  borrador: 'neutral',
 }
 
 const AREAS = [
@@ -214,6 +208,16 @@ export default function Propuestas() {
               : 'Administra y revisa el estado de tus propuestas académicas'
           }
           icon={creando ? <Plus /> : <FolderOpen />}
+          breadcrumb={
+            creando
+              ? [
+                  { label: 'Dashboard', to: '/aprendiz/dashboard', icon: <ChartBar size={14} /> },
+                  { label: 'Mis Propuestas', icon: <FolderOpen size={14} />, onClick: () => setCreando(false) },
+                  { label: 'Nueva propuesta' },
+                ]
+              : []
+          }
+          onBack={creando ? () => setCreando(false) : undefined}
           actions={
             !creando ? (
               <Button type="button" onClick={() => setCreando(true)}>
@@ -356,10 +360,8 @@ export default function Propuestas() {
                 >
                   <option value="todos">Todos</option>
                   <option value="pendiente">Pendiente</option>
-                  <option value="en_revision">En Revisión</option>
                   <option value="aprobado">Aprobado</option>
                   <option value="rechazado">Rechazado</option>
-                  <option value="requiere_ajustes">Requiere Ajustes</option>
                 </Select>
               </label>
             </FilterBar>

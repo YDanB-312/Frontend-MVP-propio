@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
-import Badge from '../../../components/Badge/Badge'
 import Avatar from '../../../components/Avatar/Avatar'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
@@ -11,15 +10,15 @@ import FormField from '../../../components/FormField/FormField'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import { Input, Select } from '../../../components/Input/Input'
+import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findFichaById,
   getEstudiantesDeFicha,
+  getProjectsByFicha,
   updateFicha,
   deleteFicha,
   instructorVeFicha,
-  getRedDePrograma,
-  displayNames,
 } from '../../../data/mockData'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 import { ArrowRight, Books, ChartBar, CheckCircle, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
@@ -146,55 +145,13 @@ export default function DetalleFichaInstructor() {
           }
         >
           {!editando ? (
-            <>
-              <dl className={s.infoGridInstructor}>
-                <div className={s.infoCell}>
-                  <dt>Código</dt>
-                  <dd>
-                    <code className={s.codigo}>{ficha.codigo}</code>
-                  </dd>
-                </div>
-                <div className={s.infoCell}>
-                  <dt>Número de ficha</dt>
-                  <dd>N° {ficha.numero}</dd>
-                </div>
-                <div className={s.infoCell}>
-                  <dt>Red de conocimiento</dt>
-                  <dd>{getRedDePrograma(ficha.programa) || '—'}</dd>
-                </div>
-                <div className={s.infoCell}>
-                  <dt>Programa</dt>
-                  <dd>{ficha.programa || '—'}</dd>
-                </div>
-                <div className={s.infoCell}>
-                  <dt>Instructor</dt>
-                  <dd>{ficha.instructorName || 'Sin asignar'}</dd>
-                </div>
-                <div className={s.infoCell}>
-                  <dt>Estado</dt>
-                  <dd>
-                    <Badge variant={ficha.estado === 'activo' ? 'success' : 'neutral'}>
-                      {displayNames.classGroupStatus[ficha.estado] || ficha.estado}
-                    </Badge>
-                  </dd>
-                </div>
-                <div className={s.infoCell}>
-                  <dt>Aprendices</dt>
-                  <dd>{estudiantes.length}</dd>
-                </div>
-                <div className={s.infoCell}>
-                  <dt>Propuestas asociadas</dt>
-                  <dd>{ficha.proyectos}</dd>
-                </div>
-              </dl>
-              <Button
-                as="link"
-                to={`/instructor/directorio-ficha/${ficha.id}`}
-                className={s.directorioBtn}
-              >
-                <Users size={14} /> Ver directorio de aprendices <ArrowRight size={14} />
-              </Button>
-            </>
+            <InformacionFicha
+              ficha={ficha}
+              estudiantesCount={estudiantes.length}
+              proyectosCount={getProjectsByFicha(ficha.id).length}
+              showDirectorioLink
+              directorioTo={`/instructor/directorio-ficha/${ficha.id}`}
+            />
           ) : (
             <form className={s.form} onSubmit={guardarEdicion} noValidate>
               <FormField label="Nombre de la ficha" required error={errores.nombre}>

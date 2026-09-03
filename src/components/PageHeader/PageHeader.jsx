@@ -8,10 +8,14 @@ function CrumbIcon({ icon }) {
   return typeof icon === 'string' ? <span aria-hidden="true">{icon}</span> : icon
 }
 
-export default function PageHeader({ title, subtitle, icon, actions, breadcrumb = [], showBack = true }) {
+export default function PageHeader({ title, subtitle, icon, actions, breadcrumb = [], showBack = true, onBack }) {
   const navigate = useNavigate()
 
   const handleBack = () => {
+    if (typeof onBack === 'function') {
+      onBack()
+      return
+    }
     if (window.history.length > 1) {
       navigate(-1)
     } else {
@@ -34,7 +38,12 @@ export default function PageHeader({ title, subtitle, icon, actions, breadcrumb 
               const isLast = i === breadcrumb.length - 1
               return (
                 <li key={i} className={isLast ? s.current : undefined} aria-current={isLast ? 'page' : undefined}>
-                  {item.to && !isLast ? (
+                  {item.onClick && !isLast ? (
+                    <button type="button" className={s.crumb} onClick={item.onClick}>
+                      <CrumbIcon icon={item.icon} />
+                      {item.label}
+                    </button>
+                  ) : item.to && !isLast ? (
                     <Link to={item.to} className={s.crumb}>
                       <CrumbIcon icon={item.icon} />
                       {item.label}

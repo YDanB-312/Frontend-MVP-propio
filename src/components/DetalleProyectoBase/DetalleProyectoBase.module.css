@@ -1,4 +1,4 @@
-﻿/* â”€â”€ Shared layout for DetalleProyecto Ã—3 (aprendiz Â· instructor Â· admin) â”€â”€ */
+﻿/* ── Shared layout for DetalleProyecto ×3 (aprendiz · instructor · admin) ── */
 
 /* Page wrapper */
 .page {
@@ -29,7 +29,7 @@
   margin-bottom: var(--sp-4);
 }
 
-/* Detail list (dl/dt/dd) */
+/* Detail list (dl/dt/dd) — compartido por los 3 roles */
 .detailList {
   display: flex;
   flex-direction: column;
@@ -84,7 +84,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-1_5);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--c-text);
 }
@@ -110,10 +110,26 @@
 }
 
 /* Keyword chips container */
-.chips {
+.chips,
+.keywords {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.keyword {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1) var(--sp-2_5);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: var(--r-full);
+  background: var(--c-success-bg);
+  color: var(--c-success);
+  border: 1px solid var(--g-200);
+  white-space: nowrap;
+  line-height: 1;
 }
 
 /* Inline link */
@@ -134,7 +150,21 @@
   color: var(--c-text-3);
 }
 
-/* â”€â”€ Similarity list (instructor + admin) â”€â”€ */
+/* ── Read-only banner (instructor: viendo propuesta de otra ficha) ── */
+.bannerLectura {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--c-info-bg);
+  color: var(--c-info);
+  border: 1px solid var(--t-200);
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* ── Similarity list (instructor + admin) ── */
 .simList {
   display: flex;
   flex-direction: column;
@@ -188,7 +218,7 @@
 .pctMid { color: var(--c-warning-text); }
 .pctLow { color: var(--c-info); }
 
-/* â”€â”€ Person/Student card (instructor + admin) â”€â”€ */
+/* ── Person/Student card (instructor + admin) ── */
 .personCard {
   display: flex;
   align-items: center;
@@ -229,7 +259,7 @@
   transform: scale(1.03);
 }
 
-/* â”€â”€ Response chip (instructor + admin) â”€â”€ */
+/* ── Response chip (instructor + admin) ── */
 .respondiendoChip {
   display: inline-flex;
   align-items: center;
@@ -260,67 +290,36 @@
   background: var(--c-chip-hover);
 }
 
-/* â”€â”€ Observation form â”€â”€ */
+/* ── Observation form ── */
 .obsForm {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
 }
 
-/* â”€â”€ Admin info grid (cell-based metadata) â”€â”€ */
-.infoGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-3);
-}
-
-.infoCell {
-  background: var(--c-surface-alt);
-  border: 1px solid var(--c-border-2);
-  border-radius: var(--r-md);
-  padding: var(--sp-3) var(--sp-4);
-}
-
-.infoCell dt {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--c-text-3);
-}
-
-.infoCell dd {
-  margin-top: var(--sp-0_5);
-  font-size: var(--text-sm);
-  color: var(--c-text);
-}
-
-/* â”€â”€ Admin description text â”€â”€ */
+/* ── Admin description text (legacy, se mantiene por compat.) ── */
 .description {
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--c-text-2);
-  margin-bottom: var(--sp-5);
+  margin: 0 0 var(--sp-5) 0;
 }
 
-/* â”€â”€ Admin actions bar â”€â”€ */
-.actionsBar {
+/* ── Estado form (DataPanel action — admin) ── */
+.stateForm {
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-card);
-  padding: var(--sp-4) var(--sp-5);
+  gap: var(--sp-2);
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.bigBadge {
-  font-size: var(--text-sm);
-  align-self: flex-start;
+.stateForm :global(select),
+.stateForm select {
+  min-width: 180px;
+  flex: 1;
 }
 
-/* â”€â”€ Admin objective blocks â”€â”€ */
+/* ── Admin objective blocks ── */
 .blocks {
   display: grid;
   grid-template-columns: 1fr;
@@ -329,20 +328,26 @@
 }
 
 .blockTitle {
-  font-size: var(--text-sm);
-  margin-bottom: var(--sp-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1_5);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-3);
+  margin: 0 0 var(--sp-2_5) 0;
 }
 
-/* â”€â”€ Responsive breakpoints â”€â”€ */
+/* ── Responsive breakpoints ── */
 @media (min-width: 768px) {
-  .actionsBar {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+  .stateForm {
+    max-width: 520px;
   }
 
-  .infoGrid {
-    grid-template-columns: repeat(3, 1fr);
+  .stateForm :global(select),
+  .stateForm select {
+    max-width: 260px;
   }
 }
 

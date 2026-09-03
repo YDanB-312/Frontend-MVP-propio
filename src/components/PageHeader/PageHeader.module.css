@@ -3,7 +3,7 @@
 .backBtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:var(--r-md);color:var(--c-text-3);background:var(--c-surface-alt);border:1px solid var(--c-border);flex-shrink:0;transition:all var(--dur-fast) var(--ease-out)}
 .backBtn:hover{color:var(--c-primary);background:var(--c-primary-light);border-color:var(--c-primary)}
 .breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-1_5);font-size:var(--text-xs);color:var(--c-text-3);list-style:none;padding:0;margin:0}
-.crumb{display:inline-flex;align-items:center;gap:var(--sp-1);color:var(--c-text-3);text-decoration:none;transition:color var(--dur-fast) var(--ease-out)}
+.crumb{display:inline-flex;align-items:center;gap:var(--sp-1);color:var(--c-text-3);text-decoration:none;transition:color var(--dur-fast) var(--ease-out);background:transparent;border:none;padding:0;font:inherit;cursor:pointer}
 .crumb:hover{color:var(--c-primary)}
 .crumbLink{display:inline-flex;align-items:center;gap:var(--sp-1);text-decoration:none;color:inherit}
 .sep{color:var(--c-border-h);user-select:none}

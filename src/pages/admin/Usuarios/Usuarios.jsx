@@ -13,12 +13,10 @@ import Actions from '../../../components/Actions/Actions'
 import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { Users, Plus, Eye, Pause, Play, CheckCircle, Code } from 'phosphor-react'
+import { Users, Plus, Eye, CheckCircle, Code, ChartBar } from 'phosphor-react'
 import {
   getAllUsers,
   findFichaById,
-  setUserActive,
   createUser,
   emailExists,
   displayNames,
@@ -41,7 +39,6 @@ export default function Usuarios() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroRol, setFiltroRol] = useState('todos')
   const [pagina, setPagina] = useState(1)
-  const [aDesactivar, setADesactivar] = useState(null)
   const [, setTick] = useState(0)
   const refrescar = () => setTick((t) => t + 1)
 
@@ -66,18 +63,6 @@ export default function Usuarios() {
     setCreadoMsg(true)
     if (msgTimer.current) clearTimeout(msgTimer.current)
     msgTimer.current = setTimeout(() => setCreadoMsg(false), 3500)
-  }
-
-  const confirmarDesactivar = () => {
-    if (!aDesactivar) return
-    setUserActive(aDesactivar.id, false)
-    setADesactivar(null)
-    refrescar()
-  }
-
-  const activar = (u) => {
-    setUserActive(u.id, true)
-    refrescar()
   }
 
   /* ---------- Creación ---------- */
@@ -126,7 +111,6 @@ export default function Usuarios() {
       email: form.email.trim().toLowerCase(),
       role: form.role,
       password: form.password,
-      estado: 1,
     })
     setForm({ name: '', email: '', password: '', role: 'aprendiz' })
     setErrores({})
@@ -146,6 +130,16 @@ export default function Usuarios() {
               : 'Administra las cuentas de aprendices, instructores y administradores de la plataforma.'
           }
           icon={creando ? <Code /> : <Users />}
+          breadcrumb={
+            creando
+              ? [
+                  { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
+                  { label: 'Usuarios', icon: <Users size={14} />, onClick: () => setCreando(false) },
+                  { label: 'Nuevo usuario' },
+                ]
+              : []
+          }
+          onBack={creando ? () => setCreando(false) : undefined}
           actions={
             !creando ? (
               <Button
@@ -178,7 +172,7 @@ export default function Usuarios() {
                     type="email"
                     value={form.email}
                     onChange={onChange}
-                    placeholder="usuario@sena.edu.co"
+                    placeholder="usuario@ejemplo.com"
                   />
                 </FormField>
               </div>
@@ -281,14 +275,12 @@ export default function Usuarios() {
                         <th>Correo</th>
                         <th>Rol</th>
                         <th>Ficha</th>
-                        <th>Estado</th>
                         <th className={s.colActions}>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginados.map((u) => {
                         const ficha = u.fichaId ? findFichaById(u.fichaId) : null
-                        const activo = u.estado === 1
                         return (
                           <tr key={u.id}>
                             <td data-label="Usuario">
@@ -310,43 +302,15 @@ export default function Usuarios() {
                                 <span className={s.muted}>—</span>
                               )}
                             </td>
-                            <td data-label="Estado">
-                              {activo ? (
-                                <Badge variant="success">Activo</Badge>
-                              ) : (
-                                <Badge variant="danger">Inactivo</Badge>
-                              )}
-                            </td>
                             <td data-label="Acciones" className={s.colActions}>
-                              <div className={s.actions}>
-                                <Button
-                                  as="link"
-                                  to={`/admin/detalle-usuario/${u.id}`}
-                                  size="sm"
-                                  variant="secondary"
-                                >
-                                  <Eye size={14} /> Ver
-                                </Button>
-                                {activo ? (
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="danger"
-                                    onClick={() => setADesactivar(u)}
-                                  >
-                                    <Pause size={14} /> Desactivar
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="success"
-                                    onClick={() => activar(u)}
-                                  >
-                                    <Play size={14} /> Activar
-                                  </Button>
-                                )}
-                              </div>
+                              <Button
+                                as="link"
+                                to={`/admin/detalle-usuario/${u.id}`}
+                                size="sm"
+                                variant="secondary"
+                              >
+                                <Eye size={14} /> Ver
+                              </Button>
                             </td>
                           </tr>
                         )
@@ -368,20 +332,6 @@ export default function Usuarios() {
           </>
         )}
       </div>
-
-      <ConfirmModal
-        open={!!aDesactivar}
-        titulo="Desactivar usuario"
-        mensaje={
-          aDesactivar
-            ? `¿Seguro que deseas desactivar la cuenta de "${aDesactivar.name}"? No podrá iniciar sesión hasta que la reactives.`
-            : ''
-        }
-        textoConfirmar="Sí, desactivar"
-        textoCancelar="Cancelar"
-        onConfirmar={confirmarDesactivar}
-        onCancelar={() => setADesactivar(null)}
-      />
     </DashboardLayout>
   )
 }

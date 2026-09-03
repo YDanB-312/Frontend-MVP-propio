@@ -11,7 +11,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { getProjectsByInstructor, getAllFichas, getPendingProjects, getUnreadCount, getSimilitudesValidas, displayNames } from '../../../data/mockData'
 import s from '../../../components/Dashboard/Dashboard.module.css'
 
-const ESTADO_VARIANT = { pendiente: 'warning', en_revision: 'info', aprobado: 'success', rechazado: 'danger', requiere_ajustes: 'warning' }
+const ESTADO_VARIANT = { pendiente: 'warning', aprobado: 'success', rechazado: 'danger' }
 
 export default function DashboardInstructor() {
   const { user } = useAuth()
@@ -21,7 +21,6 @@ export default function DashboardInstructor() {
   const misFichas = user ? getAllFichas().filter(f => f.instructorId === uid) : []
   const idsPropios = new Set(misProyectos.map(p => p.id))
   const similitudesPropias = getSimilitudesValidas().filter(x => idsPropios.has(x.projectId1) || idsPropios.has(x.projectId2))
-  const pendientesSim = similitudesPropias.filter(x => x.estado === 'pendiente').length
   const recientes = user ? getPendingProjects().filter(p => p.instructorId === uid).slice(0, 5) : []
   const saludo = user?.nombre?.split(' ')[0] || 'Instructor'
 
@@ -53,7 +52,7 @@ export default function DashboardInstructor() {
           <>
             <Link to="/instructor/revision-propuestas" className={s.statLink}><MetricCard icon={<ClipboardText size={22} />} label="Revisiones pendientes" value={pendientes.length} variant="warning" /></Link>
             <Link to="/instructor/fichas" className={s.statLink}><MetricCard icon={<BookOpen size={22} />} label="Fichas a cargo" value={misFichas.length} variant="info" /></Link>
-            <Link to="/instructor/similitudes" className={s.statLink}><MetricCard icon={<MagnifyingGlass size={22} />} label="Similitudes detectadas" value={similitudesPropias.length} variant="success" trend={pendientesSim > 0 ? `${pendientesSim} PENDIENTE${pendientesSim !== 1 ? 'S' : ''}` : undefined} /></Link>
+            <Link to="/instructor/similitudes" className={s.statLink}><MetricCard icon={<MagnifyingGlass size={22} />} label="Similitudes detectadas" value={similitudesPropias.length} variant="success" /></Link>
             <Link to="/instructor/alertas" className={s.statLink}><MetricCard icon={<Bell size={22} />} label="Alertas sin leer" value={user ? getUnreadCount(uid) : 0} variant="danger" /></Link>
           </>
         }

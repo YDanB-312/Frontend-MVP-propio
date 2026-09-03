@@ -45,6 +45,7 @@ const DirectorioFichaInstructor = lazy(() => import('./pages/instructor/Director
 // Admin
 const DashboardAdmin = lazy(() => import('./pages/admin/DashboardAdmin'))
 const Usuarios = lazy(() => import('./pages/admin/Usuarios'))
+const RedesConocimiento = lazy(() => import('./pages/admin/RedesConocimiento'))
 const ProyectosAdmin = lazy(() => import('./pages/admin/ProyectosAdmin'))
 const DetalleProyectoAdmin = lazy(() => import('./pages/admin/DetalleProyectoAdmin'))
 const SimilitudesAdmin = lazy(() => import('./pages/admin/SimilitudesAdmin'))
@@ -105,6 +106,7 @@ export default function App() {
         <Route path="/admin/gestion-usuarios" element={<Navigate to="/admin/usuarios" replace />} />
         <Route path="/admin/nuevo-usuario" element={<Navigate to="/admin/usuarios" replace />} />
         <Route path="/admin/usuarios" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><Usuarios /></SafeRoute></ProtectedRoute>} />
+        <Route path="/admin/redes-conocimiento" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><RedesConocimiento /></SafeRoute></ProtectedRoute>} />
 
         <Route path="/admin/proyectos" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><ProyectosAdmin /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/detalle-proyecto/:id" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><DetalleProyectoAdmin /></SafeRoute></ProtectedRoute>} />

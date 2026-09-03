@@ -62,7 +62,7 @@ export default function RecuperarContrasena() {
         <header className={s.header}>
           <h1 className={s.title}>Recuperar contraseña</h1>
           <p className={s.subtitle}>
-            Ingresa tu correo institucional y te enviaremos un enlace para restablecer tu contraseña.
+            Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
           </p>
         </header>
 
@@ -77,7 +77,7 @@ export default function RecuperarContrasena() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="nombre.correo@soy.sena.edu.co"
+              placeholder="tu.correo@ejemplo.com"
               autoComplete="email"
               autoFocus
             />

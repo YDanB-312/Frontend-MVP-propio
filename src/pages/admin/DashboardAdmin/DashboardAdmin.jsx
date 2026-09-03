@@ -8,7 +8,7 @@ import QuickActions from '../../../components/QuickActions/QuickActions'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
-import { getAllUsers, getAllProjects, getAllSimilarities, getAllBugReports, getNotificationsByUser, getPendingProjects, displayNames } from '../../../data/mockData'
+import { getAllUsers, getAllProjects, getSimilitudesValidas, getAllBugReports, getNotificationsByUser, getPendingProjects, displayNames } from '../../../data/mockData'
 import s from '../../../components/Dashboard/Dashboard.module.css'
 
 const TIPO_ICON = { similitud: <MagnifyingGlass size={16} />, revision: null, mensaje: <Bell size={16} />, sistema: <Sparkle size={16} />, observacion: <ChatCircle size={16} /> }
@@ -17,7 +17,7 @@ export default function DashboardAdmin() {
   const { user } = useAuth()
   const usuarios = getAllUsers()
   const proyectos = getAllProjects()
-  const similitudes = getAllSimilarities()
+  const similitudes = getSimilitudesValidas()
   const reportes = getAllBugReports()
   const datos = {
     totalUsuarios: usuarios.length,
@@ -26,7 +26,6 @@ export default function DashboardAdmin() {
     totalProyectos: proyectos.length,
     pendientes: getPendingProjects().length,
     totalSimilitudes: similitudes.length,
-    similitudesPendientes: similitudes.filter(x => x.estado === 'pendiente').length,
     totalReportes: reportes.length,
     reportesAbiertos: reportes.filter(r => r.estado === 'pendiente' || r.estado === 'en_revision').length,
     alertas: user ? getNotificationsByUser(Number(user.id)).slice(0, 5) : [],
@@ -59,7 +58,7 @@ export default function DashboardAdmin() {
           <>
             <Link to="/admin/usuarios" className={s.statLink}><MetricCard icon={<UsersThree size={22} />} label="Usuarios" value={datos.totalUsuarios} variant="primary" trend={`${datos.aprendices} AP · ${datos.instructores} IN`} /></Link>
             <Link to="/admin/proyectos" className={s.statLink}><MetricCard icon={<FolderOpen size={22} />} label="Propuestas" value={datos.totalProyectos} variant="success" trend={`${datos.pendientes} pendientes`} /></Link>
-            <Link to="/admin/similitudes" className={s.statLink}><MetricCard icon={<MagnifyingGlass size={22} />} label="Similitudes" value={datos.totalSimilitudes} variant="warning" trend={`${datos.similitudesPendientes} sin revisar`} /></Link>
+            <Link to="/admin/similitudes" className={s.statLink}><MetricCard icon={<MagnifyingGlass size={22} />} label="Similitudes" value={datos.totalSimilitudes} variant="warning" /></Link>
             <Link to="/admin/reportes-fallas" className={s.statLink}><MetricCard icon={<Bug size={22} />} label="Reportes de fallas" value={datos.totalReportes} variant="danger" trend={`${datos.reportesAbiertos} abiertos`} /></Link>
           </>
         }

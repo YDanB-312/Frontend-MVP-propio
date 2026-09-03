@@ -9,13 +9,17 @@ import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
-import { getAllSimilarities, getProjectsByInstructor, displayNames } from '../../../data/mockData'
+import { findProjectById, getSimilitudesValidas, getProjectsByInstructor, displayNames } from '../../../data/mockData'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesInstructor.module.css'
 
 const ITEMS_POR_PAGINA = 8
 
-const SIM_VARIANT = { pendiente: 'warning', revisada: 'info', resuelta: 'success' }
+const PROY_VARIANT = {
+  pendiente: 'warning',
+  aprobado: 'success',
+  rechazado: 'danger',
+}
 
 export default function SimilitudesInstructor() {
   const { user } = useAuth()
@@ -25,12 +29,18 @@ export default function SimilitudesInstructor() {
   const idsPropios = new Set(
     user ? getProjectsByInstructor(Number(user.id)).map((p) => p.id) : []
   )
-  const similitudes = getAllSimilarities().filter(
+  const similitudes = getSimilitudesValidas().filter(
     (x) => idsPropios.has(x.projectId1) || idsPropios.has(x.projectId2)
   )
 
   const filtradas =
-    filtroEstado === 'todos' ? similitudes : similitudes.filter((x) => x.estado === filtroEstado)
+    filtroEstado === 'todos'
+      ? similitudes
+      : similitudes.filter((x) => {
+          const p1 = findProjectById(x.projectId1)
+          const p2 = findProjectById(x.projectId2)
+          return p1?.estado === filtroEstado || p2?.estado === filtroEstado
+        })
 
   const paginadas = filtradas.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
@@ -47,9 +57,9 @@ export default function SimilitudesInstructor() {
           breadcrumb={[{ label: 'Dashboard', to: '/instructor/dashboard' }, { label: 'Similitudes' }]}
         />
 
-        <FilterBar title="Filtrar por estado">
+        <FilterBar title="Filtrar por estado de la propuesta">
           <label className={s.field}>
-            <span className={s.label}>Estado</span>
+            <span className={s.label}>Estado de la propuesta</span>
             <Select
               value={filtroEstado}
               onChange={(e) => {
@@ -58,9 +68,9 @@ export default function SimilitudesInstructor() {
               }}
             >
               <option value="todos">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="revisada">Revisada</option>
-              <option value="resuelta">Resuelta</option>
+              <option value="pendiente">{displayNames.projectStatus.pendiente}</option>
+              <option value="aprobado">{displayNames.projectStatus.aprobado}</option>
+              <option value="rechazado">{displayNames.projectStatus.rechazado}</option>
             </Select>
           </label>
           <p className={s.info}>
@@ -75,7 +85,7 @@ export default function SimilitudesInstructor() {
             message={
               similitudes.length === 0
                 ? 'No se han detectado similitudes entre los proyectos de tus aprendices.'
-                : 'No hay similitudes con el estado seleccionado.'
+                : 'No hay similitudes con el estado de propuesta seleccionado.'
             }
           />
         ) : (
@@ -87,7 +97,7 @@ export default function SimilitudesInstructor() {
                     <th>Propuesta A</th>
                     <th>Propuesta B</th>
                     <th>Similitud</th>
-                    <th>Estado</th>
+                    <th>Estado (A · B)</th>
                     <th>Fecha</th>
                     <th className={s.colActions}>Acciones</th>
                   </tr>
@@ -95,6 +105,10 @@ export default function SimilitudesInstructor() {
                 <tbody>
                   {paginadas.map((sim) => {
                     const pct = Math.round((sim.similitud || 0) * 100)
+                    const pA = findProjectById(sim.projectId1)
+                    const pB = findProjectById(sim.projectId2)
+                    const estadoA = pA?.estado || '—'
+                    const estadoB = pB?.estado || '—'
                     return (
                       <tr key={sim.id}>
                         <td>
@@ -123,9 +137,14 @@ export default function SimilitudesInstructor() {
                           </span>
                         </td>
                         <td>
-                          <Badge variant={SIM_VARIANT[sim.estado] || 'neutral'}>
-                            {displayNames.similarityStatus[sim.estado] || sim.estado}
-                          </Badge>
+                          <span className={local.estadoPair}>
+                            <Badge variant={PROY_VARIANT[estadoA] || 'neutral'}>
+                              A: {displayNames.projectStatus[estadoA] || estadoA}
+                            </Badge>
+                            <Badge variant={PROY_VARIANT[estadoB] || 'neutral'}>
+                              B: {displayNames.projectStatus[estadoB] || estadoB}
+                            </Badge>
+                          </span>
                         </td>
                         <td className={s.date}>{sim.createdAt}</td>
                         <td className={s.colActions}>

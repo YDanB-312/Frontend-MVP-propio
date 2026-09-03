@@ -61,7 +61,7 @@ export default function Register() {
       <div className={s.wrapper}>
         <header className={s.header}>
           <h1 className={s.title}>Crear cuenta</h1>
-          <p className={s.subtitle}>Regístrate con tu correo institucional del SENA</p>
+          <p className={s.subtitle}>Regístrate con tu correo electrónico</p>
         </header>
 
         <form className={s.form} onSubmit={handleSubmit} noValidate>
@@ -92,7 +92,7 @@ export default function Register() {
               type="email"
               value={form.correo}
               onChange={(e) => set('correo', e.target.value)}
-              placeholder="nombre.correo@soy.sena.edu.co"
+              placeholder="tu.correo@ejemplo.com"
               autoComplete="email"
             />
           </FormField>
