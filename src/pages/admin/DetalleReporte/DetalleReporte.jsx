@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight, Bug, ChartBar, CheckCircle, FileText, MagnifyingGlass, User } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
@@ -60,6 +60,15 @@ export default function DetalleReporte() {
   const reporte = findBugReportById(id)
   const reportante = reporte && reporte.reporterId ? findUserById(reporte.reporterId) : null
   const prioridadInfo = reporte ? ((reporte.prioridad && PRIORIDAD_META[reporte.prioridad]) || PRIORIDAD_POR_TIPO[reporte.tipo] || PRIORIDAD_META.media) : null
+
+  // Sincroniza el selector al navegar entre reportes sin remontar
+  useEffect(() => {
+    if (reporte) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setNuevoEstado(reporte.estado)
+      setGuardado(false)
+    }
+  }, [reporte?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!reporte) {
     return (

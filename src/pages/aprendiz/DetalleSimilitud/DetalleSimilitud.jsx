@@ -1,14 +1,16 @@
-import { useParams } from 'react-router-dom'
-import { ChatCircle } from 'phosphor-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ChatCircle, MagnifyingGlass } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DetalleSimilitudBase from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase'
 import DataPanel from '../../../components/DataPanel/DataPanel'
+import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { findSimilarityById, findProjectById, getObservaciones } from '../../../data/mockData'
 import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
 
 export default function DetalleSimilitud() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const similitud = findSimilarityById(id)
 
@@ -22,6 +24,22 @@ export default function DetalleSimilitud() {
     else if (esMia(p2)) miPid = p2.id
   }
   const observaciones = miPid ? getObservaciones(miPid) : []
+
+  if (similitud && user && miPid == null) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Detalle de Similitud">
+        <div className={s.wrapper}>
+          <EmptyState
+            icon={<MagnifyingGlass />}
+            title="Similitud no autorizada"
+            message="Esta similitud no pertenece a ninguna de tus propuestas."
+            actionLabel="Volver a similitudes"
+            onAction={() => navigate('/aprendiz/similitudes')}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout role="aprendiz" titulo="Detalle de Similitud">

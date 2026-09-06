@@ -46,7 +46,8 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
       refrescar()
     }
     if (n.projectId) navigate(`${detallePath}/detalle-proyecto/${n.projectId}`)
-    else if (n.reporteId) navigate(`${detallePath}/detalle-reporte/${n.reporteId}`)
+    // Solo el admin tiene detalle-reporte; en otros roles solo se marca como leída
+    else if (n.reporteId && detallePath === '/admin') navigate(`${detallePath}/detalle-reporte/${n.reporteId}`)
   }
 
   return (

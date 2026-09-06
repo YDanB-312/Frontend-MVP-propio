@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, ChartBar, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, Plus, Trash, X } from 'phosphor-react'
+import { ArrowRight, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, Plus, Trash, X } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
@@ -113,8 +113,8 @@ export default function DetalleProyectoAdmin() {
           subtitle={`Enviado el ${proyecto.createdAt} por ${proyecto.studentName}`}
           icon={<FolderOpen />}
           breadcrumb={[
-            { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
-            { label: 'Proyectos', to: '/admin/proyectos', icon: <FolderOpen size={14} /> },
+            { label: 'Dashboard', to: '/admin/dashboard' },
+            { label: 'Proyectos', to: '/admin/proyectos' },
             { label: proyecto.title },
           ]}
         />
@@ -154,7 +154,8 @@ export default function DetalleProyectoAdmin() {
                 </form>
               }
             >
-              <InformacionProyecto proyecto={proyecto} ficha={ficha} fichaHref={ficha ? `/admin/detalle-ficha/${ficha.id}` : null} />
+              {/* Sin fichaHref: no existe ruta /admin/detalle-ficha (se muestra como texto) */}
+              <InformacionProyecto proyecto={proyecto} ficha={ficha} fichaHref={null} />
             </DataPanel>
           </div>
 

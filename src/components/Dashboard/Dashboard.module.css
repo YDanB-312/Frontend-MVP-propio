@@ -110,7 +110,7 @@
 }
 
 .fila:hover {
-  background: var(--c-surface-alt);
+  background: var(--c-border);
 }
 
 .filaMain {

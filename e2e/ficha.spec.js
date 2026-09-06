@@ -7,7 +7,7 @@ async function registrarAprendiz(page) {
   await page.goto('/register')
   await page.getByPlaceholder('María José').fill('Test E2E')
   await page.getByPlaceholder('González Ruiz').fill('Automatizado')
-  await page.getByPlaceholder('nombre.correo@soy.sena.edu.co').fill(email)
+  await page.getByPlaceholder('tu.correo@ejemplo.com').fill(email)
   await page.locator('input[type="password"]').first().fill('clave123')
   await page.locator('input[type="password"]').nth(1).fill('clave123')
   await page.getByRole('button', { name: /Crear Cuenta/i }).click()
@@ -22,7 +22,7 @@ test.describe('Ciclo de Ficha (unirse → persistir → salir)', () => {
     email = await registrarAprendiz(page)
     // tras confirmación, ir a login y entrar
     await page.goto('/login')
-    await page.getByPlaceholder('nombre.correo@soy.sena.edu.co').fill(email)
+    await page.getByPlaceholder('tu.correo@ejemplo.com').fill(email)
     await page.locator('input[type="password"]').fill('clave123')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await page.waitForURL('**/aprendiz/dashboard')
@@ -32,10 +32,10 @@ test.describe('Ciclo de Ficha (unirse → persistir → salir)', () => {
     // Sidebar lleva a la sección unificada
     await page.getByRole('link', { name: 'Ficha' }).click()
     await expect(page).toHaveURL(/\/aprendiz\/ficha/)
-    await expect(page.getByPlaceholder('FT-X7K2MN')).toBeVisible()
+    await expect(page.getByPlaceholder('abc-defg')).toBeVisible()
 
     // Buscar ficha del seed y unirse
-    await page.getByPlaceholder('FT-X7K2MN').fill('FT-X7K2MN')
+    await page.getByPlaceholder('abc-defg').fill('xkp-mqwr')
     await page.getByRole('button', { name: /Buscar/i }).click()
     await expect(page.getByText(/Analisis y Desarrollo 2568/).first()).toBeVisible()
     await page.getByRole('button', { name: /Unirse a esta ficha/i }).click()
@@ -52,7 +52,7 @@ test.describe('Ciclo de Ficha (unirse → persistir → salir)', () => {
 
   test('salir de la ficha vuelve al modo código y permite re-unirse', async ({ page }) => {
     await page.getByRole('link', { name: 'Ficha' }).click()
-    await page.getByPlaceholder('FT-X7K2MN').fill('FT-X7K2MN')
+    await page.getByPlaceholder('abc-defg').fill('xkp-mqwr')
     await page.getByRole('button', { name: /Buscar/i }).click()
     await page.getByRole('button', { name: /Unirse a esta ficha/i }).click()
     await page.getByRole('button', { name: /Sí, unirme/i }).click()
@@ -61,10 +61,10 @@ test.describe('Ciclo de Ficha (unirse → persistir → salir)', () => {
     await page.getByRole('button', { name: /Salir de la ficha/i }).click()
     await page.getByRole('button', { name: /Sí, salir/i }).click()
 
-    await expect(page.getByPlaceholder('FT-X7K2MN')).toBeVisible()
+    await expect(page.getByPlaceholder('abc-defg')).toBeVisible()
 
     // Re-unirse para verificar que el ciclo es repetible
-    await page.getByPlaceholder('FT-X7K2MN').fill('FT-X7K2MN')
+    await page.getByPlaceholder('abc-defg').fill('xkp-mqwr')
     await page.getByRole('button', { name: /Buscar/i }).click()
     await page.getByRole('button', { name: /Unirse a esta ficha/i }).click()
     await page.getByRole('button', { name: /Sí, unirme/i }).click()

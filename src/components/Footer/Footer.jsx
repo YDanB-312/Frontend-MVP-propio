@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { CONTACTO } from '../../constants/contacto'
 import { Phone, Envelope, Copyright } from 'phosphor-react'
 import s from './Footer.module.css'
@@ -44,7 +45,7 @@ export default function Footer({ role }) {
         {footerLinks && (
           <div className={s.links}>
             {footerLinks.map(l => (
-              <a key={l.to} href={l.to} className={s.link}>{l.label}</a>
+              <Link key={l.to} to={l.to} className={s.link}>{l.label}</Link>
             ))}
           </div>
         )}

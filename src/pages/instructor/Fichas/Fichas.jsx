@@ -361,6 +361,8 @@ export default function Fichas() {
                                   type="button"
                                   size="sm"
                                   variant="danger"
+                                  disabled={getEstudiantesDeFicha(f.id).length > 0 || getProjectsByFicha(f.id).length > 0}
+                                  title={getEstudiantesDeFicha(f.id).length > 0 || getProjectsByFicha(f.id).length > 0 ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
                                   onClick={() => setAEliminar(f)}
                                 >
                                   <Trash size={14} /> Eliminar

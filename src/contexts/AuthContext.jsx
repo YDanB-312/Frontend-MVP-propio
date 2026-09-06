@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
     destino.setItem('auth_user', JSON.stringify(sesion))
     otro.removeItem('auth_user')
     setUser(sesion)
-    return { exito: true, ruta: RUTA_POR_ROL[encontrado.role] || '/home' }
+    return { exito: true, ruta: RUTA_POR_ROL[encontrado.role] || '/' }
   }, [])
 
   const register = useCallback(({ nombre, apellido, correo, password, rol }) => {

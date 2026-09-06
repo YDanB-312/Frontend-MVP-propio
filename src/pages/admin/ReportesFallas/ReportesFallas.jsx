@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
@@ -117,9 +116,7 @@ export default function ReportesFallas() {
                     return (
                       <tr key={r.id}>
                         <td>
-                          <Link to={`/admin/detalle-reporte/${r.id}`} className={s.titleLink}>
-                            {r.titulo}
-                          </Link>
+                          <span className={s.title}>{r.titulo}</span>
                           <span className={s.subText}>#{r.id}</span>
                         </td>
                         <td className={s.text}>{r.reporterName}</td>

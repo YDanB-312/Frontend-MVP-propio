@@ -85,8 +85,8 @@
   --sh-2xl:0 16px 48px rgba(0,0,0,.16);
   --ring-color:rgba(57,169,0,.22);
   --sh-ring:0 0 0 3px var(--ring-color);
-  --sh-card:0 1px 2px rgba(0,0,0,.04);
-  --sh-card-h:0 2px 8px rgba(0,0,0,.08);
+  --sh-card:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh-card-h:0 4px 16px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.08);
 
   /* Radius */
   --r-sm:6px;--r-md:8px;--r-lg:8px;--r-xl:12px;--r-full:9999px;
@@ -96,7 +96,7 @@
 
   /* Spacing (4px base) */
   --sp-0:0;--sp-px:1px;--sp-0_5:2px;--sp-1:4px;--sp-1_5:6px;--sp-2:8px;
-  --sp-2_5:10px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;
+  --sp-2_5:10px;--sp-3:12px;--sp-3_5:14px;--sp-4:16px;--sp-5:20px;--sp-6:24px;
   --sp-7:28px;--sp-8:32px;--sp-9:36px;--sp-10:40px;--sp-12:48px;
   --sp-14:56px;--sp-16:64px;--sp-20:80px;--sp-24:96px;--sp-28:112px;--sp-32:128px;
 

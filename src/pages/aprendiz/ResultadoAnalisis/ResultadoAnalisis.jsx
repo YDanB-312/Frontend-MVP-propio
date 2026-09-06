@@ -67,6 +67,24 @@ export default function ResultadoAnalisis() {
     )
   }
 
+  const esPropio = Number(propio.studentId) === Number(user.id) || (propio.integrantes || []).includes(user.nombre)
+  if (!esPropio) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Resultado del Análisis">
+        <div className={s.wrapper}>
+          <EmptyState
+            icon={<MagnifyingGlass />}
+            title="Análisis no autorizado"
+            message="Este análisis no pertenece a ninguna de tus propuestas."
+            actionLabel="Ir a mis proyectos"
+            actionIcon={<ArrowLeft size={14} />}
+            onAction={() => navigate('/aprendiz/propuestas')}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   if (propias.length === 0) {
     return (
       <DashboardLayout role="aprendiz" titulo="Resultado del Análisis">
@@ -115,8 +133,7 @@ export default function ResultadoAnalisis() {
         <header className={s.header}>
           <h1 className={s.title}>Resultado del análisis</h1>
           <p className={s.subtitle}>
-            {propio.title} · {total} coincidencia{total !== 1 ? 's' : ''} detectada
-            {total !== 1 ? 's' : ''}
+            {propio.title} · {total} coincidencia{total !== 1 ? 's' : ''} detectada{total !== 1 ? 's' : ''}
           </p>
         </header>
 

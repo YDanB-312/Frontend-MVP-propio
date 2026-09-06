@@ -21,7 +21,7 @@
   .danger{background:var(--c-danger);color:var(--c-on-danger)}
   .danger:hover{background:var(--c-danger-hover)}
 
-.dangerGhost{background:transparent;color:var(--c-danger);border:1px solid var(--c-danger)}
+.dangerGhost{background:transparent;color:var(--c-danger-text);border:1px solid var(--c-danger)}
 .dangerGhost:hover{background:var(--c-danger-bg)}
 
 .success{background:var(--c-success);color:var(--c-on-success)}

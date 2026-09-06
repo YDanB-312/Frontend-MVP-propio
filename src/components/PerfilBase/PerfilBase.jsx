@@ -118,8 +118,8 @@ export default function PerfilBase({
 
   function guardar(e) {
     e.preventDefault()
+    // El nombre es inmutable: identifica propuestas, equipos y fichas por valor
     const errs = {}
-    if (form.name.trim().length < 3) errs.name = 'El nombre debe tener al menos 3 caracteres.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       errs.email = 'Ingresa un correo electrónico válido.'
     }
@@ -128,10 +128,10 @@ export default function PerfilBase({
 
     updateUser({
       id: perfil.id,
-      name: form.name.trim(),
+      name: perfil.name,
       email: form.email.trim().toLowerCase(),
     })
-    sincronizarSesion(form.name.trim(), form.email.trim().toLowerCase())
+    sincronizarSesion(perfil.name, form.email.trim().toLowerCase())
     setEditando(false)
     setGuardado(true)
   }
@@ -302,12 +302,11 @@ export default function PerfilBase({
                 <FormField label="Rol">
                   <Input type="text" value={rolLabel} readOnly />
                 </FormField>
-                <FormField label="Nombre completo" required error={errors.name}>
+                <FormField label="Nombre completo" help="El nombre identifica tus propuestas y equipos; no se puede cambiar.">
                   <Input
                     type="text"
-                    value={form.name}
-                    onChange={(e) => set('name', e.target.value)}
-                    autoFocus
+                    value={perfil?.name || ''}
+                    readOnly
                   />
                 </FormField>
                 <FormField label="Correo electrónico" required error={errors.email}>

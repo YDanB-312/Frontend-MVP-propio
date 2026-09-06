@@ -56,8 +56,8 @@ export default function MiFicha() {
       setError(`No encontramos una ficha con el código "${codigo.trim().toLowerCase()}".`)
       return
     }
-    if (resultado.estado === 'inactivo') {
-      setError('Esta ficha está inactiva y no acepta nuevos integrantes.')
+    if (resultado.estado === 'inactivo' || resultado.estado === 'finalizado') {
+      setError('Esta ficha está finalizada y no acepta nuevos integrantes.')
       return
     }
     setEncontrada(resultado)
@@ -279,7 +279,7 @@ export default function MiFicha() {
       <ConfirmModal
         open={confirmarSalir}
         titulo="Salir de la ficha"
-        mensaje={`¿Seguro que deseas salir de "${ficha.nombre}" (${ficha.codigo})? Podrás volver a unirte con el mismo código cuando quieras.`}
+        mensaje={`¿Seguro que deseas salir de "${ficha.nombre}" (${ficha.codigo})? Tus propuestas conservarán esta ficha como historial. Podrás volver a unirte con el mismo código cuando quieras.`}
         textoConfirmar="Sí, salir"
         textoCancelar="Cancelar"
         onConfirmar={salirDeLaFicha}

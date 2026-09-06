@@ -4,4 +4,4 @@
 .danger{background:var(--c-danger-bg);color:var(--c-danger-text)}
 .info{background:var(--c-info-bg);color:var(--c-info-text)}
 .neutral{background:var(--s-100);color:var(--s-600)}
-.primary{background:var(--c-primary-light);color:var(--c-primary)}
+.primary{background:var(--c-primary-light);color:var(--c-primary-strong)}

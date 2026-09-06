@@ -13,7 +13,7 @@ test.describe('Privacidad: aprendiz vs propuestas ajenas', () => {
     await expect(page.getByText(/Similitudes detectadas/i)).toHaveCount(0)
     await expect(page.getByText(/Observaciones \(/i)).toHaveCount(0)
     await expect(page.locator('textarea')).toHaveCount(0)
-    await expect(page.getByRole('button', { name: /Publicar observación/i })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /Agregar observación/i })).toHaveCount(0)
   })
 
   test('propuesta propia SÍ muestra observaciones y similitudes', async ({ page }) => {
@@ -21,14 +21,14 @@ test.describe('Privacidad: aprendiz vs propuestas ajenas', () => {
     // Propuesta propia: Plataforma de Ventas Online (id 4)
     await page.goto('/aprendiz/detalle-proyecto/4')
 
-    await expect(page.getByText(/Similitudes detectadas \(/i)).toBeVisible()
+    await expect(page.getByText(/Similitudes detectadas/i)).toBeVisible()
     await expect(page.getByText(/Observaciones \(/i)).toBeVisible()
   })
 
   test('integrante del equipo tiene derechos plenos sobre la propuesta compartida', async ({ page }) => {
     // Juan es integrante de "Plataforma de Ventas Online" (creada por María)
     await page.goto('/login')
-    await page.getByPlaceholder('nombre.correo@soy.sena.edu.co').fill('juan.perez@soy.sena.edu.co')
+    await page.getByPlaceholder('tu.correo@ejemplo.com').fill('juan.perez@soy.sena.edu.co')
     await page.locator('input[type="password"]').fill('123456')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await page.waitForURL('**/aprendiz/dashboard')
@@ -39,7 +39,7 @@ test.describe('Privacidad: aprendiz vs propuestas ajenas', () => {
 
     // Y sobre ella tiene derechos plenos: observaciones y similitudes visibles
     await page.goto('/aprendiz/detalle-proyecto/4')
-    await expect(page.getByText(/Similitudes detectadas \(/i)).toBeVisible()
+    await expect(page.getByText(/Similitudes detectadas/i)).toBeVisible()
     await expect(page.getByText(/Observaciones \(/i)).toBeVisible()
   })
 

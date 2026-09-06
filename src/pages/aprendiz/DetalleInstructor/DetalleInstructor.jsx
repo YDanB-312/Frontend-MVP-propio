@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Badge from '../../../components/Badge/Badge'
@@ -11,6 +11,7 @@ import { CaretRight, GraduationCap, MagnifyingGlass } from 'phosphor-react'
 
 export default function DetalleInstructor() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
   const miPerfil = findUserById(user.id)
@@ -28,6 +29,7 @@ export default function DetalleInstructor() {
             message="Aún no tienes una ficha con instructor asignado. Únete a una ficha para conocer a tu instructor."
             actionLabel="Unirme a una ficha"
             actionIcon={<GraduationCap size={14} />}
+            onAction={() => navigate('/aprendiz/ficha')}
           />
         </div>
       </DashboardLayout>

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Bell, CaretRight, Clock, FolderOpen, MagnifyingGlass, PlusCircle, Tray } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import Dashboard from '../../../components/Dashboard/Dashboard'
@@ -32,6 +32,7 @@ function similitudInfo(similitudes, projectId) {
 
 export default function DashboardAprendiz() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const misProyectos = useMemo(() => getProjectsByStudent(user.id), [user.id])
   const similitudes = useMemo(() => getSimilitudesValidas(), [])
   const sinLeer = getUnreadCount(user.id)
@@ -69,7 +70,7 @@ export default function DashboardAprendiz() {
         actividad={
           <DataPanel title="Propuestas recientes" icon={<Clock size={18} />} action={<Link to="/aprendiz/propuestas" className={s.panelLink}>Ver todas</Link>}>
             {recientes.length === 0 ? (
-              <EmptyState icon={<Tray />} title="Aún no tienes propuestas" message="Registra tu primera propuesta para comenzar a analizarla." actionLabel="Crear propuesta" onAction={() => window.location.href = '/aprendiz/propuestas?crear=1'} />
+              <EmptyState icon={<Tray />} title="Aún no tienes propuestas" message="Registra tu primera propuesta para comenzar a analizarla." actionLabel="Crear propuesta" onAction={() => navigate('/aprendiz/propuestas?crear=1')} />
             ) : (
               <ul className={s.lista}>
                 {recientes.map(p => {

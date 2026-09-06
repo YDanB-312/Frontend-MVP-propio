@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { FolderOpen, Eye, MagnifyingGlass } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -11,7 +10,7 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import {
   getAllProjects,
-  getAllSimilarities,
+  getSimilitudesValidas,
   displayNames,
 } from '../../../data/mockData'
 import s from '../../../components/ListaBase/ListaBase.module.css'
@@ -31,8 +30,9 @@ export default function ProyectosAdmin() {
 
   const proyectos = getAllProjects()
 
+  // Solo similitudes válidas (intra-programa + al menos un aprobado), como el resto del admin
   const simInfo = {}
-  for (const sim of getAllSimilarities()) {
+  for (const sim of getSimilitudesValidas()) {
     const pct = Math.round((sim.similitud || 0) * 100)
     for (const pid of [sim.projectId1, sim.projectId2]) {
       if (!simInfo[pid]) simInfo[pid] = { pct, count: 0 }
@@ -127,16 +127,14 @@ export default function ProyectosAdmin() {
                     return (
                       <tr key={p.id}>
                         <td>
-                          <Link to={`/admin/detalle-proyecto/${p.id}`} className={s.titleLink}>
-                            {p.title}
-                          </Link>
+                          <span className={s.title}>{p.title}</span>
                           <span className={s.subText}>{p.areaAplicacion}</span>
                         </td>
                         <td className={s.text}>{p.studentName}</td>
                         <td className={s.date}>{p.createdAt}</td>
                         <td>
                           {info ? (
-                            <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
+                            <Badge variant={info.pct >= 60 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
                               <MagnifyingGlass size={12} /> {info.pct}% · {info.count}
                             </Badge>
                           ) : (

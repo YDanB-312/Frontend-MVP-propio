@@ -104,7 +104,7 @@ export default function App() {
 
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><DashboardAdmin /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/gestion-usuarios" element={<Navigate to="/admin/usuarios" replace />} />
-        <Route path="/admin/nuevo-usuario" element={<Navigate to="/admin/usuarios" replace />} />
+        <Route path="/admin/nuevo-usuario" element={<Navigate to="/admin/usuarios?crear=1" replace />} />
         <Route path="/admin/usuarios" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><Usuarios /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/redes-conocimiento" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><RedesConocimiento /></SafeRoute></ProtectedRoute>} />
 

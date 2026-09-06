@@ -8,7 +8,7 @@ import QuickActions from '../../../components/QuickActions/QuickActions'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
-import { getProjectsByInstructor, getAllFichas, getPendingProjects, getUnreadCount, getSimilitudesValidas, displayNames } from '../../../data/mockData'
+import { getAllProjects, getAllFichas, getPendingProjects, getUnreadCount, getSimilitudesValidas, instructorVeProyecto, displayNames } from '../../../data/mockData'
 import s from '../../../components/Dashboard/Dashboard.module.css'
 
 const ESTADO_VARIANT = { pendiente: 'warning', aprobado: 'success', rechazado: 'danger' }
@@ -16,12 +16,13 @@ const ESTADO_VARIANT = { pendiente: 'warning', aprobado: 'success', rechazado: '
 export default function DashboardInstructor() {
   const { user } = useAuth()
   const uid = Number(user?.id)
-  const misProyectos = user ? getProjectsByInstructor(uid) : []
+  // Mismo criterio que Revisión: proyecto propio O de ficha propia
+  const misProyectos = user ? getAllProjects().filter(p => instructorVeProyecto(p, uid)) : []
   const pendientes = misProyectos.filter(p => p.estado === 'pendiente')
   const misFichas = user ? getAllFichas().filter(f => f.instructorId === uid) : []
   const idsPropios = new Set(misProyectos.map(p => p.id))
   const similitudesPropias = getSimilitudesValidas().filter(x => idsPropios.has(x.projectId1) || idsPropios.has(x.projectId2))
-  const recientes = user ? getPendingProjects().filter(p => p.instructorId === uid).slice(0, 5) : []
+  const recientes = user ? getPendingProjects().filter(p => instructorVeProyecto(p, uid)).slice(0, 5) : []
   const saludo = user?.nombre?.split(' ')[0] || 'Instructor'
 
   const quick = []

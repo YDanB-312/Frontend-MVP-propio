@@ -19,6 +19,7 @@ import {
   findFichaById,
   findUserById,
   createProject,
+  detectarSimilitudes,
   createNotification,
   displayNames,
 } from '../../../data/mockData'
@@ -165,6 +166,11 @@ export default function Propuestas() {
       }).filter(Boolean)],
       estado: 'pendiente',
     })
+
+    // Detección inmediata contra el corpus aprobado del mismo programa:
+    // así ResultadoAnalisis ya muestra la lista completa al subir,
+    // sin esperar a la aprobación del instructor.
+    detectarSimilitudes(project.id)
 
     // Avisar a cada compañero añadido al equipo
     seleccionados.forEach((idComp) => {
@@ -410,7 +416,7 @@ export default function Propuestas() {
                   })}
                 </div>
                 <Pagination
-                  totalItems={proyectos.length}
+                  totalItems={filtrados.length}
                   filteredCount={filtrados.length}
                   itemsPerPage={ITEMS_POR_PAGINA}
                   paginaActual={pagina}

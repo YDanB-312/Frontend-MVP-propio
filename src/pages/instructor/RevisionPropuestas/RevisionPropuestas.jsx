@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
@@ -16,6 +15,7 @@ import {
   getAllProjects,
   getAllFichas,
   getSimilitudesValidas,
+  getSimilaritiesByProject,
   findUserById,
   findFichaById,
   updateProjectEstado,
@@ -24,7 +24,7 @@ import {
 } from '../../../data/mockData'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './RevisionPropuestas.module.css'
-import { CheckCircle, ClipboardText, MagnifyingGlass, Tray, XCircle } from 'phosphor-react'
+import { CheckCircle, ClipboardText, Tray, XCircle } from 'phosphor-react'
 
 const ITEMS_POR_PAGINA = 8
 
@@ -73,7 +73,7 @@ export default function RevisionPropuestas() {
   const confirmarAccion = () => {
     if (!modal) return
     const { proyecto, accion } = modal
-    const coincidencias = updateProjectEstado(proyecto.id, accion)
+    updateProjectEstado(proyecto.id, accion)
     createNotification({
       mensaje:
         accion === 'aprobado'
@@ -84,9 +84,11 @@ export default function RevisionPropuestas() {
       projectId: proyecto.id,
     })
     if (accion === 'aprobado') {
+      // Total acumulado (no solo las nuevas): la detección ya pudo correr al subir la propuesta
+      const total = getSimilaritiesByProject(proyecto.id).length
       setMsgAprobacion(
-        coincidencias > 0
-          ? `Propuesta aprobada · se detectaron ${coincidencias} coincidencia(s) con propuestas anteriores.`
+        total > 0
+          ? `Propuesta aprobada · se detectaron ${total} coincidencia(s) con propuestas anteriores.`
           : "Propuesta aprobada · sin coincidencias con propuestas anteriores."
       )
       if (msgTimer.current) clearTimeout(msgTimer.current)
@@ -164,9 +166,7 @@ export default function RevisionPropuestas() {
                     return (
                     <tr key={p.id}>
                       <td data-label="Propuesta">
-                        <Link to={`/instructor/detalle-proyecto/${p.id}`} className={s.titleLink}>
-                          {p.title}
-                        </Link>
+                        <span className={s.title}>{p.title}</span>
                         <span className={s.subText}>{fic ? `${fic.codigo} · ${fic.nombre}` : 'Sin ficha'}</span>
                       </td>
                       <td data-label="Aprendiz">
@@ -177,9 +177,11 @@ export default function RevisionPropuestas() {
                       </td>
                       <td data-label="Similitud">
                         {info ? (
-                          <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
-                            <MagnifyingGlass size={12} /> {info.pct}% · {info.count}
-                          </Badge>
+                          <span className={local.simCell}>
+                            <span className={`${local.dot} ${info.pct >= 60 ? local.dotHigh : info.pct >= 40 ? local.dotMid : local.dotLow}`} />
+                            <span className={local.mono}>{info.pct}%</span>
+                            <span className={s.muted}>· {info.count}</span>
+                          </span>
                         ) : (
                           <span className={s.muted}>—</span>
                         )}
@@ -197,7 +199,7 @@ export default function RevisionPropuestas() {
                               <Button
                                 type="button"
                                 size="sm"
-                                variant="success"
+                                variant="ghost"
                                 onClick={() => abrirModal(p, 'aprobado')}
                               >
                                 <CheckCircle size={14} /> Aprobar
@@ -205,7 +207,7 @@ export default function RevisionPropuestas() {
                               <Button
                                 type="button"
                                 size="sm"
-                                variant="danger"
+                                variant="dangerGhost"
                                 onClick={() => abrirModal(p, 'rechazado')}
                               >
                                 <XCircle size={14} /> Rechazar

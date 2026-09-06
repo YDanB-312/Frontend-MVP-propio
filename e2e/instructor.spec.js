@@ -69,7 +69,7 @@ test.describe('Crear ficha (instructor)', () => {
     const programa = page.locator('form select[name="programa"]')
     await expect(nombre).toBeVisible()
     await expect(numero).toBeVisible()
-    await expect(page.getByText(/FT-/).first()).toBeVisible()
+    await expect(page.getByText(/[a-z]{3}-[a-z]{4}/).first()).toBeVisible()
 
     // Validación: enviar vacío muestra errores y no navega
     const submit = page.locator('form').getByRole('button', { name: /^Crear ficha$/i })

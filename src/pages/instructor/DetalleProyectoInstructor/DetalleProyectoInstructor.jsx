@@ -31,11 +31,13 @@ import { ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, Magnifyin
 
 const ACCIONES = {
   aprobado: {
+    estado: 'aprobado',
     titulo: 'Aprobar propuesta',
     verbo: 'aprobar',
     texto: 'Sí, aprobar',
   },
   rechazado: {
+    estado: 'rechazado',
     titulo: 'Rechazar propuesta',
     verbo: 'rechazar',
     texto: 'Sí, rechazar',
@@ -131,10 +133,10 @@ export default function DetalleProyectoInstructor() {
           action={
             enMiCargo ? (
               <Actions>
-                <Button type="button" variant="success" onClick={() => setModal(ACCIONES.aprobado)}>
+                <Button type="button" variant="success" disabled={proyecto.estado === 'aprobado'} onClick={() => setModal(ACCIONES.aprobado)}>
                   <CheckCircle size={14} /> Aprobar
                 </Button>
-                <Button type="button" variant="danger" onClick={() => setModal(ACCIONES.rechazado)}>
+                <Button type="button" variant="danger" disabled={proyecto.estado === 'rechazado'} onClick={() => setModal(ACCIONES.rechazado)}>
                   <XCircle size={14} /> Rechazar
                 </Button>
               </Actions>

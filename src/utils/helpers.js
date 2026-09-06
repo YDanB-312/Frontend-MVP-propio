@@ -31,22 +31,4 @@ export function agruparObservaciones(lista) {
   return raices
 }
 
-export const ROL_INFO = {
-  aprendiz: { label: 'Aprendiz', badge: 'exito', icon: 'user-graduate' },
-  instructor: { label: 'Instructor', badge: 'advertencia', icon: 'chalkboard-teacher' },
-  admin: { label: 'Admin', badge: 'peligro', icon: 'user-shield' },
-}
 
-export const etiquetaReporte = {
-  pendiente: 'Pendiente',
-  en_revision: 'En Revision',
-  resuelto: 'Resuelto',
-  rechazado: 'Rechazado',
-}
-
-export const badgeReporte = {
-  pendiente: { clase: 'advertencia', icono: 'clock' },
-  en_revision: { clase: 'primario', icono: 'cog' },
-  resuelto: { clase: 'exito', icono: 'check' },
-  rechazado: { clase: 'neutral', icono: 'lock' },
-}

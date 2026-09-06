@@ -21,8 +21,8 @@
 .link:hover{text-decoration:underline}
 .muted{margin:0;font-size:var(--text-sm);color:var(--c-text-3)}
 .otrasList{display:flex;flex-direction:column;gap:var(--sp-2_5);margin:0;padding:0;list-style:none}
-.otrasRow{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:var(--c-surface-alt);border:1px solid var(--c-border);border-radius:var(--r-md);text-decoration:none;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
-.otrasRow:hover{background:var(--c-primary-light)}
+.otrasRow{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:var(--c-surface-alt);border:1px solid var(--c-border);border-radius:var(--r-md);text-decoration:none;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out),background var(--dur-fast) ease}
+.otrasRow:hover{background:var(--c-border)}
 .tagOrigen{flex:0 0 auto}
 .otrasInfo{display:flex;flex-direction:column;gap:var(--sp-0_5);min-width:0;flex:1}
 .otrasTitle{font-size:var(--text-sm);font-weight:600;color:var(--c-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

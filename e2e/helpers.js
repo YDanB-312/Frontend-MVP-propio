@@ -10,7 +10,7 @@ const CUENTAS = {
 export async function login(page, role) {
   const cta = CUENTAS[role]
   await page.goto('/login')
-  await page.getByPlaceholder('nombre.correo@soy.sena.edu.co').fill(cta.email)
+  await page.getByPlaceholder('tu.correo@ejemplo.com').fill(cta.email)
   await page.locator('input[type="password"]').fill(cta.password)
   await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
   await page.waitForURL(`**${cta.home}`, { timeout: 15000 })

@@ -16,7 +16,7 @@ import {
   findUserById,
   findFichaById,
   getProjectsByStudent,
-  getAllSimilarities,
+  getSimilitudesValidas,
   updateUser,
   deleteUser,
   setUserFicha,
@@ -57,7 +57,7 @@ export default function DetalleUsuario() {
 
   const usuario = findUserById(id)
   const proyectos = usuario && usuario.role === 'aprendiz' ? getProjectsByStudent(usuario.id) : []
-  const similitudes = getAllSimilarities()
+  const similitudes = getSimilitudesValidas()
 
   if (!usuario) {
     return (
@@ -125,10 +125,11 @@ export default function DetalleUsuario() {
     if (nuevoNombre !== usuario.name || nuevoEmail !== usuario.email) {
       updateUser({ id: usuario.id, name: nuevoNombre, email: nuevoEmail })
     }
-    if (usuario.role === 'aprendiz' && form.fichaId) {
-      const fichaIdNum = Number(form.fichaId)
-      if (fichaIdNum !== usuario.fichaId) {
-        setUserFicha(usuario.id, fichaIdNum)
+    if (usuario.role === 'aprendiz') {
+      const actual = usuario.fichaId ? String(usuario.fichaId) : ''
+      if (form.fichaId !== actual) {
+        // '' explícito = quitar ficha; si ya estaba sin ficha no hay nada que guardar
+        setUserFicha(usuario.id, form.fichaId === '' ? null : Number(form.fichaId))
       }
     }
     setEditando(false)
@@ -172,7 +173,13 @@ export default function DetalleUsuario() {
           <Button type="button" variant="secondary" onClick={iniciarEdicion}>
             <PencilSimple size={14} /> Editar
           </Button>
-          <Button type="button" variant="dangerGhost" onClick={() => setModalEliminar(true)}>
+          <Button
+            type="button"
+            variant="dangerGhost"
+            disabled={proyectos.length > 0}
+            title={proyectos.length > 0 ? 'No se puede eliminar: tiene propuestas asociadas' : undefined}
+            onClick={() => setModalEliminar(true)}
+          >
             <Trash size={14} /> Eliminar
           </Button>
         </Actions>
@@ -185,13 +192,11 @@ export default function DetalleUsuario() {
           <DataPanel title="Editar usuario" icon={<PencilSimple />}>
             <form className={formStyles.form} onSubmit={onSubmitEdicion} noValidate>
               <div className={formStyles.grid2}>
-                <FormField label="Nombre completo" required error={errores.name}>
+                <FormField label="Nombre completo" help="El nombre identifica propuestas y equipos; no se puede cambiar.">
                   <Input
                     name="name"
                     value={form.name}
-                    onChange={onChange}
-                    placeholder="Ej. María González"
-                    maxLength={80}
+                    readOnly
                   />
                 </FormField>
                 <FormField label="Correo electrónico" required error={errores.email}>
@@ -207,7 +212,7 @@ export default function DetalleUsuario() {
               {usuario.role === 'aprendiz' && (
                 <FormField label="Ficha" help="Solo fichas activas. Opcional.">
                   <Select name="fichaId" value={form.fichaId} onChange={onChange}>
-                    <option value="">Sin ficha / mantener actual</option>
+                    <option value="">Sin ficha</option>
                     {fichasActivas.map((f) => (
                       <option key={f.id} value={String(f.id)}>
                         {f.codigo} — {f.nombre}
@@ -244,7 +249,7 @@ export default function DetalleUsuario() {
                           <span className={s.rowMeta}>Enviado el {p.createdAt}</span>
                         </span>
                         {info && (
-                          <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
+                          <Badge variant={info.pct >= 60 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
                             <MagnifyingGlass size={12} /> {info.pct}% · {info.count}
                           </Badge>
                         )}

@@ -9,7 +9,7 @@ import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import { useAuth } from '../../../contexts/AuthContext'
-import { findProjectById, getSimilitudesValidas, getProjectsByInstructor, displayNames } from '../../../data/mockData'
+import { findProjectById, getSimilitudesValidas, getAllProjects, instructorVeProyecto, displayNames } from '../../../data/mockData'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesInstructor.module.css'
 
@@ -26,8 +26,9 @@ export default function SimilitudesInstructor() {
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
+  // Mismo criterio que Revisión y Dashboard: proyecto propio O de ficha propia
   const idsPropios = new Set(
-    user ? getProjectsByInstructor(Number(user.id)).map((p) => p.id) : []
+    user ? getAllProjects().filter((p) => instructorVeProyecto(p, Number(user.id))).map((p) => p.id) : []
   )
   const similitudes = getSimilitudesValidas().filter(
     (x) => idsPropios.has(x.projectId1) || idsPropios.has(x.projectId2)

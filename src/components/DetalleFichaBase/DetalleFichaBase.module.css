@@ -162,12 +162,14 @@
   border-radius: var(--r-md);
   text-decoration: none;
   transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease,
-    transform var(--dur-normal) var(--ease-out);
+    transform var(--dur-normal) var(--ease-out), box-shadow var(--dur-normal) var(--ease-out);
 }
 
 .studentCard:hover {
-  border-color: var(--c-primary);
-  background: var(--c-success-bg);
+  border-color: var(--c-border-h);
+  background: var(--c-surface-alt);
+  box-shadow: var(--sh-card-h);
+  transform: translateY(-1px);
 }
 
 /* Instructor head actions */
@@ -248,9 +250,10 @@
 }
 
 .studentRow:hover {
-  border-color: var(--c-primary);
-  background: var(--c-surface);
+  border-color: var(--c-border-h);
+  background: var(--c-surface-alt);
   box-shadow: var(--sh-card-h);
+  transform: translateY(-1px);
 }
 
 .arrow {

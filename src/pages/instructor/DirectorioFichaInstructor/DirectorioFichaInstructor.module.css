@@ -57,11 +57,13 @@
   border-radius: var(--r-lg);
   box-shadow: var(--sh-card);
   padding: var(--sp-6) var(--sp-5);
-  transition: transform var(--dur-normal) var(--ease-out), box-shadow var(--dur-normal) var(--ease-out);
+  transition: transform var(--dur-normal) var(--ease-out), box-shadow var(--dur-normal) var(--ease-out), border-color var(--dur-fast) ease;
 }
 
 .card:hover {
   box-shadow: var(--sh-card-h);
+  border-color: var(--c-border-h);
+  transform: translateY(-1px);
 }
 
 .name {

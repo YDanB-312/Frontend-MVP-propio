@@ -649,7 +649,7 @@ export function joinFicha(codigo, estudiante) {
   const index = state.fichas.findIndex(f => f.codigo === (codigo || '').trim().toLowerCase())
   if (index === -1) return null
   const ficha = state.fichas[index]
-  if (ficha.estado === 'inactivo') return null
+  if (ficha.estado === 'inactivo' || ficha.estado === 'finalizado') return null
   if (!ficha.estudiantes.some(e => e.id === estudiante.id)) {
     state.fichas[index] = { ...ficha, estudiantes: [...ficha.estudiantes, estudiante], aprendices: ficha.aprendices + 1 }
   }

@@ -11,7 +11,7 @@ test.describe('Autenticación por rol', () => {
 
   test('credenciales inválidas muestran error y no ingresan', async ({ page }) => {
     await page.goto('/login')
-    await page.getByPlaceholder('nombre.correo@soy.sena.edu.co').fill('maria.gonzalez@soy.sena.edu.co')
+    await page.getByPlaceholder('tu.correo@ejemplo.com').fill('maria.gonzalez@soy.sena.edu.co')
     await page.locator('input[type="password"]').fill('incorrecta')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await expect(page.locator('[role="alert"], .error')).toBeVisible()
@@ -38,8 +38,9 @@ test.describe('Seguridad de la cuenta', () => {
     // El rol permanece visible incluso durante la edición del perfil (campo de solo lectura)
     await page.getByRole('button', { name: /Editar perfil/i }).click()
     await expect(page.getByRole('main').getByText('Rol', { exact: true })).toBeVisible()
-    await expect(page.getByRole('main').locator('input[readonly]')).toHaveValue('Aprendiz')
-    await page.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(page.getByRole('textbox', { name: 'Rol' })).toHaveValue('Aprendiz')
+    await expect(page.getByRole('textbox', { name: 'Nombre completo' })).toHaveValue('María González')
+    await page.getByRole('main').getByRole('button', { name: 'Cancelar' }).click()
 
     // Abrir el formulario de seguridad
     await page.getByRole('button', { name: /Cambiar contraseña/i }).click()
@@ -68,7 +69,7 @@ test.describe('Seguridad de la cuenta', () => {
 
     // La nueva contraseña queda activa; la vieja ya no sirve
     await logout(page)
-    await page.getByPlaceholder('nombre.correo@soy.sena.edu.co').fill('maria.gonzalez@soy.sena.edu.co')
+    await page.getByPlaceholder('tu.correo@ejemplo.com').fill('maria.gonzalez@soy.sena.edu.co')
     await page.locator('input[type="password"]').fill('123456')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await expect(page.locator('[role="alert"], .error')).toBeVisible()

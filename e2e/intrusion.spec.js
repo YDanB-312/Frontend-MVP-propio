@@ -27,7 +27,7 @@ test.describe('Autorización: instructor vs recursos ajenos', () => {
 
     // Contexto general visible
     await expect(page.getByText(/Sistema IoT para Agricultura/).first()).toBeVisible()
-    await expect(page.getByText(/Información de la propuesta/i)).toBeVisible()
+    await expect(page.getByText(/Información del proyecto/i)).toBeVisible()
 
     // Sin acciones de intervención
     await expect(page.getByRole('button', { name: /Aprobar|Rechazar|Agregar observación/i })).toHaveCount(0)
@@ -46,16 +46,17 @@ test.describe('Autorización: instructor vs recursos ajenos', () => {
     await expect(page.locator('table tbody tr').first()).toBeVisible()
   })
 
-  test('en similitud ajena, sin botón Ver proyecto hacia fichas fuera de su cargo', async ({ page }) => {
-    // Carlos Rodríguez Díaz (fichas 2 y 3) abre la similitud 2 (proyectos de ficha 1, de Carlos Ruiz)
+  test('en similitud del mismo programa, Ver proyecto lleva a modo lectura', async ({ page }) => {
+    // Carlos Rodríguez Díaz (fichas 2 y 3, con ADSO) abre la similitud 2
+    // (proyectos de ficha 1, también ADSO): regla intra-programa visible
     await login(page, 'otro')
     await page.goto('/instructor/detalle-similitud/2')
 
     // El contexto de la coincidencia SÍ es visible (tarjetas A/B)
     await expect(page.getByText(/Propuesta A/).first()).toBeVisible()
 
-    // Pero sin enlaces profundos hacia propuestas fuera de su cargo
-    await expect(page.getByRole('link', { name: /Ver proyecto/i })).toHaveCount(0)
+    // Mismo programa → enlaces visibles hacia las propuestas (detalle en lectura)
+    await expect(page.getByRole('link', { name: /Ver proyecto/i })).toHaveCount(2)
 
     // Y sin formulario de observación
     await expect(page.locator('textarea')).toHaveCount(0)

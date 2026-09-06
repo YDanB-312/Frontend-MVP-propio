@@ -4,3 +4,29 @@
   gap: var(--sp-2);
   white-space: nowrap;
 }
+
+.simCell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1_5);
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  flex-shrink: 0;
+}
+
+.dotHigh { background: var(--c-danger); }
+.dotMid { background: var(--c-warning); }
+.dotLow { background: var(--c-success); }
+
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--c-text-2);
+}

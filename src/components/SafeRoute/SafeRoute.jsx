@@ -10,6 +10,13 @@ const HOME_POR_ROL = {
   admin: '/admin/dashboard',
 }
 
+// El admin no tiene formulario propio: va al listado de reportes
+const REPORTE_POR_ROL = {
+  aprendiz: '/aprendiz/reportar-falla',
+  instructor: '/instructor/reportar-falla',
+  admin: '/admin/reportes-fallas',
+}
+
 function derivarRol(pathname) {
   if (pathname.startsWith('/instructor')) return 'instructor'
   if (pathname.startsWith('/admin')) return 'admin'
@@ -37,7 +44,7 @@ export default function SafeRoute({ children }) {
               <button type="button" className={s.primary} onClick={() => navigate(home)}>
                 <ArrowCounterClockwise size={16} /> Volver al dashboard
               </button>
-              <button type="button" className={s.secondary} onClick={() => navigate(`/${role}/reportar-falla`)}>
+              <button type="button" className={s.secondary} onClick={() => navigate(REPORTE_POR_ROL[role] || home)}>
                 <Bug size={16} /> Reportar falla
               </button>
             </Actions>

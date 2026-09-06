@@ -37,6 +37,8 @@ export default function DetalleFichaInstructor() {
 
   const ficha = findFichaById(id)
   const estudiantes = ficha ? getEstudiantesDeFicha(ficha.id) : []
+  const proyectosFicha = ficha ? getProjectsByFicha(ficha.id) : []
+  const tieneDatos = estudiantes.length > 0 || proyectosFicha.length > 0
 
   // Autorización: solo el instructor a cargo de la ficha
   const autorizado = ficha && instructorVeFicha(ficha, user?.id)
@@ -137,6 +139,8 @@ export default function DetalleFichaInstructor() {
               <Button
                 type="button"
                 variant="danger"
+                disabled={tieneDatos}
+                title={tieneDatos ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
                 onClick={() => setModalEliminar(true)}
               >
                 <Trash size={14} /> Eliminar ficha
