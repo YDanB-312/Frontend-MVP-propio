@@ -12,6 +12,13 @@
   font-family: var(--mono);
 }
 
+/* Texto atenuado */
+.muted {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--c-text-3);
+}
+
 /* Inline link */
 .link {
   font-weight: 600;
@@ -57,16 +64,20 @@
   color: var(--c-text);
 }
 
-/* Info card (aprendiz header card) */
+/* Portada de cohorte (aprendiz header card) */
 .infoCard {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
   padding: var(--sp-6);
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-card);
+  background:
+    radial-gradient(50% 90% at 100% 0%, var(--scan), transparent 70%),
+    var(--c-surface);
+  border: 1px solid var(--c-border-h);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-card), var(--glow-soft);
 }
 
 .infoHeader {
@@ -83,27 +94,31 @@
   width: 52px;
   height: 52px;
   font-size: 24px;
-  background: var(--c-success-bg);
-  border-radius: var(--r-md);
+  color: var(--c-primary);
+  background: var(--c-primary-light);
+  border: 1px solid var(--grade-s-border);
+  border-radius: var(--r-lg);
   flex-shrink: 0;
 }
 
 .infoTitle {
   margin: 0 0 var(--sp-1);
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 800;
+  letter-spacing: var(--tracking-tight);
   color: var(--c-text);
 }
 
 .infoCodigo {
   display: inline-block;
   padding: var(--sp-0_5) var(--sp-3);
-  background: var(--c-surface-alt);
-  border: 1px solid var(--c-border);
+  background: var(--c-surface-sunken);
+  border: 1px solid var(--grade-s-border);
   border-radius: var(--r-sm);
   font-size: var(--text-sm);
   font-weight: 700;
-  color: var(--c-primary-strong);
+  color: var(--c-primary);
 }
 
 .infoHeader > div {
@@ -129,9 +144,10 @@
 
 .infoItem dt {
   margin-bottom: var(--sp-0_5);
-  font-size: var(--text-xs);
+  font-family: var(--mono);
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
+  letter-spacing: 0.1em;
   color: var(--c-text-3);
 }
 
@@ -157,9 +173,9 @@
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
-  background: var(--c-surface-alt);
-  border: 1px solid var(--c-border-2);
-  border-radius: var(--r-md);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
   text-decoration: none;
   transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease,
     transform var(--dur-normal) var(--ease-out), box-shadow var(--dur-normal) var(--ease-out);
@@ -167,7 +183,7 @@
 
 .studentCard:hover {
   border-color: var(--c-border-h);
-  background: var(--c-surface-alt);
+  background: var(--c-surface);
   box-shadow: var(--sh-card-h);
   transform: translateY(-1px);
 }

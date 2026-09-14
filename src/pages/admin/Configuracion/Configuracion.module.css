@@ -1,0 +1,11 @@
+.subhead{margin-bottom:var(--sp-4)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4)}
+.grid>*{min-width:0}
+.tile{display:flex;align-items:center;gap:var(--sp-4);height:100%;padding:var(--sp-5);background:var(--c-surface-sunken);border:1px solid var(--c-border);border-radius:var(--r-xl);text-decoration:none;transition:border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+.tile:hover{border-color:var(--c-border-h);box-shadow:var(--sh-card-h);transform:translateY(-1px)}
+.tileIcon{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;flex-shrink:0;border-radius:var(--r-lg);background:var(--c-primary-light);color:var(--c-primary)}
+.tileText{flex:1;display:flex;flex-direction:column;gap:var(--sp-1);min-width:0}
+.tileTitle{font-weight:700;color:var(--c-text);font-size:var(--text-base)}
+.tileDesc{font-family:var(--mono);font-size:var(--text-xs);color:var(--c-text-3)}
+.tileChevron{color:var(--c-text-3);flex-shrink:0}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}

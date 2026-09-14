@@ -261,9 +261,9 @@ export default function MiFicha() {
         <>
           <h3 className={sd.sectionTitle}>Integrantes de la ficha ({estudiantes.length})</h3>
           <ul className={sd.studentsGrid}>
-            {estudiantes.map((est) => (
-              <li key={est.id}>
-                <Link to={`/aprendiz/perfil-companero/${est.id}`} className={sd.studentCard}>
+            {estudiantes.map((est, i) => (
+              <li key={est.id} className="fx-rise" style={{ '--fx-i': i }}>
+                <Link to={`/aprendiz/perfil-companero/${est.id}`} viewTransition className={sd.studentCard}>
                   <Avatar name={est.name} src={est.fotoPerfil} size="md" />
                   <span className={sd.studentInfo}>
                     <span className={sd.studentName}>{est.name}</span>

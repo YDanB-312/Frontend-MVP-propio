@@ -22,19 +22,29 @@ import {
   deleteFicha,
   getEstudiantesDeFicha,
   getProjectsByFicha,
+  getCentros,
   REDES,
   displayNames,
 } from '../../../data/mockData'
+import { PAGINA_TABLA } from '../../../constants/pagination'
 // Estilos reutilizados de las páginas originales (lista + formulario)
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import c from '../../../components/FormularioBase/FormularioBase.module.css'
 
-const ITEMS_POR_PAGINA = 8
+const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 export default function Fichas() {
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
+
+  // Reacciona si se navega a ?crear=1 ya estando en la lista
+  useEffect(() => {
+    if (searchParams.get('crear') === '1') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCreando(true)
+    }
+  }, [searchParams])
   const [creadaMsg, setCreadaMsg] = useState(false)
   const msgTimer = useRef(null)
 
@@ -88,7 +98,8 @@ export default function Fichas() {
 
   /* ---------- Creación ---------- */
   const [codigo, setCodigo] = useState(() => generarCodigoFichaUnico())
-  const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', descripcion: '' })
+  const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', descripcion: '', centroId: '' })
+  const centros = getCentros()
   const [errores, setErrores] = useState({})
 
   const onChange = (e) => {
@@ -109,6 +120,7 @@ export default function Fichas() {
     const err = {}
     if (!form.red) err.red = 'Selecciona la red de conocimiento.'
     if (!form.programa) err.programa = 'Selecciona el programa de formación.'
+    if (!form.centroId) err.centroId = 'Selecciona el centro de formación.'
     if (!form.nombre.trim()) err.nombre = 'El nombre de la ficha es obligatorio.'
     const numero = form.numero.trim()
     if (!numero) {
@@ -135,8 +147,9 @@ export default function Fichas() {
       instructorName: user?.nombre || '',
       instructorId: Number(user?.id) || null,
       codigo,
+      centroId: form.centroId === '' ? null : Number(form.centroId),
     })
-    setForm({ red: '', programa: '', nombre: '', numero: '', descripcion: '' })
+    setForm({ red: '', programa: '', nombre: '', numero: '', descripcion: '', centroId: '' })
     setErrores({})
     setCodigo(generarCodigoFichaUnico())
     setCreando(false)
@@ -200,6 +213,17 @@ export default function Fichas() {
                   </Select>
                 </FormField>
               </div>
+
+              <FormField label="Centro de formación" required error={errores.centroId}>
+                <Select name="centroId" value={form.centroId} onChange={onChange}>
+                  <option value="">Selecciona un centro…</option>
+                  {centros.map((ct) => (
+                    <option key={ct.id} value={String(ct.id)}>
+                      {ct.nombre}{ct.ciudad ? ` · ${ct.ciudad}` : ''}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
 
               <FormField label="Nombre de la ficha" required error={errores.nombre}>
                 <Input
@@ -308,72 +332,54 @@ export default function Fichas() {
               />
             ) : (
               <>
-                <div className={s.tableWrap}>
-                  <table className={s.table}>
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Ficha</th>
-                        <th>Aprendices</th>
-                        <th>Propuestas</th>
-                        <th>Estado</th>
-                        <th>Creada</th>
-                        <th className={s.colActions}>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginadas.map((f) => {
-                        const estudiantes = getEstudiantesDeFicha(f.id).length
-                        return (
-                          <tr key={f.id}>
-                            <td data-label="Código">
-                              <code className={s.codigo}>{f.codigo}</code>
-                            </td>
-                            <td data-label="Ficha">
-                              <Link to={`/instructor/detalle-ficha/${f.id}`} className={s.nameLink}>
-                                {f.nombre}
-                              </Link>
-                              <span className={s.subText}>N° {f.numero} · {f.programa}</span>
-                            </td>
-                            <td data-label="Aprendices">
-                              <span className={s.count}>{estudiantes || f.aprendices}</span>
-                            </td>
-                            <td data-label="Propuestas">
-                              <span className={s.count}>{getProjectsByFicha(f.id).length}</span>
-                            </td>
-                            <td data-label="Estado">
-                              <Badge variant={f.estado === 'activo' ? 'success' : 'neutral'}>
-                                {displayNames.classGroupStatus[f.estado] || f.estado}
-                              </Badge>
-                            </td>
-                            <td data-label="Creada" className={s.date}>{f.createdAt}</td>
-                            <td data-label="Acciones" className={s.colActions}>
-                              <div className={s.actions}>
-                                <Button
-                                  as="link"
-                                  to={`/instructor/detalle-ficha/${f.id}`}
-                                  size="sm"
-                                  variant="secondary"
-                                >
-                                  <Eye size={14} /> Ver
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="danger"
-                                  disabled={getEstudiantesDeFicha(f.id).length > 0 || getProjectsByFicha(f.id).length > 0}
-                                  title={getEstudiantesDeFicha(f.id).length > 0 || getProjectsByFicha(f.id).length > 0 ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
-                                  onClick={() => setAEliminar(f)}
-                                >
-                                  <Trash size={14} /> Eliminar
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                <div className={s.cardGrid}>
+                  {paginadas.map((f) => {
+                    const estudiantes = getEstudiantesDeFicha(f.id).length || f.aprendices
+                    const props = getProjectsByFicha(f.id)
+                    const pend = props.filter((p) => p.estado === 'pendiente').length
+                    const bloqueada = getEstudiantesDeFicha(f.id).length > 0 || props.length > 0
+                    return (
+                      <article key={f.id} className={s.card}>
+                        <header className={s.cardHeader}>
+                          <code className={s.codigo}>{f.codigo}</code>
+                          <Badge variant={f.estado === 'activo' ? 'success' : 'neutral'}>
+                            {displayNames.classGroupStatus[f.estado] || f.estado}
+                          </Badge>
+                        </header>
+                        <Link to={`/instructor/detalle-ficha/${f.id}`} viewTransition className={s.cardTitle}>
+                          {f.nombre}
+                        </Link>
+                        <p className={s.cardMeta}>N° {f.numero} · {f.programa}</p>
+                        <div className={s.cohorteBar} role="img" aria-label={`${pend} de ${props.length} propuestas por revisar`}>
+                          <span className={s.cohorteFill} style={{ width: props.length === 0 ? '0%' : `${Math.round(((props.length - pend) / props.length) * 100)}%` }} />
+                        </div>
+                        <p className={s.cardMeta}>
+                          {estudiantes} aprendices · {props.length} propuestas · {pend} por revisar
+                        </p>
+                        <footer className={s.cardFooter}>
+                          <Button
+                            as="link"
+                            to={`/instructor/detalle-ficha/${f.id}`}
+                            viewTransition
+                            size="sm"
+                            variant="secondary"
+                          >
+                            <Eye size={14} /> Ver
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="danger"
+                            disabled={bloqueada}
+                            title={bloqueada ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
+                            onClick={() => setAEliminar(f)}
+                          >
+                            <Trash size={14} /> Eliminar
+                          </Button>
+                        </footer>
+                      </article>
+                    )
+                  })}
                 </div>
 
                 <Pagination

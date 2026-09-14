@@ -8,11 +8,7 @@ import Button from '../../../components/Button/Button'
 import { Input } from '../../../components/Input/Input'
 import s from './Login.module.css'
 
-const RUTA_POR_ROL = {
-  aprendiz: '/aprendiz/dashboard',
-  instructor: '/instructor/dashboard',
-  admin: '/admin/dashboard',
-}
+import { RUTA_POR_ROL } from '../../../constants/routes'
 
 const CUENTAS_PRUEBA = [
   { rol: 'Aprendiz', email: 'maria.gonzalez@soy.sena.edu.co', password: '123456' },

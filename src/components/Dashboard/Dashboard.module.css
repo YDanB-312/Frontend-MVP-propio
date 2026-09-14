@@ -4,7 +4,7 @@
   gap: var(--sp-6);
 }
 
-/* ── Hero: kicker + saludo/título + fecha + texto ── */
+/* Hero: kicker + saludo/título + fecha + texto */
 .hero {
   display: flex;
   flex-direction: column;
@@ -50,7 +50,7 @@
   line-height: var(--leading-normal);
 }
 
-/* ── Fila de métricas ── */
+/* Fila de métricas */
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -64,7 +64,7 @@
   min-width: 0;
 }
 
-/* ── Dos columnas: acciones | actividad ── */
+/* Dos columnas: acciones | actividad */
 .cols {
   display: grid;
   grid-template-columns: 5fr 7fr;
@@ -78,7 +78,7 @@
   min-width: 0;
 }
 
-/* ── Lista compartida de actividad ── */
+/* Lista compartida de actividad */
 .panelLink {
   font-size: var(--text-sm);
   font-weight: 600;

@@ -11,6 +11,7 @@ import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { instructorVeProyecto } from '../../../data/mockData'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
@@ -125,8 +126,8 @@ export default function DetalleProyectoInstructor() {
           </div>
         )}
 
-        <div className={s.grid}>
-        <div className={s.col}>
+        <div className={s.dossier}>
+        <div className={s.colPrincipal}>
         <DataPanel
           title="Información del proyecto"
           icon={<FileText />}
@@ -147,13 +148,13 @@ export default function DetalleProyectoInstructor() {
         </DataPanel>
         </div>
 
-        <div className={s.col}>
+        <aside className={s.rail} aria-label="Aprendiz, similitudes y observaciones">
 
         <DataPanel title="Información del aprendiz" icon={<GraduationCap />}>
           {estudiante ? (
             <div className={s.personCard}>
               {estudiante.fotoPerfil ? (
-                <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: estudiante.fotoPerfil, alt: estudiante.name })}>
+                <button type="button" className={s.avatarBtn} title="Ver foto" aria-label="Ver foto del aprendiz" onClick={() => setFotoViendo({ src: estudiante.fotoPerfil, alt: estudiante.name })}>
                   <Avatar name={estudiante.name} src={estudiante.fotoPerfil} size="md" />
                 </button>
               ) : (
@@ -186,15 +187,13 @@ export default function DetalleProyectoInstructor() {
                 const pct = Math.round((sim.similitud || 0) * 100)
                 return (
                   <li key={sim.id}>
-                    <Link to={`/instructor/detalle-similitud/${sim.id}`} className={s.simRow}>
+                    <Link to={`/instructor/detalle-similitud/${sim.id}`} viewTransition className={s.simRow}>
                       <span className={s.simPair}>
                         vs.{' '}
                         {sim.projectId1 === proyecto.id ? sim.project2Title : sim.project1Title}
                       </span>
                       <span className={s.simRight}>
-                        <span className={`${s.pct} ${pct >= 60 ? s.pctHigh : pct >= 40 ? s.pctMid : s.pctLow}`}>
-                          {pct}%
-                        </span>
+                        <GradeBadge score={pct} size="sm" />
                       </span>
                     </Link>
                   </li>
@@ -217,12 +216,14 @@ export default function DetalleProyectoInstructor() {
             grupos={agruparObservaciones(observaciones)}
             permitirResponder
             onRespuesta={(o) => setRespondiendoA(o)}
+            className={s.hilosScroll}
           />
           <form className={s.obsForm} onSubmit={agregarObservacion}>
             <Textarea
               rows={3}
               value={textoObs}
               onChange={(e) => setTextoObs(e.target.value)}
+              aria-label="Escribe una observación para el aprendiz"
               placeholder={respondiendoA ? 'Continúa la conversación con tu aprendiz…' : 'Escribe una observación para el aprendiz sobre su propuesta…'}
             />
             <Button type="submit" disabled={!textoObs.trim()}>
@@ -231,7 +232,7 @@ export default function DetalleProyectoInstructor() {
           </form>
         </DataPanel>
         )}
-        </div>
+        </aside>
         </div>
       </div>
 

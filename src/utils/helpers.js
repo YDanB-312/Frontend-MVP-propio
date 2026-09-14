@@ -2,6 +2,14 @@ export function iniciales(nombre) {
   return (nombre || '').split(' ').filter(Boolean).map((n) => n[0]).slice(0, 2).join('').toUpperCase()
 }
 
+// Normaliza para búsquedas: minúsculas + sin tildes (María === maria)
+export function norm(texto) {
+  return String(texto || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 export const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
 export function formatearFecha(fecha) {

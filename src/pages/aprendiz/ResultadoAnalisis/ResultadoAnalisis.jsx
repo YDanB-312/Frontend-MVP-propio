@@ -5,11 +5,14 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import SectionHeader from '../../../components/SectionHeader/SectionHeader'
+import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
+import ScoreDial from '../../../components/ScoreDial/ScoreDial'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import { toPct } from '../../../utils/similitudInfo'
 import { useAuth } from '../../../contexts/AuthContext'
 import { findProjectById, findSimilarityById, getSimilitudesValidas } from '../../../data/mockData'
 import s from './ResultadoAnalisis.module.css'
-
-const CIRCUNFERENCIA = 2 * Math.PI * 54
 
 export default function ResultadoAnalisis() {
   const { user } = useAuth()
@@ -104,7 +107,7 @@ export default function ResultadoAnalisis() {
 
   const maxima = seleccionada || propias[0]
   const total = propias.length
-  const pctMax = Math.round(maxima.similitud * 100)
+  const pctMax = toPct(maxima.similitud)
   const nivel = pctMax >= 70 ? 'alta' : pctMax >= 40 ? 'media' : 'baja'
 
   const recomendaciones =
@@ -131,60 +134,48 @@ export default function ResultadoAnalisis() {
     <DashboardLayout role="aprendiz" titulo="Resultado del Análisis">
       <div className={s.wrapper}>
         <header className={s.header}>
+          <p className={`mono ${s.kicker}`}>VEREDICTO DEL MOTOR · {total} coincidencia{total !== 1 ? 's' : ''}</p>
           <h1 className={s.title}>Resultado del análisis</h1>
           <p className={s.subtitle}>
             {propio.title} · {total} coincidencia{total !== 1 ? 's' : ''} detectada{total !== 1 ? 's' : ''}
           </p>
         </header>
 
-        <section className={`${s.scoreCard} ${nivel === 'alta' ? s.danger : nivel === 'media' ? s.warning : s.success}`}>
-          <div className={s.circleWrap}>
-            <svg className={s.circle} viewBox="0 0 120 120" aria-hidden="true">
-              <circle className={s.circleBg} cx="60" cy="60" r="54" />
-              <circle
-                className={s.circleFg}
-                cx="60"
-                cy="60"
-                r="54"
-                strokeDasharray={CIRCUNFERENCIA}
-                strokeDashoffset={animado ? CIRCUNFERENCIA * (1 - pctMax / 100) : CIRCUNFERENCIA}
-              />
-            </svg>
-            <div className={s.circleText}>
-              <span className={s.pct}>{pctMax}%</span>
-              <span className={s.pctLabel}>máxima</span>
+        <ConsoleCard glow className={`${s.scoreCard} ${animado ? s.on : ''}`}>
+          <div className={s.scoreTop}>
+            <ScoreDial value={pctMax} size={148} label="Coincidencia máxima" />
+            <div className={s.scoreInfo}>
+              <p className={s.nivel}>Coincidencia {nivel} <GradeBadge score={pctMax} /></p>
+              <p className={s.nivelDesc}>
+                {total === 1
+                  ? 'Se detectó una coincidencia para tu proyecto.'
+                  : `Es la más alta entre las ${total} coincidencias detectadas. Revisa el listado completo abajo.`}{' '}
+                {nivel === 'alta'
+                  ? 'El sistema encontró coincidencias significativas con otros proyectos registrados.'
+                  : nivel === 'media'
+                    ? 'Existen coincidencias parciales que vale la pena revisar.'
+                    : 'Tu proyecto es mayormente original frente a la base de datos.'}
+              </p>
             </div>
           </div>
-          <div className={s.scoreInfo}>
-            <p className={s.nivel}>Coincidencia {nivel}</p>
-            <p className={s.nivelDesc}>
-              {total === 1
-                ? 'Se detectó una coincidencia para tu proyecto.'
-                : `Es la más alta entre las ${total} coincidencias detectadas. Revisa el listado completo abajo.`}{' '}
-              {nivel === 'alta'
-                ? 'El sistema encontró coincidencias significativas con otros proyectos registrados.'
-                : nivel === 'media'
-                  ? 'Existen coincidencias parciales que vale la pena revisar.'
-                  : 'Tu proyecto es mayormente original frente a la base de datos.'}
-            </p>
-          </div>
-        </section>
+        </ConsoleCard>
 
         <section aria-label="Proyectos con similitud">
-          <h2 className={s.sectionTitle}>Proyectos con similitud ({total})</h2>
+          <SectionHeader title={`Proyectos con similitud (${total})`} hint="ranking por puntaje" />
           <ol className={s.matchList}>
             {propias.map((sim, i) => {
-              const pct = Math.round(sim.similitud * 100)
+              const pct = toPct(sim.similitud)
               const otroId = sim.projectId1 === propio.id ? sim.projectId2 : sim.projectId1
               const otro = findProjectById(otroId)
-              const seleccionada = sim.id === maxima.id
+              const esMaxima = sim.id === maxima.id
               return (
-                <li key={sim.id}>
+                <li key={sim.id} className="fx-rise" style={{ '--fx-i': i }}>
                   <Link
                     to={`/aprendiz/detalle-similitud/${sim.id}`}
-                    className={`${s.matchRow} ${seleccionada ? s.matchRowSelected : ''}`}
+                    viewTransition
+                    className={`${s.matchRow} ${esMaxima ? s.matchRowSelected : ''}`}
                   >
-                    <span className={s.matchRank}>#{i + 1}</span>
+                    <span className={`mono ${s.matchRank}`}>#{i + 1}</span>
                     <span className={s.matchInfo}>
                       <span className={s.matchTitle}>{otro?.title || 'Proyecto no disponible'}</span>
                       <span className={s.matchMeta}>
@@ -193,13 +184,7 @@ export default function ResultadoAnalisis() {
                       </span>
                     </span>
                     <span className={s.matchRight}>
-                      <span
-                        className={`${s.matchPct} ${
-                          pct >= 70 ? s.matchPctHigh : pct >= 40 ? s.matchPctMid : s.matchPctLow
-                        }`}
-                      >
-                        {pct}%
-                      </span>
+                      <GradeBadge score={pct} size="sm" />
                       <CaretRight size={16} className={s.matchChevron} />
                     </span>
                   </Link>
@@ -209,8 +194,8 @@ export default function ResultadoAnalisis() {
           </ol>
         </section>
 
-        <section className={s.recoPanel} aria-labelledby="reco-title">
-          <h2 id="reco-title" className={s.sectionTitle}>
+        <ConsoleCard className={s.recoPanel}>
+          <h2 id="reco-title" className={s.recoTitle}>
             <PushPin size={14} /> Recomendaciones
           </h2>
           <ul className={s.recoList}>
@@ -220,13 +205,13 @@ export default function ResultadoAnalisis() {
               </li>
             ))}
           </ul>
-        </section>
+        </ConsoleCard>
 
         <Actions align="center" wrap>
-          <Button as="link" to="/aprendiz/propuestas">
+          <Button as="link" to="/aprendiz/propuestas" viewTransition>
             <ArrowLeft size={14} /> Volver a mis proyectos
           </Button>
-          <Button as="link" to={`/aprendiz/detalle-proyecto/${propio.id}`} variant="secondary">
+          <Button as="link" to={`/aprendiz/detalle-proyecto/${propio.id}`} variant="secondary" viewTransition>
             Ver mi proyecto <ArrowRight size={14} />
           </Button>
         </Actions>

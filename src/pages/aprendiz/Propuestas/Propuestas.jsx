@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -6,11 +6,12 @@ import FilterBar from '../../../components/FilterBar/FilterBar'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import Badge from '../../../components/Badge/Badge'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import Button from '../../../components/Button/Button'
 import Actions from '../../../components/Actions/Actions'
 import { Input, Select, Textarea } from '../../../components/Input/Input'
 import FormField from '../../../components/FormField/FormField'
-import { CalendarBlank, ChartBar, FolderOpen, GraduationCap, MagnifyingGlass, Plus, Tray } from 'phosphor-react'
+import { CalendarBlank, ChartBar, FolderOpen, GraduationCap, Plus, Tray } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   getProjectsByStudent,
@@ -23,17 +24,14 @@ import {
   createNotification,
   displayNames,
 } from '../../../data/mockData'
+import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { getSimilitudInfo as similitudInfo } from '../../../utils/similitudInfo'
+import { PAGINA_TARJETAS } from '../../../constants/pagination'
 // Estilos reutilizados de las páginas originales (lista + formulario)
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import n from '../../../components/FormularioBase/FormularioBase.module.css'
 
-const ITEMS_POR_PAGINA = 6
-
-const ESTADO_VARIANT = {
-  pendiente: 'warning',
-  aprobado: 'success',
-  rechazado: 'danger',
-}
+const ITEMS_POR_PAGINA = PAGINA_TARJETAS
 
 const AREAS = [
   'Desarrollo Web',
@@ -43,20 +41,19 @@ const AREAS = [
   'Otro',
 ]
 
-function similitudInfo(similitudes, projectId) {
-  const propias = similitudes.filter((s) => s.projectId1 === projectId || s.projectId2 === projectId)
-  if (propias.length === 0) return null
-  return {
-    pct: Math.max(...propias.map((s) => Math.round(s.similitud * 100))),
-    count: propias.length,
-  }
-}
-
 export default function Propuestas() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
+
+  // Reacciona si se navega a ?crear=1 ya estando en la lista
+  useEffect(() => {
+    if (searchParams.get('crear') === '1') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCreando(true)
+    }
+  }, [searchParams])
 
   /* ---------- Lista ---------- */
   const [filtro, setFiltro] = useState('todos')
@@ -141,6 +138,14 @@ export default function Propuestas() {
     return errs
   }
 
+  function empezar() {
+    setCreando(true)
+  }
+
+  function volverALista() {
+    setCreando(false)
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     const errs = validar()
@@ -167,9 +172,9 @@ export default function Propuestas() {
       estado: 'pendiente',
     })
 
-    // Detección inmediata contra el corpus aprobado del mismo programa:
-    // así ResultadoAnalisis ya muestra la lista completa al subir,
-    // sin esperar a la aprobación del instructor.
+    // Detección inmediata contra el corpus vigente del mismo programa
+    // (pendientes + aprobadas): así ResultadoAnalisis ya muestra la lista
+    // completa al subir, sin esperar a la aprobación del instructor.
     detectarSimilitudes(project.id)
 
     // Avisar a cada compañero añadido al equipo
@@ -205,7 +210,7 @@ export default function Propuestas() {
 
   return (
     <DashboardLayout role="aprendiz" titulo={creando ? 'Nueva Propuesta' : 'Mis Propuestas'}>
-      <div className={s.wrapper}>
+      <div className={s.page}>
         <PageHeader
           title={creando ? 'Nueva Propuesta' : 'Mis Propuestas'}
           subtitle={
@@ -218,15 +223,15 @@ export default function Propuestas() {
             creando
               ? [
                   { label: 'Dashboard', to: '/aprendiz/dashboard', icon: <ChartBar size={14} /> },
-                  { label: 'Mis Propuestas', icon: <FolderOpen size={14} />, onClick: () => setCreando(false) },
+                  { label: 'Mis Propuestas', icon: <FolderOpen size={14} />, onClick: volverALista },
                   { label: 'Nueva propuesta' },
                 ]
               : []
           }
-          onBack={creando ? () => setCreando(false) : undefined}
+          onBack={creando ? volverALista : undefined}
           actions={
             !creando ? (
-              <Button type="button" onClick={() => setCreando(true)}>
+              <Button type="button" onClick={empezar}>
                 <Plus size={14} /> Nueva propuesta
               </Button>
             ) : undefined
@@ -235,122 +240,123 @@ export default function Propuestas() {
 
         {creando ? (
           <form className={n.form} onSubmit={handleSubmit} noValidate>
-            <FormField label="Nombre de la propuesta" error={errors.title} required>
-              <Input
-                type="text"
-                value={form.title}
-                onChange={(e) => set('title', e.target.value)}
-                placeholder="Ej: Sistema de monitoreo ambiental con IoT"
-                maxLength={120}
-                autoFocus
-              />
-            </FormField>
+                <FormField label="Nombre de la propuesta" error={errors.title} required>
+                  <Input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => set('title', e.target.value)}
+                    placeholder="Ej: Sistema de monitoreo ambiental con IoT"
+                    maxLength={120}
+                    autoFocus
+                  />
+                </FormField>
 
-            <FormField
-              label="Descripción del problema y la solución"
-              error={errors.description}
-              help={`${form.description.length}/600 caracteres`}
-              required
-            >
-              <Textarea
-                rows={5}
-                value={form.description}
-                onChange={(e) => set('description', e.target.value)}
-                placeholder="¿Qué problema quieres resolver? ¿Cómo lo resolvería tu software? ¿Quiénes se beneficiarían?"
-                maxLength={600}
-              />
-            </FormField>
+                <FormField
+                  label="Descripción del problema y la solución"
+                  error={errors.description}
+                  help={`${form.description.length}/600 caracteres`}
+                  required
+                >
+                  <Textarea
+                    rows={5}
+                    value={form.description}
+                    onChange={(e) => set('description', e.target.value)}
+                    placeholder="¿Qué problema quieres resolver? ¿Cómo lo resolvería tu software? ¿Quiénes se beneficiarían?"
+                    maxLength={600}
+                  />
+                </FormField>
 
-            <FormField
-              label="Objetivo general"
-              error={errors.objetivoGeneral}
-              help="Qué quieres lograr con la solución, en una sola frase."
-              required
-            >
-              <Textarea
-                rows={3}
-                value={form.objetivoGeneral}
-                onChange={(e) => set('objetivoGeneral', e.target.value)}
-                placeholder="Ej: Optimizar el riego de cultivos pequeños mediante monitoreo automatizado de humedad del suelo."
-                maxLength={300}
-              />
-            </FormField>
+                <FormField
+                  label="Objetivo general"
+                  error={errors.objetivoGeneral}
+                  help="Qué quieres lograr con la solución, en una sola frase."
+                  required
+                >
+                  <Textarea
+                    rows={3}
+                    value={form.objetivoGeneral}
+                    onChange={(e) => set('objetivoGeneral', e.target.value)}
+                    placeholder="Ej: Optimizar el riego de cultivos pequeños mediante monitoreo automatizado de humedad del suelo."
+                    maxLength={300}
+                    autoFocus
+                  />
+                </FormField>
 
-            <FormField
-              label="Objetivos específicos"
-              error={errors.objetivosEspecificos}
-              help={`Un objetivo por línea (mínimo 2). Usa verbos como Implementar, Diseñar, Evaluar. Llevas ${objetivosValidos.length}.`}
-              required
-            >
-              <Textarea
-                rows={5}
-                value={form.objetivosEspecificos}
-                onChange={(e) => set('objetivosEspecificos', e.target.value)}
-                placeholder={'Implementar sensores de humedad en el cultivo.\nDiseñar un panel web para visualizar los datos.\nEvaluar el ahorro de agua durante un mes.'}
-              />
-            </FormField>
+                <FormField
+                  label="Objetivos específicos"
+                  error={errors.objetivosEspecificos}
+                  help={`Un objetivo por línea (mínimo 2). Usa verbos como Implementar, Diseñar, Evaluar. Llevas ${objetivosValidos.length}.`}
+                  required
+                >
+                  <Textarea
+                    rows={5}
+                    value={form.objetivosEspecificos}
+                    onChange={(e) => set('objetivosEspecificos', e.target.value)}
+                    placeholder={'Implementar sensores de humedad en el cultivo.\nDiseñar un panel web para visualizar los datos.\nEvaluar el ahorro de agua durante un mes.'}
+                  />
+                </FormField>
 
-          <FormField
-            label={`Integrantes del equipo${seleccionados.length > 0 ? ` (${seleccionados.length})` : ''}`}
-            help="Opcional. Compañeros de tu ficha con los que desarrollarás la propuesta."
-          >
-            {companeros.length === 0 ? (
-              <p className={n.hint}>Aún no hay compañeros en tu ficha para invitar.</p>
-            ) : (
-              <div className={n.chipList}>
-                {companeros.map((c) => {
-                  const activo = seleccionados.includes(c.id)
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className={`${n.chip} ${activo ? n.chipActive : ''}`}
-                      onClick={() => alternarCompanero(c.id)}
-                      aria-pressed={activo}
-                    >
-                      {c.name}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </FormField>
+                <FormField
+                  label={`Integrantes del equipo${seleccionados.length > 0 ? ` (${seleccionados.length})` : ''}`}
+                  help="Opcional. Compañeros de tu ficha con los que desarrollarás la propuesta."
+                >
+                  {companeros.length === 0 ? (
+                    <p className={n.hint}>Aún no hay compañeros en tu ficha para invitar.</p>
+                  ) : (
+                    <div className={n.chipList}>
+                      {companeros.map((c) => {
+                        const activo = seleccionados.includes(c.id)
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className={`${n.chip} ${activo ? n.chipActive : ''}`}
+                            onClick={() => alternarCompanero(c.id)}
+                            aria-pressed={activo}
+                          >
+                            {c.name}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </FormField>
 
-          <FormField label="Área de aplicación" error={errors.areaAplicacion} required>
-            <Select
-              value={form.areaAplicacion}
-              onChange={(e) => set('areaAplicacion', e.target.value)}
-            >
-              <option value="">Selecciona un área...</option>
-              {AREAS.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </Select>
-          </FormField>
+                <FormField label="Área de aplicación" error={errors.areaAplicacion} required>
+                  <Select
+                    value={form.areaAplicacion}
+                    onChange={(e) => set('areaAplicacion', e.target.value)}
+                  >
+                    <option value="">Selecciona un área...</option>
+                    {AREAS.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
 
-          <p className={n.hint}>
-            Ficha de formación: {miFicha.nombre} · {miFicha.codigo} — definida al unirte con el código
-          </p>
+                <p className={n.hint}>
+                  Ficha de formación: {miFicha.nombre} · {miFicha.codigo} — definida al unirte con el código
+                </p>
 
-            <FormField
-              label="Palabras clave"
-              help="Opcional. Si aún no las tienes claras, puedes agregarlas después."
-            >
-              <Input
-                type="text"
-                value={form.keywords}
-                onChange={(e) => set('keywords', e.target.value)}
-                placeholder="iot, sensores, agricultura"
-              />
-            </FormField>
+                <FormField
+                  label="Palabras clave"
+                  help="Opcional. Si aún no las tienes claras, puedes agregarlas después."
+                >
+                  <Input
+                    type="text"
+                    value={form.keywords}
+                    onChange={(e) => set('keywords', e.target.value)}
+                    placeholder="iot, sensores, agricultura"
+                  />
+                </FormField>
 
             <Actions className={n.actions}>
               <Button type="submit" disabled={guardando}>
                 {guardando ? 'Enviando...' : 'Enviar propuesta y analizar'}
               </Button>
-              <Button type="button" variant="secondary" onClick={() => setCreando(false)}>
+              <Button type="button" variant="secondary" onClick={volverALista}>
                 Cancelar
               </Button>
             </Actions>
@@ -386,7 +392,7 @@ export default function Propuestas() {
                 }
                 actionIcon={<Plus size={14} />}
                 onAction={
-                  filtro === 'todos' && proyectos.length === 0 ? () => setCreando(true) : undefined
+                  filtro === 'todos' && proyectos.length === 0 ? empezar : undefined
                 }
               />
             ) : (
@@ -395,10 +401,10 @@ export default function Propuestas() {
                   {visibles.map((p) => {
                     const info = similitudInfo(similitudes, p.id)
                     return (
-                      <Link key={p.id} to={`/aprendiz/detalle-proyecto/${p.id}`} className={s.card}>
+                      <Link key={p.id} to={`/aprendiz/detalle-proyecto/${p.id}`} viewTransition className={s.card}>
                         <header className={s.cardHeader}>
                           <h3 className={s.cardTitle}>{p.title}</h3>
-                          <Badge variant={ESTADO_VARIANT[p.estado] || 'neutral'}>
+                          <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
                             {displayNames.projectStatus[p.estado] || p.estado}
                           </Badge>
                         </header>
@@ -406,9 +412,9 @@ export default function Propuestas() {
                         <footer className={s.cardFooter}>
                           <span className={s.cardMeta}><CalendarBlank size={14} /> {p.createdAt}</span>
                           {info && (
-                            <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
-                              <MagnifyingGlass size={14} /> {info.pct}% · {info.count} coincidencia{info.count !== 1 ? 's' : ''}
-                            </Badge>
+                            <span title={`${info.pct}% · ${info.count} coincidencia${info.count !== 1 ? 's' : ''}`}>
+                              <GradeBadge score={info.pct} size="sm" />
+                            </span>
                           )}
                         </footer>
                       </Link>

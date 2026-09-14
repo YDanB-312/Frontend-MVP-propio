@@ -12,23 +12,11 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import {
   getProjectsByStudent, getSimilitudesValidas, getUnreadCount, displayNames,
 } from '../../../data/mockData'
+import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import { useAuth } from '../../../contexts/AuthContext'
+import { getSimilitudInfo as similitudInfo } from '../../../utils/similitudInfo'
 import s from '../../../components/Dashboard/Dashboard.module.css'
-
-const ESTADO_VARIANT = {
-  pendiente: 'warning',
-  aprobado: 'success',
-  rechazado: 'danger',
-}
-
-function similitudInfo(similitudes, projectId) {
-  const propias = similitudes.filter(s => s.projectId1 === projectId || s.projectId2 === projectId)
-  if (propias.length === 0) return null
-  return {
-    pct: Math.max(...propias.map(s => Math.round(s.similitud * 100))),
-    count: propias.length,
-  }
-}
+import { RECIENTES } from '../../../constants/pagination'
 
 export default function DashboardAprendiz() {
   const { user } = useAuth()
@@ -39,7 +27,7 @@ export default function DashboardAprendiz() {
   const similitudesPropias = similitudes.filter(sim =>
     misProyectos.some(p => p.id === sim.projectId1 || p.id === sim.projectId2)
   ).length
-  const recientes = [...misProyectos].slice(0, 5)
+  const recientes = [...misProyectos].slice(0, RECIENTES)
   const saludo = user.nombre.split(' ')[0]
 
   const acciones = [{
@@ -88,7 +76,7 @@ export default function DashboardAprendiz() {
                               {info.pct}% · {info.count} coincidencia{info.count !== 1 ? 's' : ''}
                             </Badge>
                           )}
-                          <Badge variant={ESTADO_VARIANT[p.estado] || 'neutral'}>{displayNames.projectStatus[p.estado] || p.estado}</Badge>
+                          <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>{displayNames.projectStatus[p.estado] || p.estado}</Badge>
                           <CaretRight size={16} />
                         </div>
                       </Link>

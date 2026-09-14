@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Camera, CheckCircle, IdentificationCard, LockKey, PencilLine, Trash } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
 import DataPanel from '../DataPanel/DataPanel'
@@ -14,6 +15,7 @@ import { findUserById, updateUser, updateUserFoto, displayNames } from '../../da
 import { useAuth } from '../../contexts/AuthContext'
 import { procesarFoto } from '../../utils/foto'
 import s from './PerfilBase.module.css'
+import { esEmailValido, esPasswordValida } from '../../utils/validation'
 
 const SUBTITULOS = {
   aprendiz: 'Consulta y administra tu información personal',
@@ -120,7 +122,7 @@ export default function PerfilBase({
     e.preventDefault()
     // El nombre es inmutable: identifica propuestas, equipos y fichas por valor
     const errs = {}
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    if (!esEmailValido(form.email.trim())) {
       errs.email = 'Ingresa un correo electrónico válido.'
     }
     setErrors(errs)
@@ -162,7 +164,7 @@ export default function PerfilBase({
     e.preventDefault()
     const errs = {}
     if (!passForm.actual) errs.actual = 'Ingresa tu contraseña actual.'
-    if (!passForm.nueva || passForm.nueva.length < 6) {
+    if (!passForm.nueva || !esPasswordValida(passForm.nueva)) {
       errs.nueva = 'La nueva contraseña debe tener al menos 6 caracteres.'
     }
     if (passForm.confirmar !== passForm.nueva) {
@@ -220,11 +222,12 @@ export default function PerfilBase({
         <div className={s.profile}>
           <div className={s.fotoCol}>
               <div className={s.fotoWrap}>
-                {!soloLectura ? (
+                {!soloLectura && editando ? (
                   <button
                     type="button"
                     className={`${s.fotoBtn} ${perfil?.fotoPerfil ? s.fotoBtnVer : ''}`}
                     title={perfil?.fotoPerfil ? 'Ver foto' : 'Subir foto de perfil'}
+                    aria-label={perfil?.fotoPerfil ? `Ver foto de ${nombre}` : 'Subir foto de perfil'}
                     onClick={() => (perfil?.fotoPerfil ? setViendoFoto(true) : fileRef.current?.click())}
                     disabled={subiendoFoto}
                   >
@@ -241,7 +244,15 @@ export default function PerfilBase({
                     )}
                   </button>
                 ) : (
-                  <div className={`${s.fotoBtn} ${perfil?.fotoPerfil ? s.fotoBtnVer : ''}`} title={perfil?.fotoPerfil ? 'Ver foto' : undefined} onClick={perfil?.fotoPerfil ? () => setViendoFoto(true) : undefined} role={perfil?.fotoPerfil ? 'button' : undefined}>
+                  <div
+                    className={`${s.fotoBtn} ${perfil?.fotoPerfil ? s.fotoBtnVer : ''}`}
+                    title={perfil?.fotoPerfil ? 'Ver foto' : undefined}
+                    onClick={perfil?.fotoPerfil ? () => setViendoFoto(true) : undefined}
+                    role={perfil?.fotoPerfil ? 'button' : undefined}
+                    tabIndex={perfil?.fotoPerfil ? 0 : undefined}
+                    aria-label={perfil?.fotoPerfil ? `Ver foto de ${nombre}` : undefined}
+                    onKeyDown={perfil?.fotoPerfil ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViendoFoto(true) } } : undefined}
+                  >
                     {perfil?.fotoPerfil ? (
                       <Avatar key={perfil.fotoPerfil} name={nombre} src={perfil.fotoPerfil} size="xl" />
                     ) : (
@@ -251,29 +262,31 @@ export default function PerfilBase({
                     )}
                   </div>
                 )}
-                {!soloLectura && perfil?.fotoPerfil && !subiendoFoto && (
+                {!soloLectura && editando && perfil?.fotoPerfil && !subiendoFoto && (
                   <button
                     type="button"
                     className={s.fotoCam}
                     title="Cambiar foto de perfil"
+                    aria-label="Cambiar foto de perfil"
                     onClick={() => fileRef.current?.click()}
                   >
                     <Camera size={14} />
                   </button>
                 )}
-                {!soloLectura && (
+                {!soloLectura && editando && (
                   <input
                     ref={fileRef}
                     type="file"
                     accept="image/*"
                     className={s.fotoInput}
                     aria-label="Cambiar foto de perfil"
+                    tabIndex={-1}
                     onChange={alElegirFoto}
                     disabled={subiendoFoto}
                   />
                 )}
               </div>
-              {!soloLectura && perfil?.fotoPerfil && !subiendoFoto && (
+              {!soloLectura && editando && perfil?.fotoPerfil && !subiendoFoto && (
                 <button type="button" className={s.fotoQuitar} onClick={quitarFoto}>
                   <Trash size={12} /> Quitar foto
                 </button>
@@ -336,6 +349,8 @@ export default function PerfilBase({
           <div className={s.seguridadRow}>
             <p className={s.seguridadTexto}>
               Usa una contraseña única de al menos 6 caracteres para proteger tu cuenta.
+              <br />
+              <Link to="/recuperar-contrasena" className={s.link}>¿Olvidaste tu contraseña actual? Recupérala por correo</Link>
             </p>
             <Button type="button" variant="secondary" onClick={iniciarCambioPass}>
               <LockKey size={14} /> Cambiar contraseña

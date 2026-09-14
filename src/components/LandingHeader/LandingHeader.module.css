@@ -4,13 +4,15 @@
   left: 0;
   right: 0;
   height: var(--header-h);
-  background: var(--c-surface);
-  border-bottom: 2px solid var(--c-header-accent);
+  background: var(--c-rail);
+  border-bottom: 1px solid var(--c-rail-border);
   z-index: var(--z-header);
 }
 
 .container {
   height: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
   padding: 0 var(--sp-4);
   display: flex;
   align-items: center;
@@ -26,7 +28,7 @@
 }
 
 .logo img {
-  height: 32px;
+  height: 30px;
   width: auto;
 }
 

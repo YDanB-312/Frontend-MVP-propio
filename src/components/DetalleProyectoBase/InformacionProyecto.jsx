@@ -3,12 +3,7 @@ import Badge from '../Badge/Badge'
 import Tag from '../Tag/Tag'
 import s from './DetalleProyectoBase.module.css'
 import { displayNames } from '../../data/mockData'
-
-const ESTADO_VARIANT = {
-  pendiente: 'warning',
-  aprobado: 'success',
-  rechazado: 'danger',
-}
+import { PROJECT_ESTADO_VARIANT as ESTADO_VARIANT } from '../../constants/badgeVariants'
 
 /**
  * Contenido compartido "Información del proyecto" — usado por

@@ -65,7 +65,7 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
 
       {sinLeer > 0 && (
         <p className={s.summary}>
-          Tienes <strong>{sinLeer}</strong> alerta{sinLeer !== 1 ? 's' : ''} sin leer.
+          Tienes <strong className={`mono ${s.sinLeer}`}>{sinLeer}</strong> alerta{sinLeer !== 1 ? 's' : ''} sin leer.
         </p>
       )}
 
@@ -83,13 +83,19 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
             const info = TIPO_CONFIG[n.tipo] || TIPO_CONFIG.sistema
             return (
               <li key={n.id}>
-                <button type="button" className={`${s.item} ${!n.leido ? s.unread : ''}`} onClick={() => handleClick(n)}>
+                <button
+                  type="button"
+                  className={`${s.item} ${s[`tipo-${n.tipo}`] || ''} ${!n.leido ? s.unread : ''}`}
+                  onClick={() => handleClick(n)}
+                  title={n.projectId || (n.reporteId && detallePath === '/admin') ? 'Abrir detalle' : 'Marcar como leída'}
+                >
+                  <span className={s.rail} aria-hidden="true" />
                   <span className={s.icon} aria-hidden="true">{info.icon}</span>
                   <span className={s.body}>
                     <span className={s.top}>
                       <Badge variant={info.variant}>{info.label}</Badge>
                       {!n.leido && <span className={s.unreadDot}>Nueva</span>}
-                      <time className={s.date}>{n.createdAt}</time>
+                      <time className={`mono ${s.date}`}>{n.createdAt}</time>
                     </span>
                     <span className={s.message}>{n.mensaje}</span>
                   </span>

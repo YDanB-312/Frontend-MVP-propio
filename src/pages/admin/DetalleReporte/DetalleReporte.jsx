@@ -185,7 +185,7 @@ export default function DetalleReporte() {
           {reportante ? (
             <div className={s.personCard}>
               {reportante.fotoPerfil ? (
-                <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: reportante.fotoPerfil, alt: reportante.name })}>
+                <button type="button" className={s.avatarBtn} title="Ver foto" aria-label="Ver foto del reportante" onClick={() => setFotoViendo({ src: reportante.fotoPerfil, alt: reportante.name })}>
                   <Avatar name={reportante.name} src={reportante.fotoPerfil} size="md" />
                 </button>
               ) : (
@@ -195,7 +195,7 @@ export default function DetalleReporte() {
                 <span className={s.personName}>{reportante.name}</span>
                 <span className={s.personEmail}>{reportante.email}</span>
               </div>
-              <Button as="link" to={`/admin/detalle-usuario/${reportante.id}`} variant="secondary">
+              <Button as="link" to={`/admin/detalle-usuario/${reportante.id}`} viewTransition variant="secondary">
                 Ver usuario <ArrowRight size={14} />
               </Button>
             </div>

@@ -26,15 +26,19 @@ test.describe('Modo oscuro', () => {
   test('toggle aplica data-theme y persiste tras recargar', async ({ page }) => {
     await login(page, 'aprendiz')
     const btnTema = page.getByRole('button', { name: /modo (oscuro|claro)/i })
+    const tema = () => page.evaluate(() => document.documentElement.dataset.theme)
 
+    // Agnóstico al tema inicial (dark-first): el toggle siempre invierte
+    const inicial = await tema()
     await btnTema.click()
-    await expect(page.locator('html[data-theme="dark"]')).toHaveCount(1)
+    const invertido = inicial === 'dark' ? 'light' : 'dark'
+    await expect(page.locator(`html[data-theme="${invertido}"]`)).toHaveCount(1)
 
     await page.reload()
-    await expect(page.locator('html[data-theme="dark"]')).toHaveCount(1)
+    await expect(page.locator(`html[data-theme="${invertido}"]`)).toHaveCount(1)
 
-    await btnTema.click()
-    await expect(page.locator('html[data-theme="dark"]')).toHaveCount(0)
+    await page.getByRole('button', { name: /modo (oscuro|claro)/i }).click()
+    await expect(page.locator(`html[data-theme="${inicial}"]`)).toHaveCount(1)
   })
 })
 
@@ -48,10 +52,11 @@ test.describe('Vista móvil de tablas', () => {
     await expect(page.locator('[data-label]').first()).toBeVisible()
   })
 
-  test('revisiones del instructor usa tarjetas con etiquetas', async ({ page }) => {
+  test('revisiones del instructor muestra la cola en móvil', async ({ page }) => {
     await login(page, 'instructor')
     await page.goto('/instructor/revision-propuestas')
-    await expect(page.locator('th').first()).toBeHidden()
-    await expect(page.locator('[data-label="Aprendiz"]').first()).toBeVisible()
+    const cola = page.getByRole('list', { name: /Cola de revisión/i })
+    await expect(cola).toBeVisible()
+    await expect(cola.getByRole('button').first()).toBeVisible()
   })
 })

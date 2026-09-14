@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { findUserById, displayNames } from '../../data/mockData'
-import s from './Header.module.css'
+import s from './TopNav.module.css'
 
 const RUTA_NOTIFICACIONES = {
   aprendiz: '/aprendiz/alertas',
@@ -30,14 +30,6 @@ function iniciales(nombre = '') {
     .join('')
 }
 
-function HamburgerIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-      <path d="M3 6h18M3 12h18M3 18h18" />
-    </svg>
-  )
-}
-
 function BellIcon() {
   return (
     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -64,7 +56,15 @@ function PlusIcon() {
   )
 }
 
-export default function Header({ titulo = '', usuario = null, notificaciones = 0, role = '', onToggleSidebar }) {
+function HamburgerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <path d="M3 6h18M3 12h18M3 18h18" />
+    </svg>
+  )
+}
+
+export default function TopNav({ titulo = '', usuario = null, notificaciones = 0, role = '', onToggleSidebar }) {
   const { logout } = useAuth()
   const navigate = useNavigate()
 
@@ -82,13 +82,13 @@ export default function Header({ titulo = '', usuario = null, notificaciones = 0
   }
 
   return (
-    <header className={s.header}>
-      <div className={s.container}>
+    <header className={s.topnav}>
+      <div className={s.bar}>
         <div className={s.left}>
           <button type="button" className={s.hamburger} onClick={onToggleSidebar} aria-label="Abrir menú de navegación">
             <HamburgerIcon />
           </button>
-          <Link to="/" className={s.logo} aria-label="Ir al inicio">
+          <Link to="/" viewTransition className={s.logo} aria-label="Ir al inicio">
             <img src="/images/Logo-ProyecTwin.png" alt="ProyecTwin SENA" />
           </Link>
           <span className={s.title}>{titulo}</span>
@@ -122,13 +122,15 @@ export default function Header({ titulo = '', usuario = null, notificaciones = 0
           </button>
 
           <div className={s.user} title={usuario?.correo}>
-            <span className={s.avatar} aria-hidden="true">
+            <Link to={`/${role}/perfil`} viewTransition className={s.avatarLink} aria-label="Ir a mi perfil">
+              <span className={s.avatar} aria-hidden="true">
               {fotoPerfilSesion ? (
                 <img src={fotoPerfilSesion} alt="" />
               ) : (
                 iniciales(usuario?.nombre)
               )}
-            </span>
+              </span>
+            </Link>
             <span className={s.userInfo}>
               <span className={s.userName}>{usuario?.nombre}</span>
               <span className={s.userRole}>{displayNames.userRole[role] || role}</span>
@@ -141,7 +143,6 @@ export default function Header({ titulo = '', usuario = null, notificaciones = 0
           </button>
         </div>
       </div>
-
     </header>
   )
 }

@@ -7,6 +7,7 @@ import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
 import { Input } from '../../../components/Input/Input'
 import s from './RestablecerContrasena.module.css'
+import { esEmailValido, esPasswordValida } from '../../../utils/validation'
 
 export default function RestablecerContrasena() {
   const { cambiarContrasena } = useAuth()
@@ -21,11 +22,11 @@ export default function RestablecerContrasena() {
     e.preventDefault()
     setError('')
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!esEmailValido(email.trim())) {
       setError('Ingresa un correo electrónico válido.')
       return
     }
-    if (password.length < 6) {
+    if (!esPasswordValida(password)) {
       setError('La contraseña debe tener al menos 6 caracteres.')
       return
     }

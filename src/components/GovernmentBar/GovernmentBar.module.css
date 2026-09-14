@@ -28,6 +28,26 @@
   text-overflow: ellipsis;
 }
 
+.motor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--govbar-text-dim);
+  white-space: nowrap;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-full);
+  background: var(--c-primary-hover);
+  box-shadow: var(--glow-soft);
+  animation: fx-pulse-dot var(--dur-loop) var(--ease-out) infinite;
+}
+
 .themeBtn {
   display: inline-flex;
   align-items: center;
@@ -43,6 +63,20 @@
 .themeBtn:hover {
   background: rgba(255, 255, 255, 0.14);
   color: var(--govbar-text);
+}
+
+.motorCorto {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .motorFull {
+    display: none;
+  }
+
+  .motorCorto {
+    display: inline;
+  }
 }
 
 @media (max-width: 640px) {

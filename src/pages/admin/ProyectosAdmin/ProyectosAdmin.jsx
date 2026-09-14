@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderOpen, Eye, MagnifyingGlass } from 'phosphor-react'
+import { FolderOpen, Eye } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
@@ -8,25 +8,38 @@ import Button from '../../../components/Button/Button'
 import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import DataTable from '../../../components/DataTable/DataTable'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import { norm } from '../../../utils/helpers'
 import {
   getAllProjects,
+  getAllFichas,
   getSimilitudesValidas,
+  findFichaById,
+  findCentroById,
+  getCentros,
+  REDES,
   displayNames,
 } from '../../../data/mockData'
+import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import s from '../../../components/ListaBase/ListaBase.module.css'
+import { PAGINA_TABLA } from '../../../constants/pagination'
 
-const ITEMS_POR_PAGINA = 8
-
-const ESTADO_VARIANT = {
-  pendiente: 'warning',
-  aprobado: 'success',
-  rechazado: 'danger',
-}
+const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 export default function ProyectosAdmin() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [filtroCentro, setFiltroCentro] = useState('todos')
+  const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
+
+  const centros = getCentros()
+  const programasFiltro = (
+    filtroCentro === 'todos'
+      ? [...new Set(REDES.flatMap((r) => r.programas))]
+      : [...new Set(getAllFichas().filter((f) => String(f.centroId) === String(filtroCentro)).map((f) => f.programa))]
+  ).sort()
 
   const proyectos = getAllProjects()
 
@@ -42,19 +55,30 @@ export default function ProyectosAdmin() {
   }
 
   const filtrados = proyectos.filter((p) => {
-    const q = busqueda.trim().toLowerCase()
+    const q = norm(busqueda.trim())
     const coincideQ =
       !q ||
-      p.title.toLowerCase().includes(q) ||
-      (p.studentName || '').toLowerCase().includes(q)
+      norm(p.title).includes(q) ||
+      norm(p.studentName).includes(q)
     const coincideEstado = filtroEstado === 'todos' || p.estado === filtroEstado
-    return coincideQ && coincideEstado
+    const fichaP = p.fichaId ? findFichaById(p.fichaId) : null
+    const coincideCentro = filtroCentro === 'todos' || (fichaP && String(fichaP.centroId) === String(filtroCentro))
+    const coincidePrograma = filtroPrograma === 'todos' || (fichaP && fichaP.programa === filtroPrograma)
+    return coincideQ && coincideEstado && coincideCentro && coincidePrograma
   })
 
   const paginados = filtrados.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
     pagina * ITEMS_POR_PAGINA
   )
+
+  const limpiarFiltros = () => {
+    setBusqueda('')
+    setFiltroEstado('todos')
+    setFiltroCentro('todos')
+    setFiltroPrograma('todos')
+    setPagina(1)
+  }
 
   return (
     <DashboardLayout role="admin" titulo="Propuestas">
@@ -63,6 +87,10 @@ export default function ProyectosAdmin() {
           title="Propuestas"
           subtitle="Consulta y supervisa todas las propuestas registradas en la plataforma."
           icon={<FolderOpen />}
+          breadcrumb={[
+            { label: 'Dashboard', to: '/admin/dashboard' },
+            { label: 'Propuestas' },
+          ]}
         />
 
         <FilterBar title="Buscar y filtrar">
@@ -92,6 +120,41 @@ export default function ProyectosAdmin() {
               <option value="rechazado">{displayNames.projectStatus.rechazado}</option>
             </Select>
           </label>
+          <label className={s.field}>
+            <span className={s.label}>Centro</span>
+            <Select
+              value={filtroCentro}
+              onChange={(e) => {
+                setFiltroCentro(e.target.value)
+                setFiltroPrograma('todos')
+                setPagina(1)
+              }}
+            >
+              <option value="todos">Todos</option>
+              {centros.map((ct) => (
+                <option key={ct.id} value={String(ct.id)}>
+                  {ct.nombre}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className={s.field}>
+            <span className={s.label}>Programa</span>
+            <Select
+              value={filtroPrograma}
+              onChange={(e) => {
+                setFiltroPrograma(e.target.value)
+                setPagina(1)
+              }}
+            >
+              <option value="todos">Todos</option>
+              {programasFiltro.map((prog) => (
+                <option key={prog} value={prog}>
+                  {prog}
+                </option>
+              ))}
+            </Select>
+          </label>
           <p className={s.info}>
             {filtrados.length} proyecto{filtrados.length !== 1 ? 's' : ''}
           </p>
@@ -106,62 +169,86 @@ export default function ProyectosAdmin() {
                 ? 'Todavía no hay propuestas registradas.'
                 : 'Ninguna propuesta coincide con los filtros aplicados.'
             }
+            actionLabel={proyectos.length === 0 ? undefined : 'Limpiar filtros'}
+            onAction={proyectos.length === 0 ? undefined : limpiarFiltros}
           />
         ) : (
           <>
-            <div className={s.tableWrap}>
-              <table className={s.table}>
-                <thead>
-                  <tr>
-                    <th>Propuesta</th>
-                    <th>Aprendiz</th>
-                    <th>Fecha</th>
-                    <th>Similitud</th>
-                    <th>Estado</th>
-                    <th className={s.colActions}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginados.map((p) => {
+            <DataTable
+              ariaLabel="Propuestas registradas"
+              columns={[
+                {
+                  key: 'propuesta',
+                  header: 'Propuesta',
+                  render: (p) => (
+                    <>
+                      <span className={s.title}>{p.title}</span>
+                      <br />
+                      <span className={s.subText}>{p.areaAplicacion}</span>
+                    </>
+                  ),
+                },
+                { key: 'studentName', header: 'Aprendiz' },
+                { key: 'createdAt', header: 'Fecha' },
+                {
+                  key: 'similitud',
+                  header: 'Similitud',
+                  render: (p) => {
                     const info = simInfo[p.id]
+                    if (!info) return <span className={s.muted}>—</span>
                     return (
-                      <tr key={p.id}>
-                        <td>
-                          <span className={s.title}>{p.title}</span>
-                          <span className={s.subText}>{p.areaAplicacion}</span>
-                        </td>
-                        <td className={s.text}>{p.studentName}</td>
-                        <td className={s.date}>{p.createdAt}</td>
-                        <td>
-                          {info ? (
-                            <Badge variant={info.pct >= 60 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
-                              <MagnifyingGlass size={12} /> {info.pct}% · {info.count}
-                            </Badge>
-                          ) : (
-                            <span className={s.muted}>—</span>
-                          )}
-                        </td>
-                        <td>
-                          <Badge variant={ESTADO_VARIANT[p.estado] || 'neutral'}>
-                            {displayNames.projectStatus[p.estado] || p.estado}
-                          </Badge>
-                        </td>
-                        <td className={s.colActions}>
-                          <Button
-                            as="link"
-                            to={`/admin/detalle-proyecto/${p.id}`}
-                            size="sm"
-                            variant="secondary"
-                          >
-                            <Eye size={14} /> Ver
-                          </Button>
-                        </td>
-                      </tr>
+                      <span title={`${info.pct}% · ${info.count}`}>
+                        <GradeBadge score={info.pct} size="sm" />
+                      </span>
                     )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  },
+                },
+                {
+                  key: 'centro',
+                  header: 'Centro',
+                  render: (p) => {
+                    const fichaRow = p.fichaId ? findFichaById(p.fichaId) : null
+                    const centroRow = fichaRow?.centroId ? findCentroById(fichaRow.centroId) : null
+                    return centroRow?.nombre || <span className={s.muted}>—</span>
+                  },
+                },
+                {
+                  key: 'programa',
+                  header: 'Programa',
+                  render: (p) => {
+                    const fichaRow = p.fichaId ? findFichaById(p.fichaId) : null
+                    return fichaRow?.programa || <span className={s.muted}>—</span>
+                  },
+                },
+                {
+                  key: 'estado',
+                  header: 'Estado',
+                  render: (p) => (
+                    <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
+                      {displayNames.projectStatus[p.estado] || p.estado}
+                    </Badge>
+                  ),
+                },
+                {
+                  key: 'acciones',
+                  header: 'Acciones',
+                  align: 'end',
+                  render: (p) => (
+                    <Button
+                      as="link"
+                      to={`/admin/detalle-proyecto/${p.id}`}
+                      viewTransition
+                      size="sm"
+                      variant="secondary"
+                    >
+                      <Eye size={14} /> Ver
+                    </Button>
+                  ),
+                },
+              ]}
+              rows={paginados}
+              keyOf={(p) => p.id}
+            />
 
             <Pagination
               totalItems={filtrados.length}

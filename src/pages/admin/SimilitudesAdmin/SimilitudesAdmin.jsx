@@ -4,15 +4,20 @@ import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
 import Badge from '../../../components/Badge/Badge'
 import Button from '../../../components/Button/Button'
-import { Select } from '../../../components/Input/Input'
+import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import { findProjectById, getSimilitudesValidas, displayNames } from '../../../data/mockData'
+import DataTable from '../../../components/DataTable/DataTable'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import StatChip from '../../../components/StatChip/StatChip'
+import { findProjectById, getSimilitudesValidas, getConfigMotor, getProgramaDeProyecto, REDES, displayNames } from '../../../data/mockData'
+import { norm } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesAdmin.module.css'
 import { Eye, MagnifyingGlass } from 'phosphor-react'
+import { PAGINA_TABLA } from '../../../constants/pagination'
 
-const ITEMS_POR_PAGINA = 8
+const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 const PROY_VARIANT = {
   pendiente: 'warning',
@@ -21,35 +26,92 @@ const PROY_VARIANT = {
 }
 
 export default function SimilitudesAdmin() {
+  const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
   const similitudes = getSimilitudesValidas()
+  const programasFiltro = [...new Set(REDES.flatMap((r) => r.programas))].sort()
 
-  const filtradas =
-    filtroEstado === 'todos'
-      ? similitudes
-      : similitudes.filter((x) => {
-          const p1 = findProjectById(x.projectId1)
-          const p2 = findProjectById(x.projectId2)
-          return p1?.estado === filtroEstado || p2?.estado === filtroEstado
-        })
+  const filtradas = similitudes.filter((x) => {
+    const p1 = findProjectById(x.projectId1)
+    const p2 = findProjectById(x.projectId2)
+    const q = norm(busqueda.trim())
+    const coincideQ =
+      !q ||
+      norm(x.project1Title).includes(q) ||
+      norm(x.project2Title).includes(q) ||
+      norm(x.project1Student).includes(q) ||
+      norm(x.project2Student).includes(q)
+    const coincideEstado =
+      filtroEstado === 'todos' || p1?.estado === filtroEstado || p2?.estado === filtroEstado
+    const coincidePrograma =
+      filtroPrograma === 'todos' ||
+      getProgramaDeProyecto(p1) === filtroPrograma ||
+      getProgramaDeProyecto(p2) === filtroPrograma
+    return coincideQ && coincideEstado && coincidePrograma
+  })
 
   const paginadas = filtradas.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
     pagina * ITEMS_POR_PAGINA
   )
 
+  const limpiarFiltros = () => {
+    setBusqueda('')
+    setFiltroEstado('todos')
+    setFiltroPrograma('todos')
+    setPagina(1)
+  }
+
+  const cfg = getConfigMotor()
+  const umbralPct = Math.round(cfg.umbral * 100)
+  const altas = similitudes.filter((x) => Math.round((x.similitud || 0) * 100) >= 70).length
+  const programasAfectados = new Set(
+    similitudes.flatMap((x) => [
+      getProgramaDeProyecto(findProjectById(x.projectId1)),
+      getProgramaDeProyecto(findProjectById(x.projectId2)),
+    ]).filter(Boolean)
+  ).size
+
   return (
     <DashboardLayout role="admin" titulo="Similitudes">
       <div className={s.page}>
         <PageHeader
           title="Similitudes Detectadas"
-          subtitle="Analiza los pares de proyectos con contenido similar y dales seguimiento."
+          subtitle={`Umbral ${Math.round(getConfigMotor().umbral * 100)}% · corpus de ${getConfigMotor().meses} meses. Analiza los pares y dales seguimiento.`}
           icon={<MagnifyingGlass />}
+          breadcrumb={[
+            { label: 'Dashboard', to: '/admin/dashboard' },
+            { label: 'Similitudes' },
+          ]}
+          actions={
+            <Button as="link" to="/admin/config-similitud" size="sm" variant="secondary">
+              Ajustar motor
+            </Button>
+          }
         />
 
-        <FilterBar title="Filtrar por estado de la propuesta">
+        <div className={local.tira} role="status" aria-label="Resumen de coincidencias">
+          <StatChip label="Pares" value={similitudes.length} />
+          <StatChip label="Sobre 70%" value={altas} />
+          <StatChip label="Programas" value={programasAfectados} />
+          <StatChip label="Umbral" value={`${umbralPct}%`} />
+        </div>
+
+        <FilterBar title="Buscar y filtrar">
+          <label className={s.field}>
+            <span className={s.label}>Buscar</span>
+            <Input
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value)
+                setPagina(1)
+              }}
+              placeholder="Título o aprendiz…"
+            />
+          </label>
           <label className={s.field}>
             <span className={s.label}>Estado de la propuesta</span>
             <Select
@@ -65,6 +127,23 @@ export default function SimilitudesAdmin() {
               <option value="rechazado">{displayNames.projectStatus.rechazado}</option>
             </Select>
           </label>
+          <label className={s.field}>
+            <span className={s.label}>Programa</span>
+            <Select
+              value={filtroPrograma}
+              onChange={(e) => {
+                setFiltroPrograma(e.target.value)
+                setPagina(1)
+              }}
+            >
+              <option value="todos">Todos</option>
+              {programasFiltro.map((prog) => (
+                <option key={prog} value={prog}>
+                  {prog}
+                </option>
+              ))}
+            </Select>
+          </label>
           <p className={s.info}>
             {filtradas.length} similitud{filtradas.length !== 1 ? 'es' : ''}
           </p>
@@ -77,84 +156,82 @@ export default function SimilitudesAdmin() {
             message={
               similitudes.length === 0
                 ? 'No se han detectado similitudes entre proyectos.'
-                : 'No hay similitudes con el estado de propuesta seleccionado.'
+                : 'Ninguna similitud coincide con los filtros aplicados.'
             }
+            actionLabel={similitudes.length === 0 ? undefined : 'Limpiar filtros'}
+            onAction={similitudes.length === 0 ? undefined : limpiarFiltros}
           />
         ) : (
           <>
-            <div className={s.tableWrap}>
-              <table className={s.table}>
-                <thead>
-                  <tr>
-                    <th>Propuesta A</th>
-                    <th>Propuesta B</th>
-                    <th>Similitud</th>
-                    <th>Estado (A · B)</th>
-                    <th>Fecha</th>
-                    <th className={s.colActions}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginadas.map((sim) => {
-                    const pct = Math.round((sim.similitud || 0) * 100)
-                    const pA = findProjectById(sim.projectId1)
-                    const pB = findProjectById(sim.projectId2)
-                    const estadoA = pA?.estado || '—'
-                    const estadoB = pB?.estado || '—'
+            <DataTable
+              ariaLabel="Similitudes detectadas"
+              columns={[
+                {
+                  key: 'a',
+                  header: 'Propuesta A',
+                  render: (sim) => (
+                    <>
+                      <span className={s.title}>{sim.project1Title}</span>
+                      <br />
+                      <span className={s.subText}>{sim.project1Student}</span>
+                    </>
+                  ),
+                },
+                {
+                  key: 'b',
+                  header: 'Propuesta B',
+                  render: (sim) => (
+                    <>
+                      <span className={s.title}>{sim.project2Title}</span>
+                      <br />
+                      <span className={s.subText}>{sim.project2Student}</span>
+                    </>
+                  ),
+                },
+                {
+                  key: 'similitud',
+                  header: 'Similitud',
+                  render: (sim) => <GradeBadge score={Math.round((sim.similitud || 0) * 100)} size="sm" />,
+                },
+                {
+                  key: 'estados',
+                  header: 'Estado',
+                  render: (sim) => {
+                    const estadoA = findProjectById(sim.projectId1)?.estado || '—'
+                    const estadoB = findProjectById(sim.projectId2)?.estado || '—'
                     return (
-                      <tr key={sim.id}>
-                        <td>
-                          <span className={s.title}>{sim.project1Title}</span>
-                          <span className={s.subText}>{sim.project1Student}</span>
-                        </td>
-                        <td>
-                          <span className={s.title}>{sim.project2Title}</span>
-                          <span className={s.subText}>{sim.project2Student}</span>
-                        </td>
-                        <td>
-                          <span
-                            className={`${local.pct} ${
-                              pct >= 60 ? local.pctHigh : pct >= 40 ? local.pctMid : local.pctLow
-                            }`}
-                          >
-                            {pct}%
-                          </span>
-                          <span className={local.barTrack} aria-hidden="true">
-                            <span
-                              className={`${local.barFill} ${
-                                pct >= 60 ? local.fillHigh : pct >= 40 ? local.fillMid : local.fillLow
-                              }`}
-                              style={{ width: `${Math.min(pct, 100)}%` }}
-                            />
-                          </span>
-                        </td>
-                        <td>
-                          <span className={local.estadoPair}>
-                            <Badge variant={PROY_VARIANT[estadoA] || 'neutral'}>
-                              A: {displayNames.projectStatus[estadoA] || estadoA}
-                            </Badge>
-                            <Badge variant={PROY_VARIANT[estadoB] || 'neutral'}>
-                              B: {displayNames.projectStatus[estadoB] || estadoB}
-                            </Badge>
-                          </span>
-                        </td>
-                        <td className={s.date}>{sim.createdAt}</td>
-                        <td className={s.colActions}>
-                          <Button
-                            as="link"
-                            to={`/admin/detalle-similitud/${sim.id}`}
-                            size="sm"
-                            variant="secondary"
-                          >
-                            <Eye size={14} /> Ver
-                          </Button>
-                        </td>
-                      </tr>
+                      <span className={local.estadoPair}>
+                        <Badge variant={PROY_VARIANT[estadoA] || 'neutral'}>
+                          A: {displayNames.projectStatus[estadoA] || estadoA}
+                        </Badge>
+                        <Badge variant={PROY_VARIANT[estadoB] || 'neutral'}>
+                          B: {displayNames.projectStatus[estadoB] || estadoB}
+                        </Badge>
+                      </span>
                     )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  },
+                },
+                { key: 'createdAt', header: 'Fecha' },
+                {
+                  key: 'acciones',
+                  header: 'Acciones',
+                  align: 'end',
+                  render: (sim) => (
+                    <Button
+                      as="link"
+                      to={`/admin/detalle-similitud/${sim.id}`}
+                      viewTransition
+                      size="sm"
+                      variant="secondary"
+                    >
+                      <Eye size={14} /> Ver
+                    </Button>
+                  ),
+                },
+              ]}
+              rows={paginadas}
+              keyOf={(sim) => sim.id}
+            />
 
             <Pagination
               totalItems={filtradas.length}

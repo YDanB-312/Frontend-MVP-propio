@@ -3,17 +3,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--c-bg);
+  background:
+    radial-gradient(50% 35% at 50% 0%, var(--scan), transparent 70%),
+    var(--c-bg);
   padding: var(--sp-6) var(--sp-4);
 }
 
+.layout::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(60% 50% at 50% 20%, black, transparent 75%);
+}
+
 .card {
+  position: relative;
   width: 100%;
   max-width: 440px;
   background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--c-border-h);
   border-radius: var(--r-xl);
-  box-shadow: var(--sh-lg);
+  box-shadow: var(--sh-xl), var(--glow-soft);
   padding: var(--sp-8) var(--sp-6);
 }
 

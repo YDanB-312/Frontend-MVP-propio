@@ -1,0 +1,8 @@
+.wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.dial{display:block}
+.track{fill:none;stroke:var(--c-border);stroke-width:10}
+.arc{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset var(--dur-slow) var(--ease-out)}
+.s{color:var(--grade-s)}.a{color:var(--grade-a)}.b{color:var(--grade-b)}.c{color:var(--grade-c)}
+.center{position:absolute;display:flex;flex-direction:column;align-items:center;line-height:1.1}
+.grade{font-family:var(--font-display);font-weight:800;font-size:var(--text-2xl)}
+.pct{font-size:var(--text-sm);font-weight:700;color:var(--c-text-2)}

@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   House, FolderOpen, Bell, Bug, UserCircle,
-  ClipboardText, BookOpen, UsersThree, MagnifyingGlass, GraduationCap, ShareNetwork
+  ClipboardText, BookOpen, BookBookmark, UsersThree, MagnifyingGlass, GraduationCap, GearSix
 } from 'phosphor-react'
 import { getUnreadCount } from '../../data/mockData'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
-import Header from '../../components/Header/Header'
+import TopNav from '../../components/TopNav/TopNav'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import Footer from '../../components/Footer/Footer'
 import s from './DashboardLayout.module.css'
@@ -14,30 +14,31 @@ import s from './DashboardLayout.module.css'
 const LINKS = {
   aprendiz: [
     { to: '/aprendiz/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
-    { to: '/aprendiz/propuestas', icon: <FolderOpen size={20} weight="regular" />, label: 'Propuestas' },
-    { to: '/aprendiz/ficha', icon: <GraduationCap size={20} weight="regular" />, label: 'Ficha' },
-    { to: '/aprendiz/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes' },
+    { to: '/aprendiz/propuestas', icon: <FolderOpen size={20} weight="regular" />, label: 'Propuestas', activeFor: ['/aprendiz/detalle-proyecto'] },
+    { to: '/aprendiz/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes', activeFor: ['/aprendiz/detalle-similitud', '/aprendiz/resultado-analisis'] },
+    { to: '/aprendiz/ficha', icon: <GraduationCap size={20} weight="regular" />, label: 'Ficha', activeFor: ['/aprendiz/detalle-ficha'] },
     { to: '/aprendiz/alertas', icon: <Bell size={20} weight="regular" />, label: 'Alertas' },
-    { to: '/aprendiz/reportar-falla', icon: <Bug size={20} weight="regular" />, label: 'Reportar Falla' },
     { to: '/aprendiz/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
+    { to: '/aprendiz/reportar-falla', icon: <Bug size={20} weight="regular" />, label: 'Reportar Falla' },
   ],
   instructor: [
     { to: '/instructor/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
-    { to: '/instructor/revision-propuestas', icon: <ClipboardText size={20} weight="regular" />, label: 'Revision Propuestas' },
-    { to: '/instructor/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes' },
-    { to: '/instructor/fichas', icon: <BookOpen size={20} weight="regular" />, label: 'Fichas' },
+    { to: '/instructor/revision-propuestas', icon: <ClipboardText size={20} weight="regular" />, label: 'Revisión Propuestas', activeFor: ['/instructor/detalle-proyecto'] },
+    { to: '/instructor/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes', activeFor: ['/instructor/detalle-similitud'] },
+    { to: '/instructor/fichas', icon: <BookOpen size={20} weight="regular" />, label: 'Fichas', activeFor: ['/instructor/detalle-ficha', '/instructor/directorio-ficha'] },
     { to: '/instructor/alertas', icon: <Bell size={20} weight="regular" />, label: 'Alertas' },
-    { to: '/instructor/reportar-falla', icon: <Bug size={20} weight="regular" />, label: 'Reportar Falla' },
     { to: '/instructor/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
+    { to: '/instructor/reportar-falla', icon: <Bug size={20} weight="regular" />, label: 'Reportar Falla' },
   ],
   admin: [
     { to: '/admin/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
-    { to: '/admin/usuarios', icon: <UsersThree size={20} weight="regular" />, label: 'Usuarios' },
-    { to: '/admin/redes-conocimiento', icon: <ShareNetwork size={20} weight="regular" />, label: 'Redes de Conocimiento' },
-    { to: '/admin/proyectos', icon: <FolderOpen size={20} weight="regular" />, label: 'Proyectos' },
-    { to: '/admin/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes' },
-    { to: '/admin/reportes-fallas', icon: <Bug size={20} weight="regular" />, label: 'Reportes de Fallas' },
-    { to: '/admin/notificaciones', icon: <Bell size={20} weight="regular" />, label: 'Notificaciones' },
+    { to: '/admin/proyectos', icon: <FolderOpen size={20} weight="regular" />, label: 'Propuestas', activeFor: ['/admin/detalle-proyecto'] },
+    { to: '/admin/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes', activeFor: ['/admin/detalle-similitud'] },
+    { to: '/admin/reportes-fallas', icon: <Bug size={20} weight="regular" />, label: 'Reportes de Fallas', activeFor: ['/admin/detalle-reporte'] },
+    { to: '/admin/notificaciones', icon: <Bell size={20} weight="regular" />, label: 'Alertas' },
+    { to: '/admin/usuarios', icon: <UsersThree size={20} weight="regular" />, label: 'Usuarios', activeFor: ['/admin/detalle-usuario'] },
+    { to: '/admin/fichas', icon: <BookBookmark size={20} weight="regular" />, label: 'Fichas', activeFor: ['/admin/detalle-ficha'] },
+    { to: '/admin/configuracion', icon: <GearSix size={20} weight="regular" />, label: 'Configuración', activeFor: ['/admin/redes-conocimiento', '/admin/centros', '/admin/config-similitud'] },
     { to: '/admin/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
   ],
 }
@@ -51,7 +52,7 @@ export default function DashboardLayout({ role = 'aprendiz', titulo = '', childr
   return (
     <div className={s.layout}>
       <GovernmentBar />
-      <Header
+      <TopNav
         titulo={titulo}
         usuario={user}
         role={role}

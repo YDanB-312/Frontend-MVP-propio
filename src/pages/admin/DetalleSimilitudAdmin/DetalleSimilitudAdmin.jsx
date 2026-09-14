@@ -64,6 +64,7 @@ export default function DetalleSimilitudAdmin() {
             rows={3}
             value={textoObs}
             onChange={(e) => setTextoObs(e.target.value)}
+            aria-label="Observación sobre la propuesta seleccionada"
                   placeholder="Escribe una observación sobre la propuesta seleccionada…"
           />
         </div>

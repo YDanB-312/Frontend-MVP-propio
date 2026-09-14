@@ -13,12 +13,14 @@ export default function Pagination({
   const totalPages = Math.max(1, Math.ceil(count / itemsPerPage))
   if (count === 0) return null
 
-  const start = (paginaActual - 1) * itemsPerPage + 1
-  const end = Math.min(paginaActual * itemsPerPage, count)
+  // Clamp: si el filtro encogió la lista, no mostrar rangos imposibles (9–8 de 8)
+  const pagina = Math.min(Math.max(1, paginaActual), totalPages)
+  const start = (pagina - 1) * itemsPerPage + 1
+  const end = Math.min(pagina * itemsPerPage, count)
 
   const pages = []
-  const from = Math.max(1, paginaActual - 2)
-  const to = Math.min(totalPages, paginaActual + 2)
+  const from = Math.max(1, pagina - 2)
+  const to = Math.min(totalPages, pagina + 2)
   if (from > 1) {
     pages.push(1)
     if (from > 2) pages.push('…')
@@ -40,8 +42,8 @@ export default function Pagination({
         <button
           type="button"
           className={s.navBtn}
-          disabled={paginaActual === 1}
-          onClick={() => setPaginaActual(paginaActual - 1)}
+          disabled={pagina === 1}
+          onClick={() => setPaginaActual(pagina - 1)}
           aria-label="Página anterior"
         >
           ‹
@@ -53,8 +55,8 @@ export default function Pagination({
             <button
               key={p}
               type="button"
-              className={`${s.pageBtn} ${p === paginaActual ? s.active : ''}`}
-              aria-current={p === paginaActual ? 'page' : undefined}
+              className={`${s.pageBtn} ${p === pagina ? s.active : ''}`}
+              aria-current={p === pagina ? 'page' : undefined}
               onClick={() => setPaginaActual(p)}
             >
               {p}
@@ -64,8 +66,8 @@ export default function Pagination({
         <button
           type="button"
           className={s.navBtn}
-          disabled={paginaActual === totalPages}
-          onClick={() => setPaginaActual(paginaActual + 1)}
+          disabled={pagina === totalPages}
+          onClick={() => setPaginaActual(pagina + 1)}
           aria-label="Página siguiente"
         >
           ›

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Bug, PaperPlaneRight } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
 import DataPanel from '../DataPanel/DataPanel'
+import ConsoleCard from '../ConsoleCard/ConsoleCard'
 import FormField from '../FormField/FormField'
 import Actions from '../Actions/Actions'
 import Button from '../Button/Button'
@@ -37,7 +38,7 @@ export default function ReportarFallaBase({ role, onSubmit }) {
     <div className={s.wrapper}>
       <PageHeader title="Reportar Falla" subtitle={`Reporta un problema que encuentres como ${role}`} icon={<Bug size={20} />} />
 
-      <DataPanel title="Detalles de la falla" icon={<Bug size={18} />}>
+      <ConsoleCard title="Detalles de la falla" subtitle="Describe lo ocurrido con el mayor detalle posible" glow>
         <form className={s.form} onSubmit={handleSubmit}>
           <FormField label="Título del reporte" required>
             <Input type="text" value={form.titulo} onChange={handleChange('titulo')} placeholder="Ej: Error al cargar proyectos" required />
@@ -71,7 +72,7 @@ export default function ReportarFallaBase({ role, onSubmit }) {
             <Button size="lg" type="submit"><PaperPlaneRight size={16} /> Enviar reporte</Button>
           </Actions>
         </form>
-      </DataPanel>
+      </ConsoleCard>
     </div>
   )
 }

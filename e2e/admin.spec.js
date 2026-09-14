@@ -41,6 +41,7 @@ test.describe('Administración de usuarios (admin)', () => {
 
     await page.getByPlaceholder('Ej. Análisis y Desarrollo 2718').fill('Ficha Redes E2E')
     await page.getByPlaceholder('Ej. 3142101').fill('8888')
+    await page.locator('form select[name="centroId"]').selectOption({ index: 1 })
     await page.locator('form').getByRole('button', { name: /^Crear ficha$/i }).click()
 
     // La ficha queda creada bajo el programa elegido (no heredado)

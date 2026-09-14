@@ -1,23 +1,21 @@
-import { useEffect, useState } from 'react'
 import { Sun, Moon } from 'phosphor-react'
+import { useTheme } from '../../contexts/useTheme'
+import { getConfigMotor } from '../../data/mockData'
 import s from './GovernmentBar.module.css'
 
-const THEME_KEY = 'theme'
-
 export default function GovernmentBar() {
-  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'light')
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
-    localStorage.setItem(THEME_KEY, theme)
-  }, [theme])
-
-  const alternarTema = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'))
+  const { theme, alternarTema } = useTheme()
+  const motor = getConfigMotor()
 
   return (
     <div className={s.bar}>
       <div className={s.container}>
         <p className={s.accessibility}>Portal del SENA - República de Colombia</p>
+        <p className={`mono ${s.motor}`} aria-label={`Motor de similitud: umbral ${Math.round(motor.umbral * 100)} por ciento, corpus de ${motor.meses} meses`}>
+          <span className={s.dot} aria-hidden="true" />
+          <span className={s.motorFull}>MOTOR · UMBRAL {Math.round(motor.umbral * 100)}% · CORPUS {motor.meses}M</span>
+          <span className={s.motorCorto} aria-hidden="true">UMBRAL {Math.round(motor.umbral * 100)}%</span>
+        </p>
         <button
           type="button"
           className={s.themeBtn}

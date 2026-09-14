@@ -4,7 +4,9 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Avatar from '../../../components/Avatar/Avatar'
+import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import FormField from '../../../components/FormField/FormField'
 import Actions from '../../../components/Actions/Actions'
@@ -19,9 +21,10 @@ import {
   updateFicha,
   deleteFicha,
   instructorVeFicha,
+  displayNames,
 } from '../../../data/mockData'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
-import { ArrowRight, Books, ChartBar, CheckCircle, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
+import { ArrowRight, Books, CalendarBlank, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
 
 export default function DetalleFichaInstructor() {
   const { id } = useParams()
@@ -220,12 +223,39 @@ export default function DetalleFichaInstructor() {
             <ul className={s.studentList}>
               {estudiantes.map((est) => (
                 <li key={est.id}>
-                  <Link to={`/instructor/perfil-companero/${est.id}`} className={s.studentRow}>
+                  <Link to={`/instructor/perfil-companero/${est.id}`} viewTransition className={s.studentRow}>
                     <Avatar name={est.name} src={est.fotoPerfil} size="md" />
                     <span className={s.studentInfo}>
                       <span className={s.studentName}>{est.name}</span>
                       <span className={s.studentEmail}>{est.email}</span>
                     </span>
+                    <span className={s.arrow} aria-hidden="true"><ArrowRight size={22} /></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </DataPanel>
+
+        <DataPanel title={`Propuestas de la ficha (${proyectosFicha.length})`} icon={<FolderOpen />}>
+          {proyectosFicha.length === 0 ? (
+            <EmptyState
+              icon={<FolderOpen />}
+              title="Sin propuestas"
+              message="Aún no hay propuestas registradas en esta ficha."
+            />
+          ) : (
+            <ul className={s.studentList}>
+              {proyectosFicha.map((p) => (
+                <li key={p.id}>
+                  <Link to={`/instructor/detalle-proyecto/${p.id}`} viewTransition className={s.studentRow}>
+                    <span className={s.studentInfo}>
+                      <span className={s.studentName}>{p.title}</span>
+                      <span className={s.studentEmail}><CalendarBlank size={12} /> {p.createdAt}</span>
+                    </span>
+                    <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
+                      {displayNames.projectStatus[p.estado] || p.estado}
+                    </Badge>
                     <span className={s.arrow} aria-hidden="true"><ArrowRight size={22} /></span>
                   </Link>
                 </li>

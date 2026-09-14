@@ -6,6 +6,7 @@ import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
 import { Input } from '../../../components/Input/Input'
 import s from './RecuperarContrasena.module.css'
+import { esEmailValido } from '../../../utils/validation'
 
 export default function RecuperarContrasena() {
   const [email, setEmail] = useState('')
@@ -16,7 +17,7 @@ export default function RecuperarContrasena() {
     e.preventDefault()
     setError('')
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!esEmailValido(email.trim())) {
       setError('Ingresa un correo electrónico válido.')
       return
     }

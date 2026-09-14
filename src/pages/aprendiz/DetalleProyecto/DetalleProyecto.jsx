@@ -1,12 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
-import PageHeader from '../../../components/PageHeader/PageHeader'
+import PageHeader from
+'../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Button from '../../../components/Button/Button'
 import { Textarea } from '../../../components/Input/Input'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
+import ObservacionHilo from
+'../../../components/ObservacionHilo/ObservacionHilo'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import { toPct } from '../../../utils/similitudInfo'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findProjectById,
@@ -86,67 +90,67 @@ export default function DetalleProyecto() {
           ]}
         />
 
-        <div className={s.grid}>
-          <div className={s.col}>
+        <div className={esPropio ? s.dossier : s.dossierSolo}>
+          <div className={s.colPrincipal}>
             <DataPanel title="Información del proyecto" icon={<FileText />}>
               <InformacionProyecto proyecto={project} ficha={ficha} fichaHref={`/aprendiz/detalle-ficha/${project.fichaId}`} />
             </DataPanel>
           </div>
 
-          <div className={s.col}>
-            {esPropio && (
-            <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
-              {similitudes.length === 0 ? (
-                <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
-              ) : (
-                <ul className={s.simList}>
-                  {similitudes.map((sim) => {
-                    const pct = Math.round(sim.similitud * 100)
-                    const otroTitulo = sim.projectId1 === project.id ? sim.project2Title : sim.project1Title
-                    return (
-                      <li key={sim.id}>
-                        <Link to={`/aprendiz/detalle-similitud/${sim.id}`} className={s.simRow}>
-                          <span className={s.simPair}>vs. {otroTitulo}</span>
-                          <span className={s.simRight}>
-                            <span className={`${s.pct} ${pct >= 60 ? s.pctHigh : pct >= 40 ? s.pctMid : s.pctLow}`}>{pct}%</span>
-                          </span>
-                        </Link>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </DataPanel>
-            )}
+          {esPropio && (
+            <aside className={s.rail} aria-label="Similitudes y observaciones">
+              <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
+                {similitudes.length === 0 ? (
+                  <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
+                ) : (
+                  <ul className={s.simList}>
+                    {similitudes.map((sim) => {
+                      const pct = toPct(sim.similitud)
+                      const otroTitulo = sim.projectId1 === project.id ? sim.project2Title : sim.project1Title
+                      return (
+                        <li key={sim.id}>
+                          <Link to={`/aprendiz/detalle-similitud/${sim.id}`} viewTransition className={s.simRow}>
+                            <span className={s.simPair}>vs. {otroTitulo}</span>
+                            <span className={s.simRight}>
+                              <GradeBadge score={pct} size="sm" />
+                            </span>
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </DataPanel>
 
-            {esPropio && (
-            <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
-              {respondiendoA && (
-                <div className={s.respondiendoChip}>
-                  Respondiendo a {String(respondiendoA.autor).split(' | ')[0]}
-                  <button type="button" onClick={() => setRespondiendoA(null)} aria-label="Cancelar respuesta"><X size={12} /></button>
-                </div>
-              )}
+              <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
+                {respondiendoA && (
+                  <div className={s.respondiendoChip}>
+                    Respondiendo a {String(respondiendoA.autor).split(' | ')[0]}
+                    <button type="button" onClick={() => setRespondiendoA(null)} aria-label="Cancelar respuesta"><X size={12} /></button>
+                  </div>
+                )}
               <ObservacionHilo
                 grupos={agruparObservaciones(observaciones)}
                 permitirResponder
                 onRespuesta={(o) => setRespondiendoA(o)}
+                className={s.hilosScroll}
               />
 
-              <form className={s.obsForm} onSubmit={agregarObservacion}>
-                <Textarea
-                  rows={3}
-                  value={texto}
-                  onChange={(e) => setTexto(e.target.value)}
-                  placeholder={respondiendoA ? 'Escribe tu respuesta al instructor…' : 'Escribe tu comentario sobre la propuesta...'}
-                />
-                <Button type="submit" disabled={!texto.trim()}>
-                  <Plus size={14} /> Agregar observación
-                </Button>
-              </form>
-            </DataPanel>
-            )}
-          </div>
+                <form className={s.obsForm} onSubmit={agregarObservacion}>
+                  <Textarea
+                    rows={3}
+                    value={texto}
+                    onChange={(e) => setTexto(e.target.value)}
+                    aria-label="Escribe un comentario sobre la propuesta"
+                    placeholder={respondiendoA ? 'Escribe tu respuesta al instructor…' : 'Escribe tu comentario sobre la propuesta...'}
+                  />
+                  <Button type="submit" disabled={!texto.trim()}>
+                    <Plus size={14} /> Agregar observación
+                  </Button>
+                </form>
+              </DataPanel>
+            </aside>
+          )}
         </div>
       </div>
     </DashboardLayout>

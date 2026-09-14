@@ -50,6 +50,7 @@
 .chip {
   display: inline-flex;
   align-items: center;
+  min-height: 40px;
   padding: var(--sp-1_5) var(--sp-3);
   border-radius: var(--r-full);
   border: 1px solid var(--c-border);
@@ -64,13 +65,14 @@
 
 .chip:hover {
   border-color: var(--c-primary);
-  color: var(--c-primary-strong);
+  color: var(--c-primary);
 }
 
 .chipActive {
   background: var(--c-primary);
   border-color: var(--c-primary);
   color: var(--c-on-primary);
+  box-shadow: var(--glow-soft);
 }
 
 .chipActive:hover {
@@ -93,10 +95,11 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--c-primary);
-  background: var(--c-success-bg);
+  background: var(--c-primary-light);
   border: 1px dashed var(--c-primary);
   border-radius: var(--r-md);
   padding: var(--sp-2_5) var(--sp-4);
+  box-shadow: var(--glow-soft);
 }
 
 /* ── Placeholder color ── */

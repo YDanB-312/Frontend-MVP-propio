@@ -30,7 +30,7 @@ test.describe('Ciclo de Ficha (unirse → persistir → salir)', () => {
 
   test('sin ficha muestra formulario de código; al unirse cambia a Mi Ficha y persiste', async ({ page }) => {
     // Sidebar lleva a la sección unificada
-    await page.getByRole('link', { name: 'Ficha' }).click()
+    await page.getByLabel(/Navegación principal/).getByRole('link', { name: 'Ficha' }).click()
     await expect(page).toHaveURL(/\/aprendiz\/ficha/)
     await expect(page.getByPlaceholder('abc-defg')).toBeVisible()
 
@@ -51,7 +51,7 @@ test.describe('Ciclo de Ficha (unirse → persistir → salir)', () => {
   })
 
   test('salir de la ficha vuelve al modo código y permite re-unirse', async ({ page }) => {
-    await page.getByRole('link', { name: 'Ficha' }).click()
+    await page.getByLabel(/Navegación principal/).getByRole('link', { name: 'Ficha' }).click()
     await page.getByPlaceholder('abc-defg').fill('xkp-mqwr')
     await page.getByRole('button', { name: /Buscar/i }).click()
     await page.getByRole('button', { name: /Unirse a esta ficha/i }).click()
@@ -69,5 +69,23 @@ test.describe('Ciclo de Ficha (unirse → persistir → salir)', () => {
     await page.getByRole('button', { name: /Unirse a esta ficha/i }).click()
     await page.getByRole('button', { name: /Sí, unirme/i }).click()
     await expect(page.getByRole('heading', { name: /Analisis y Desarrollo 2568/ })).toBeVisible()
+  })
+
+  test('código vacío o inexistente muestra error', async ({ page }) => {
+    await page.getByLabel(/Navegación principal/).getByRole('link', { name: 'Ficha' }).click()
+    await page.getByRole('button', { name: /Buscar/i }).click()
+    await expect(page.getByText(/Ingresa el código de la ficha/i)).toBeVisible()
+
+    await page.getByPlaceholder('abc-defg').fill('zzz-zzzz')
+    await page.getByRole('button', { name: /Buscar/i }).click()
+    await expect(page.getByText(/No encontramos una ficha/i)).toBeVisible()
+  })
+
+  test('ficha inactiva no acepta integrantes', async ({ page }) => {
+    await page.getByLabel(/Navegación principal/).getByRole('link', { name: 'Ficha' }).click()
+    await page.getByPlaceholder('abc-defg').fill('mno-pqrs')
+    await page.getByRole('button', { name: /Buscar/i }).click()
+    await expect(page.getByText(/finalizada/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: /Unirse a esta ficha/i })).toHaveCount(0)
   })
 })

@@ -10,7 +10,9 @@ import Button from '../../../components/Button/Button'
 import Actions from '../../../components/Actions/Actions'
 import { Input } from '../../../components/Input/Input'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import DataTable from '../../../components/DataTable/DataTable'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import { norm } from '../../../utils/helpers'
 import { ShareNetwork, Plus, Trash, PencilSimple, CheckCircle, X, Warning, CaretDown, CaretUp, ChartBar } from 'phosphor-react'
 import {
   getRedes,
@@ -106,6 +108,7 @@ function ProgramasInput({ programas, setProgramas, error }) {
                 value={p}
                 onChange={(e) => editar(i, e.target.value)}
                 placeholder="Nombre del programa"
+                aria-label={`Nombre del programa ${i + 1}`}
                 maxLength={60}
               />
               <button
@@ -128,6 +131,7 @@ function ProgramasInput({ programas, setProgramas, error }) {
           value={nuevo}
           onChange={(e) => { setNuevo(e.target.value); setLocalErr('') }}
           placeholder="Nuevo programa… ej. ADSO"
+          aria-label="Nuevo programa"
           maxLength={60}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); agregar() } }}
         />
@@ -153,9 +157,9 @@ export default function RedesConocimiento() {
   const redes = getRedes()
 
   const filtradas = redes.filter(r => {
-    const q = busqueda.trim().toLowerCase()
+    const q = norm(busqueda.trim())
     if (!q) return true
-    return r.nombre.toLowerCase().includes(q) || r.programas.some(p => p.toLowerCase().includes(q))
+    return norm(r.nombre).includes(q) || r.programas.some(p => norm(p).includes(q))
   })
 
   // Form state
@@ -340,78 +344,86 @@ export default function RedesConocimiento() {
                     ? 'No hay redes registradas. Crea la primera para comenzar.'
                     : 'Ninguna red coincide con la búsqueda.'
                 }
-                actionLabel={redes.length === 0 ? 'Crear primera red' : undefined}
-                onAction={redes.length === 0 ? abrirCrear : undefined}
+                actionLabel={redes.length === 0 ? 'Crear primera red' : 'Limpiar filtros'}
+                onAction={redes.length === 0 ? abrirCrear : () => { setBusqueda('') }}
               />
             ) : (
-              <div className={s.tableWrap}>
-                <table className={s.table}>
-                  <thead>
-                    <tr>
-                      <th>Red</th>
-                      <th>Programas</th>
-                      <th>Fichas</th>
-                      <th className={s.colActions}>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtradas.map((r) => {
-                      const conteo = getConteoFichasDeRed(r.id)
+              <DataTable
+                ariaLabel="Redes de conocimiento"
+                columns={[
+                  {
+                    key: 'red',
+                    header: 'Red',
+                    render: (r) => {
                       const enUso = isRedEnUso(r.id)
                       return (
-                        <tr key={r.id}>
-                          <td data-label="Red">
-                            <span className={s.title}>{r.nombre}</span>
-                            {enUso && <span className={s.subText}>En uso</span>}
-                          </td>
-                          <td data-label="Programas">
-                            <ProgramasCell programas={r.programas} />
-                          </td>
-                          <td data-label="Fichas">
-                            <span className={s.count}>{conteo}</span>
-                          </td>
-                          <td data-label="Acciones" className={s.colActions}>
-                            <span className={s.actions}>
-                              <Button size="sm" variant="secondary" onClick={() => abrirEditar(r)}>
-                                <PencilSimple size={14} /> Editar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="danger"
-                                onClick={() => setConfirmId(r.id)}
-                                title={enUso ? 'No se puede eliminar: está en uso' : 'Eliminar red'}
-                              >
-                                <Trash size={14} /> Eliminar
-                              </Button>
-                            </span>
-                          </td>
-                        </tr>
+                        <>
+                          <span className={s.title}>{r.nombre}</span>
+                          {enUso && (
+                            <>
+                              <br />
+                              <span className={s.subText}>En uso</span>
+                            </>
+                          )}
+                        </>
                       )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    },
+                  },
+                  {
+                    key: 'programas',
+                    header: 'Programas',
+                    render: (r) => <ProgramasCell programas={r.programas} />,
+                  },
+                  {
+                    key: 'fichas',
+                    header: 'Fichas',
+                    render: (r) => <span className={s.count}>{getConteoFichasDeRed(r.id)}</span>,
+                  },
+                  {
+                    key: 'acciones',
+                    header: 'Acciones',
+                    align: 'end',
+                    render: (r) => {
+                      const enUso = isRedEnUso(r.id)
+                      return (
+                        <span className={s.actions}>
+                          <Button size="sm" variant="secondary" onClick={() => abrirEditar(r)}>
+                            <PencilSimple size={14} /> Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            disabled={enUso}
+                            onClick={() => setConfirmId(r.id)}
+                            title={enUso ? 'No se puede eliminar: está en uso' : 'Eliminar red'}
+                          >
+                            <Trash size={14} /> Eliminar
+                          </Button>
+                        </span>
+                      )
+                    },
+                  },
+                ]}
+                rows={filtradas}
+                keyOf={(r) => r.id}
+              />
             )}
           </>
         )}
 
-        <ConfirmModal
-          open={!!confirmId}
-          titulo="Eliminar red"
-          mensaje={
-            redAEliminar
-              ? isRedEnUso(redAEliminar.id)
-                ? `No se puede eliminar "${redAEliminar.nombre}" porque tiene programas con fichas o proyectos asociados. Reasigna o elimina esas fichas primero.`
-                : `¿Eliminar la red "${redAEliminar.nombre}"? Esta acción no se puede deshacer.`
-              : ''
-          }
-          textoConfirmar={redAEliminar && isRedEnUso(redAEliminar.id) ? 'Entendido' : 'Eliminar'}
-          onConfirmar={() => {
-            if (redAEliminar && isRedEnUso(redAEliminar.id)) setConfirmId(null)
-            else confirmarEliminar()
-          }}
-          onCancelar={() => setConfirmId(null)}
-        />
+      <ConfirmModal
+        open={!!confirmId}
+        titulo="Eliminar red"
+        mensaje={
+          redAEliminar
+            ? `¿Eliminar la red "${redAEliminar.nombre}"? Esta acción no se puede deshacer.`
+            : ''
+        }
+        textoConfirmar="Sí, eliminar"
+        textoCancelar="Cancelar"
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setConfirmId(null)}
+      />
       </div>
     </DashboardLayout>
   )

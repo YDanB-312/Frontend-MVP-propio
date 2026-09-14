@@ -2,6 +2,9 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background:
+    radial-gradient(60% 40% at 50% 0%, var(--scan), transparent 70%),
+    var(--c-bg);
 }
 
 .main {

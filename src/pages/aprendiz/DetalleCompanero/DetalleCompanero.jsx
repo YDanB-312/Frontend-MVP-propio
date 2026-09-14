@@ -2,18 +2,17 @@ import { Link, useParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Badge from '../../../components/Badge/Badge'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import { useAuth } from '../../../contexts/AuthContext'
-import { findUserById, findFichaById, getProjectsByStudent, displayNames } from '../../../data/mockData'
+import { findUserById, findFichaById, getProjectsByStudent, getSimilitudesValidas, displayNames } from '../../../data/mockData'
+import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { getSimilitudMax } from '../../../utils/similitudInfo'
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import { CalendarBlank, FolderOpen, Info, MagnifyingGlass } from 'phosphor-react'
 
-const ESTADO_VARIANT = {
-  pendiente: 'warning',
-  aprobado: 'success',
-  rechazado: 'danger',
-}
+
 
 export default function DetalleCompanero() {
   const { user } = useAuth()
@@ -73,19 +72,25 @@ export default function DetalleCompanero() {
               <p className={s.muted}>Este aprendiz aún no ha registrado propuestas.</p>
             ) : (
               <ul className={s.list}>
-                {proyectos.map((p) => (
-                  <li key={p.id}>
-                    <Link to={`${base}/detalle-proyecto/${p.id}`} className={s.row}>
-                      <span className={s.rowInfo}>
-                        <span className={s.rowTitle}>{p.title}</span>
-                        <span className={s.rowMeta}><CalendarBlank size={14} /> {p.createdAt}</span>
-                      </span>
-                      <Badge variant={ESTADO_VARIANT[p.estado] || 'neutral'}>
-                        {displayNames.projectStatus[p.estado] || p.estado}
-                      </Badge>
-                    </Link>
-                  </li>
-                ))}
+                {proyectos.map((p) => {
+                  const pct = getSimilitudMax(getSimilitudesValidas(), p.id)
+                  return (
+                    <li key={p.id}>
+                      <Link to={`${base}/detalle-proyecto/${p.id}`} viewTransition className={s.row}>
+                        <span className={s.rowInfo}>
+                          <span className={s.rowTitle}>{p.title}</span>
+                          <span className={s.rowMeta}><CalendarBlank size={14} /> {p.createdAt}</span>
+                        </span>
+                        <span className={s.rowSide}>
+                          {pct != null && <GradeBadge score={pct} size="sm" />}
+                          <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
+                            {displayNames.projectStatus[p.estado] || p.estado}
+                          </Badge>
+                        </span>
+                      </Link>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </DataPanel>

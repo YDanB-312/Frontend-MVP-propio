@@ -4,6 +4,8 @@ import { ArrowLeft, ArrowRight, CalendarBlank, FileText, MagnifyingGlass, User }
 import PageHeader from '../PageHeader/PageHeader'
 import DataPanel from '../DataPanel/DataPanel'
 import Badge from '../Badge/Badge'
+import GradeBadge from '../GradeBadge/GradeBadge'
+import ScoreDial from '../ScoreDial/ScoreDial'
 import Tag from '../Tag/Tag'
 import EmptyState from '../EmptyState/EmptyState'
 import { useAuth } from '../../contexts/AuthContext'
@@ -109,7 +111,6 @@ export default function DetalleSimilitudBase({
   }
 
   const pct = Math.round((similitud.similitud || 0) * 100)
-  const nivelClase = pct >= 60 ? s.high : pct >= 40 ? s.mid : s.low
   const proyectos = [
     { p: proyecto1, tag: 'A' },
     { p: proyecto2, tag: 'B' },
@@ -145,15 +146,11 @@ export default function DetalleSimilitudBase({
         breadcrumb={[...crumbPrevio, { label: `#${similitud.id}` }]}
       />
 
-      <section className={`${s.score} ${nivelClase}`} role="img" aria-label={`Similitud del ${pct} por ciento`}>
-        <div className={s.scoreHead}>
-          <span className={s.pctBig}>{pct}%</span>
-          <div className={s.scoreInfo}>
-            <p className={s.scoreLabel}>Índice de similitud</p>
-          </div>
-        </div>
-        <div className={s.barTrack}>
-          <div className={s.barFill} style={{ width: `${Math.min(pct, 100)}%` }} />
+      <section className={s.score}>
+        <ScoreDial value={pct} size={120} label="Índice de similitud" />
+        <div className={s.scoreInfo}>
+          <p className={s.scoreLabel}>Índice de similitud</p>
+          <GradeBadge score={pct} />
         </div>
       </section>
 
@@ -206,13 +203,7 @@ export default function DetalleSimilitudBase({
                         <User size={12} /> {otro?.studentName}
                       </span>
                     </span>
-                    <span
-                      className={`${s.otrasPct} ${
-                        pctX >= 70 ? s.pctHigh : pctX >= 40 ? s.pctMid : s.pctLow
-                      }`}
-                    >
-                      {pctX}%
-                    </span>
+                    <GradeBadge score={pctX} size="sm" />
                     <ArrowRight size={14} className={s.otrasChevron} />
                   </Link>
                 </li>

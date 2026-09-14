@@ -115,6 +115,7 @@ export default function DirectorioFichaInstructor() {
                 <Button
                   as="link"
                   to={`/instructor/perfil-companero/${est.id}`}
+                  viewTransition
                   variant="secondary"
                 >
                   Ver perfil <ArrowRight size={14} />

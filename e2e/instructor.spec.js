@@ -3,26 +3,29 @@ import { test, expect, login, logout } from './helpers'
 test.describe('Revisión de propuestas (instructor)', () => {
   test.beforeEach(async ({ page }) => {
     await login(page, 'instructor')
-    await page.getByRole('link', { name: /Revision Propuestas/i }).first().click()
+    await page.getByRole('link', { name: /Revisión Propuestas/i }).first().click()
     await page.waitForURL('**/instructor/revision-propuestas')
   })
 
-  test('muestra la tabla con columnas en propuesta', async ({ page }) => {
-    await expect(page.locator('th', { hasText: 'Propuesta' }).first()).toBeVisible()
-    await expect(page.locator('[data-label="Aprendiz"]').first()).toBeVisible()
-    await expect(page.locator('[data-label="Similitud"]').first()).toBeVisible()
+  test('muestra la cola con nodos de propuesta', async ({ page }) => {
+    const cola = page.getByRole('list', { name: /Cola de revisión/i })
+    await expect(cola).toBeVisible()
+    const primero = cola.getByRole('button').first()
+    await expect(primero).toContainText(/./)
   })
 
   test('aprobar una pendiente cambia su estado y notifica al aprendiz', async ({ page }) => {
-    const filaPendiente = page.locator('tr', { has: page.locator('[data-label="Estado"] >> text=Pendiente') }).first()
-    const existe = await filaPendiente.isVisible().catch(() => false)
-    test.skip(!existe, 'No hay pendientes para este instructor en el seed actual')
+    const cola = page.getByRole('list', { name: /Cola de revisión/i })
+    await expect(cola.getByRole('button').first()).toBeVisible({ timeout: 15000 })
+    const nodo = cola.getByRole('button', { name: /Pendiente/ }).first()
+    if ((await nodo.count()) === 0) test.skip(true, 'No hay pendientes para este instructor en el seed actual')
 
-    await filaPendiente.getByRole('button', { name: /Aprobar/i }).click()
+    await nodo.click()
+    await page.getByRole('button', { name: /^Aprobar /i }).click()
     await page.getByRole('button', { name: /Sí, aprobar/i }).click()
 
-    // La fila aprobada ya no ofrece botones Aprobar/Rechazar
-    await expect(filaPendiente.getByRole('button', { name: /Aprobar/i })).toHaveCount(0, { timeout: 10000 })
+    // La propuesta aprobada ya no ofrece botones Aprobar/Rechazar en el preview
+    await expect(page.getByRole('button', { name: /^Aprobar /i })).toHaveCount(0, { timeout: 10000 })
   })
 })
 
@@ -44,12 +47,12 @@ test.describe('Detección de similitudes al aprobar', () => {
     await page.waitForURL('**/aprendiz/analizando-proyecto', { timeout: 15000 })
     await page.waitForURL('**/aprendiz/resultado-analisis**', { timeout: 20000 })
 
-    // 2. El instructor aprueba la nueva propuesta desde Revisión de Propuestas
+    // 2. El instructor aprueba la nueva propuesta desde la cola de Revisión
     await logout(page)
     await login(page, 'instructor')
     await page.goto('/instructor/revision-propuestas')
-    const fila = page.locator('tr', { hasText: 'Sistema de Control de Inventarios' })
-    await fila.getByRole('button', { name: /Aprobar/i }).click()
+    await page.getByRole('list', { name: /Cola de revisión/i }).getByRole('button', { name: /Sistema de Control de Inventarios/ }).click()
+    await page.getByRole('button', { name: /^Aprobar /i }).click()
     await page.getByRole('button', { name: 'Sí, aprobar' }).click()
 
     // 3. La detección corre contra el corpus aprobado del mismo programa y lo informa
@@ -89,6 +92,7 @@ test.describe('Crear ficha (instructor)', () => {
     await nombre.fill('Ficha de Prueba E2E')
     await numero.fill('9999')
     await programa.selectOption('ADSO')
+    await page.locator('form select[name="centroId"]').selectOption({ index: 1 })
     await submit.click()
 
     // El formulario se cierra (sin navegación), muestra confirmación y lista la ficha nueva

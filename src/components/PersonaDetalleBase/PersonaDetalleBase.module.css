@@ -10,6 +10,19 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);
+  max-width: 960px;
+}
+
+/* Barra de inspector: acciones siempre a mano */
+.barraInspector {
+  position: sticky;
+  top: calc(var(--govbar-h) + var(--header-h) + var(--sp-3));
+  z-index: 50;
+  padding: var(--sp-2_5) var(--sp-3);
+  background: color-mix(in srgb, var(--c-surface) 88%, transparent);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(8px);
 }
 
 /* ── Empty / info text ── */
@@ -38,11 +51,11 @@
   gap: var(--sp-3);
   flex-wrap: wrap;
   padding: var(--sp-3) var(--sp-4);
-  background: var(--c-surface-alt);
-  border: 1px solid var(--c-border-2);
-  border-radius: var(--r-md);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
   text-decoration: none;
-  transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease;
+  transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 
 /* ── Row body (left side) ── */
@@ -82,12 +95,12 @@
 .rowCodigo {
   align-self: flex-start;
   padding: var(--sp-0_5) var(--sp-2);
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  background: var(--c-primary-light);
+  border: 1px solid var(--grade-s-border);
   border-radius: var(--r-sm);
   font-size: var(--text-xs);
   font-weight: 700;
-  color: var(--c-primary-strong);
+  color: var(--c-primary);
   font-family: var(--mono);
 }
 
@@ -100,7 +113,8 @@
 /* ── Hover feedback ── */
 .row:hover {
   border-color: var(--c-border-h);
-  background: var(--c-border);
+  background: var(--c-surface);
+  box-shadow: var(--sh-card);
 }
 
 .row:hover .rowTitle {

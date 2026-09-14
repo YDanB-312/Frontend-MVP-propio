@@ -59,9 +59,9 @@ export default function DetalleInstructor() {
             <p className={s.muted}>Este instructor no tiene fichas asignadas actualmente.</p>
           ) : (
             <ul className={s.list}>
-              {fichas.map((f) => (
-                <li key={f.id}>
-                  <Link to={`/aprendiz/detalle-ficha/${f.id}`} className={s.row}>
+              {fichas.map((f, i) => (
+                <li key={f.id} className="fx-rise" style={{ '--fx-i': i }}>
+                  <Link to={`/aprendiz/detalle-ficha/${f.id}`} viewTransition className={s.row}>
                     <span className={s.rowInfo}>
                       <span className={s.rowTitle}>{f.nombre}</span>
                       <span className={s.rowCodigo}>{f.codigo}</span>

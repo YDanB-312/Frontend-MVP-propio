@@ -15,15 +15,18 @@
   gap: var(--sp-2);
   padding: var(--sp-5);
   background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-card);
+  border: 1px solid var(--c-border-h);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-card), var(--glow-soft);
 }
 
 .fieldLabel {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--c-text);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-2);
 }
 
 .searchRow {
@@ -69,9 +72,9 @@
   gap: var(--sp-4);
   padding: var(--sp-6);
   background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-card-h);
+  border: 1px solid var(--c-border-h);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-card-h), var(--glow-soft);
   animation: appear var(--dur-slow) var(--ease-out);
 }
 
@@ -95,20 +98,22 @@
 
 .fichaNombre {
   margin: 0 0 var(--sp-1);
+  font-family: var(--font-display);
   font-size: var(--text-xl);
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: var(--tracking-tight);
   color: var(--c-text);
 }
 
 .fichaCodigo {
   display: inline-block;
   padding: var(--sp-1) var(--sp-3);
-  background: var(--c-surface-alt);
-  border: 1px solid var(--c-border);
+  background: var(--c-surface-sunken);
+  border: 1px solid var(--grade-s-border);
   border-radius: var(--r-sm);
   font-size: var(--text-sm);
   font-weight: 700;
-  color: var(--c-primary-strong);
+  color: var(--c-primary);
 }
 
 .fichaInfo {

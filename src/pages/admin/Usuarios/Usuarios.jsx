@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
-import FilterBar from '../../../components/FilterBar/FilterBar'
+import DataTable from '../../../components/DataTable/DataTable'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import FormField from '../../../components/FormField/FormField'
 import Badge from '../../../components/Badge/Badge'
@@ -13,49 +13,91 @@ import Actions from '../../../components/Actions/Actions'
 import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
-import { Users, Plus, Eye, CheckCircle, Code, ChartBar } from 'phosphor-react'
+import { norm } from '../../../utils/helpers'
+import { Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise } from 'phosphor-react'
+import { useAuth } from '../../../contexts/AuthContext'
 import {
   getAllUsers,
   findFichaById,
+  findCentroById,
+  getAllFichas,
+  getCentros,
   createUser,
+  setUserEstado,
   emailExists,
+  REDES,
   displayNames,
 } from '../../../data/mockData'
+import { esEmailValido, esPasswordValida } from '../../../utils/validation'
+import { PAGINA_TABLA } from '../../../constants/pagination'
 // Estilos reutilizados de las páginas originales (lista + formulario)
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import nu from '../../../components/FormularioBase/FormularioBase.module.css'
+import u from './Usuarios.module.css'
 
-const ITEMS_POR_PAGINA = 8
+const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 const ROL_VARIANT = { aprendiz: 'info', instructor: 'primary', admin: 'warning' }
+const ESTADO_VARIANT = { activo: 'success', suspendido: 'danger' }
 
 export default function Usuarios() {
+  const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
+
+  // Reacciona si se navega a ?crear=1 ya estando en la lista
+  useEffect(() => {
+    if (searchParams.get('crear') === '1') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCreando(true)
+    }
+  }, [searchParams])
   const [creadoMsg, setCreadoMsg] = useState(false)
   const msgTimer = useRef(null)
 
   /* ---------- Lista ---------- */
   const [busqueda, setBusqueda] = useState('')
   const [filtroRol, setFiltroRol] = useState('todos')
+  const [filtroCentro, setFiltroCentro] = useState('todos')
+  const [filtroFicha, setFiltroFicha] = useState('todos')
+  const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
   const [, setTick] = useState(0)
   const refrescar = () => setTick((t) => t + 1)
 
   const usuarios = getAllUsers()
 
+  const centros = getCentros()
+  const fichasFiltro = filtroCentro === 'todos'
+    ? getAllFichas()
+    : getAllFichas().filter((f) => String(f.centroId) === String(filtroCentro))
+  const programasFiltro = [...new Set(REDES.flatMap((r) => r.programas))].sort()
+
   const filtrados = usuarios.filter((u) => {
-    const q = busqueda.trim().toLowerCase()
+    const q = norm(busqueda.trim())
     const coincideQ =
-      !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+      !q || norm(u.name).includes(q) || norm(u.email).includes(q)
     const coincideRol = filtroRol === 'todos' || u.role === filtroRol
-    return coincideQ && coincideRol
+    const fichaU = u.fichaId ? findFichaById(u.fichaId) : null
+    const coincideCentro = filtroCentro === 'todos' || (fichaU && String(fichaU.centroId) === String(filtroCentro))
+    const coincideFicha = filtroFicha === 'todos' || String(u.fichaId || '') === String(filtroFicha)
+    const coincidePrograma = filtroPrograma === 'todos' || (u.programa || '') === filtroPrograma
+    return coincideQ && coincideRol && coincideCentro && coincideFicha && coincidePrograma
   })
 
   const paginados = filtrados.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
     pagina * ITEMS_POR_PAGINA
   )
+
+  const limpiarFiltros = () => {
+    setBusqueda('')
+    setFiltroRol('todos')
+    setFiltroCentro('todos')
+    setFiltroFicha('todos')
+    setFiltroPrograma('todos')
+    setPagina(1)
+  }
 
   useEffect(() => () => { if (msgTimer.current) clearTimeout(msgTimer.current) }, [])
 
@@ -86,13 +128,13 @@ export default function Usuarios() {
     else if (form.name.trim().length < 3) err.name = 'El nombre debe tener al menos 3 caracteres.'
 
     if (!form.email.trim()) err.email = 'El correo es obligatorio.'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
+    else if (!esEmailValido(form.email.trim()))
       err.email = 'Ingresa un correo válido.'
     else if (emailExists(form.email.trim().toLowerCase()))
       err.email = 'Ya existe un usuario con este correo.'
 
     if (!form.password) err.password = 'La contraseña es obligatoria.'
-    else if (form.password.length < 6)
+    else if (!esPasswordValida(form.password))
       err.password = 'La contraseña debe tener al menos 6 caracteres.'
 
     if (!form.role) err.role = 'Selecciona un rol.'
@@ -248,6 +290,58 @@ export default function Usuarios() {
                   <option value="admin">Administrador</option>
                 </Select>
               </label>
+              <label className={s.field}>
+                <span className={s.label}>Centro</span>
+                <Select
+                  value={filtroCentro}
+                  onChange={(e) => {
+                    setFiltroCentro(e.target.value)
+                    setFiltroFicha('todos')
+                    setPagina(1)
+                  }}
+                >
+                  <option value="todos">Todos</option>
+                  {centros.map((ct) => (
+                    <option key={ct.id} value={String(ct.id)}>
+                      {ct.nombre}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <label className={s.field}>
+                <span className={s.label}>Ficha</span>
+                <Select
+                  value={filtroFicha}
+                  onChange={(e) => {
+                    setFiltroFicha(e.target.value)
+                    setPagina(1)
+                  }}
+                >
+                  <option value="todos">Todas</option>
+                  {fichasFiltro.map((f) => (
+                    <option key={f.id} value={String(f.id)}>
+                      {f.codigo} · {f.nombre}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <label className={s.field}>
+                <span className={s.label}>Programa</span>
+                <Select
+                  value={filtroPrograma}
+                  onChange={(e) => {
+                    setFiltroPrograma(e.target.value)
+                    setPagina(1)
+                  }}
+                >
+                  <option value="todos">Todos</option>
+                  {programasFiltro.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </Select>
+              </label>
               <p className={s.info}>
                 {filtrados.length} usuario{filtrados.length !== 1 ? 's' : ''}
               </p>
@@ -262,62 +356,116 @@ export default function Usuarios() {
                     ? 'No hay usuarios registrados en la plataforma. Crea el primero para comenzar.'
                     : 'Ningún usuario coincide con los filtros aplicados.'
                 }
-                actionLabel={usuarios.length === 0 ? 'Crear primer usuario' : undefined}
-                onAction={usuarios.length === 0 ? () => setCreando(true) : undefined}
+                actionLabel={usuarios.length === 0 ? 'Crear primer usuario' : 'Limpiar filtros'}
+                onAction={usuarios.length === 0 ? () => setCreando(true) : limpiarFiltros}
               />
             ) : (
               <>
-                <div className={s.tableWrap}>
-                  <table className={s.table}>
-                    <thead>
-                      <tr>
-                        <th>Usuario</th>
-                        <th>Correo</th>
-                        <th>Rol</th>
-                        <th>Ficha</th>
-                        <th className={s.colActions}>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginados.map((u) => {
-                        const ficha = u.fichaId ? findFichaById(u.fichaId) : null
-                        return (
-                          <tr key={u.id}>
-                            <td data-label="Usuario">
-                              <Link to={`/admin/detalle-usuario/${u.id}`} className={s.userCell}>
-                                <Avatar name={u.name} src={u.fotoPerfil} size="sm" />
-                                <span className={s.userName}>{u.name}</span>
-                              </Link>
-                            </td>
-                            <td data-label="Correo" className={s.email}>{u.email}</td>
-                            <td data-label="Rol">
-                              <Badge variant={ROL_VARIANT[u.role] || 'neutral'}>
-                                {displayNames.userRole[u.role] || u.role}
-                              </Badge>
-                            </td>
-                            <td data-label="Ficha">
-                              {ficha ? (
-                                <code className={s.codigo}>{ficha.codigo}</code>
-                              ) : (
-                                <span className={s.muted}>—</span>
-                              )}
-                            </td>
-                            <td data-label="Acciones" className={s.colActions}>
-                              <Button
-                                as="link"
-                                to={`/admin/detalle-usuario/${u.id}`}
-                                size="sm"
-                                variant="secondary"
-                              >
-                                <Eye size={14} /> Ver
-                              </Button>
-                            </td>
-                          </tr>
+                <DataTable
+                  ariaLabel="Usuarios registrados"
+                  columns={[
+                    {
+                      key: 'usuario',
+                      header: 'Usuario',
+                      render: (usr) => (
+                        <Link to={`/admin/detalle-usuario/${usr.id}`} viewTransition className={s.userCell}>
+                          <Avatar name={usr.name} src={usr.fotoPerfil} size="sm" />
+                          <span className={s.userName}>{usr.name}</span>
+                        </Link>
+                      ),
+                    },
+                    { key: 'email', header: 'Correo' },
+                    {
+                      key: 'role',
+                      header: 'Rol',
+                      render: (usr) => (
+                        <Badge variant={ROL_VARIANT[usr.role] || 'neutral'}>
+                          {displayNames.userRole[usr.role] || usr.role}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: 'ficha',
+                      header: 'Ficha',
+                      render: (usr) => {
+                        const ficha = usr.fichaId ? findFichaById(usr.fichaId) : null
+                        return ficha ? (
+                          <code className={s.codigo}>{ficha.codigo}</code>
+                        ) : (
+                          <span className={s.muted}>—</span>
                         )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                      },
+                    },
+                    {
+                      key: 'centro',
+                      header: 'Centro',
+                      render: (usr) => {
+                        const ficha = usr.fichaId ? findFichaById(usr.fichaId) : null
+                        const centro = ficha?.centroId ? findCentroById(ficha.centroId) : null
+                        return centro?.nombre || <span className={s.muted}>—</span>
+                      },
+                    },
+                    {
+                      key: 'programa',
+                      header: 'Programa',
+                      render: (usr) => {
+                        const ficha = usr.fichaId ? findFichaById(usr.fichaId) : null
+                        return usr.programa || ficha?.programa || <span className={s.muted}>—</span>
+                      },
+                    },
+                    {
+                      key: 'estado',
+                      header: 'Estado',
+                      render: (usr) => (
+                        <Badge variant={ESTADO_VARIANT[usr.estado] || 'neutral'}>
+                          {displayNames.userStatus[usr.estado] || usr.estado || 'Activo'}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: 'acciones',
+                      header: 'Acciones',
+                      align: 'end',
+                      render: (usr) => (
+                        <div className={s.actions}>
+                          <Button
+                            as="link"
+                            to={`/admin/detalle-usuario/${usr.id}`}
+                            viewTransition
+                            size="sm"
+                            variant="secondary"
+                          >
+                            <Eye size={14} /> Ver
+                          </Button>
+                          {usr.estado === 'suspendido' ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              title="Reactivar cuenta"
+                              onClick={() => { setUserEstado(usr.id, 'activo'); refrescar() }}
+                            >
+                              <ArrowCounterClockwise size={14} /> Activar
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="dangerGhost"
+                              title={Number(user?.id) === Number(usr.id) ? 'No puedes suspender tu propia cuenta' : 'Suspender cuenta'}
+                              disabled={Number(user?.id) === Number(usr.id)}
+                              onClick={() => { setUserEstado(usr.id, 'suspendido'); refrescar() }}
+                            >
+                              <Prohibit size={14} /> Suspender
+                            </Button>
+                          )}
+                        </div>
+                      ),
+                    },
+                  ]}
+                  rows={paginados}
+                  keyOf={(usr) => usr.id}
+                />
 
                 <Pagination
                   totalItems={filtrados.length}

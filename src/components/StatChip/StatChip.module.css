@@ -1,0 +1,4 @@
+.chip{display:inline-flex;align-items:center;gap:var(--sp-2);padding:var(--sp-1_5) var(--sp-3);background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);font-size:var(--text-sm)}
+.icon{display:inline-flex;color:var(--c-primary)}
+.label{color:var(--c-text-3);font-weight:500}
+.value{color:var(--c-text);font-weight:700}

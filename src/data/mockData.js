@@ -1,3 +1,5 @@
+import { vectorDeProyecto, construirIdf, similitudEntre } from './similitud.js'
+
 const KEY = 'proyectwin_mock_v2'
 const SEED_VERSION = 7
 
@@ -181,20 +183,26 @@ const ESTADO_INICIAL = {
   nextObservacionId: 4,
   nextRedId: 3,
   redes: JSON.parse(JSON.stringify(REDES_SEED)),
+  config: { umbralSimilitud: 0.2, mesesCorpus: 12 },
+  nextCentroId: 3,
+  centros: [
+    { id: 1, nombre: 'Centro de Teleinformática y Producción Industrial', ciudad: 'Popayán' },
+    { id: 2, nombre: 'Centro de Comercio y Servicios', ciudad: 'Popayán' },
+  ],
   users: [
-    { id: 1, name: 'María González', email: 'maria.gonzalez@soy.sena.edu.co', role: 'aprendiz', fichaId: 1, programa: 'ADSO' },
-    { id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@sena.edu.co', role: 'instructor' },
-    { id: 3, name: 'Administrador', email: 'admin@sena.edu.co', role: 'admin' },
-    { id: 4, name: 'Ana Martínez', email: 'ana.martinez@soy.sena.edu.co', role: 'aprendiz', fichaId: 1, programa: 'ADSO' },
-    { id: 5, name: 'Juan Pérez', email: 'juan.perez@soy.sena.edu.co', role: 'aprendiz', fichaId: 1, programa: 'ADSO' },
-    { id: 6, name: 'Laura Gómez', email: 'laura.gomez@soy.sena.edu.co', role: 'aprendiz', fichaId: 2, programa: 'ADSO' },
-    { id: 7, name: 'Carlos Rodríguez Díaz', email: 'carlos.rodriguez@sena.edu.co', role: 'instructor' },
-    { id: 8, name: 'Andrés Martínez López', email: 'andres.martinez@sena.edu.co', role: 'instructor' },
-    { id: 9, name: 'Laura Sánchez Pérez', email: 'laura.sanchez@soy.sena.edu.co', role: 'aprendiz', fichaId: 3, programa: 'Produccion Multimedia' },
-    { id: 10, name: 'Diego Ramírez Castro', email: 'diego.ramirez@soy.sena.edu.co', role: 'aprendiz', fichaId: 4, programa: 'Infraestructura Redes' },
-    { id: 11, name: 'Patricia Morales Vega', email: 'patricia.morales@soy.sena.edu.co', role: 'aprendiz', fichaId: 2, programa: 'ADSO' },
-    { id: 12, name: 'María Fernanda Torres', email: 'maria.torres@sena.edu.co', role: 'admin' },
-    { id: 13, name: 'Luis Fernando García', email: 'luis.garcia@sena.edu.co', role: 'instructor' },
+    { id: 1, name: 'María González', email: 'maria.gonzalez@soy.sena.edu.co', role: 'aprendiz', estado: 'activo', fichaId: 1, programa: 'ADSO' },
+    { id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@sena.edu.co', role: 'instructor', estado: 'activo' },
+    { id: 3, name: 'Administrador', email: 'admin@sena.edu.co', role: 'admin', estado: 'activo' },
+    { id: 4, name: 'Ana Martínez', email: 'ana.martinez@soy.sena.edu.co', role: 'aprendiz', estado: 'activo', fichaId: 1, programa: 'ADSO' },
+    { id: 5, name: 'Juan Pérez', email: 'juan.perez@soy.sena.edu.co', role: 'aprendiz', estado: 'activo', fichaId: 1, programa: 'ADSO' },
+    { id: 6, name: 'Laura Gómez', email: 'laura.gomez@soy.sena.edu.co', role: 'aprendiz', estado: 'activo', fichaId: 2, programa: 'ADSO' },
+    { id: 7, name: 'Carlos Rodríguez Díaz', email: 'carlos.rodriguez@sena.edu.co', role: 'instructor', estado: 'activo' },
+    { id: 8, name: 'Andrés Martínez López', email: 'andres.martinez@sena.edu.co', role: 'instructor', estado: 'activo' },
+    { id: 9, name: 'Laura Sánchez Pérez', email: 'laura.sanchez@soy.sena.edu.co', role: 'aprendiz', estado: 'activo', fichaId: 3, programa: 'Produccion Multimedia' },
+    { id: 10, name: 'Diego Ramírez Castro', email: 'diego.ramirez@soy.sena.edu.co', role: 'aprendiz', estado: 'activo', fichaId: 4, programa: 'Infraestructura Redes' },
+    { id: 11, name: 'Patricia Morales Vega', email: 'patricia.morales@soy.sena.edu.co', role: 'aprendiz', estado: 'activo', fichaId: 2, programa: 'ADSO' },
+    { id: 12, name: 'María Fernanda Torres', email: 'maria.torres@sena.edu.co', role: 'admin', estado: 'activo' },
+    { id: 13, name: 'Luis Fernando García', email: 'luis.garcia@sena.edu.co', role: 'instructor', estado: 'activo' },
   ],
   passwords: {
     'maria.gonzalez@soy.sena.edu.co': '123456',
@@ -212,10 +220,10 @@ const ESTADO_INICIAL = {
     'luis.garcia@sena.edu.co': '123456',
   },
   fichas: [
-    { id: 1, codigo: 'xkp-mqwr', numero: '2568', nombre: 'Analisis y Desarrollo 2568', programa: 'ADSO', idPrograma: 1, aprendices: 28, proyectos: 5, estado: 'activo', instructorName: 'Carlos Ruiz', instructorId: 2, createdAt: '01/02/2026', estudiantes: [] },
-    { id: 2, codigo: 'bnt-jhsa', numero: '2634', nombre: 'Analisis y Desarrollo 2634', programa: 'ADSO', idPrograma: 1, aprendices: 25, proyectos: 3, estado: 'activo', instructorName: 'Carlos Rodríguez Díaz', instructorId: 7, createdAt: '10/02/2026', estudiantes: [] },
-    { id: 3, codigo: 'qwe-rtzu', numero: '3102', nombre: 'Produccion Multimedia 3102', programa: 'Produccion Multimedia', idPrograma: 2, aprendices: 22, proyectos: 4, estado: 'activo', instructorName: 'Carlos Rodríguez Díaz', instructorId: 7, createdAt: '15/02/2026', estudiantes: [] },
-    { id: 4, codigo: 'mno-pqrs', numero: '2801', nombre: 'Infraestructura Redes 2801', programa: 'Infraestructura Redes', idPrograma: 3, aprendices: 20, proyectos: 0, estado: 'inactivo', instructorName: 'Andrés Martínez López', instructorId: 8, createdAt: '20/02/2026', estudiantes: [] },
+    { id: 1, codigo: 'xkp-mqwr', numero: '2568', nombre: 'Analisis y Desarrollo 2568', programa: 'ADSO', idPrograma: 1, centroId: 1, aprendices: 28, proyectos: 5, estado: 'activo', instructorName: 'Carlos Ruiz', instructorId: 2, createdAt: '01/02/2026', estudiantes: [] },
+    { id: 2, codigo: 'bnt-jhsa', numero: '2634', nombre: 'Analisis y Desarrollo 2634', programa: 'ADSO', idPrograma: 1, centroId: 1, aprendices: 25, proyectos: 3, estado: 'activo', instructorName: 'Carlos Rodríguez Díaz', instructorId: 7, createdAt: '10/02/2026', estudiantes: [] },
+    { id: 3, codigo: 'qwe-rtzu', numero: '3102', nombre: 'Produccion Multimedia 3102', programa: 'Produccion Multimedia', idPrograma: 2, centroId: 2, aprendices: 22, proyectos: 4, estado: 'activo', instructorName: 'Carlos Rodríguez Díaz', instructorId: 7, createdAt: '15/02/2026', estudiantes: [] },
+    { id: 4, codigo: 'mno-pqrs', numero: '2801', nombre: 'Infraestructura Redes 2801', programa: 'Infraestructura Redes', idPrograma: 3, centroId: 1, aprendices: 20, proyectos: 0, estado: 'inactivo', instructorName: 'Andrés Martínez López', instructorId: 8, createdAt: '20/02/2026', estudiantes: [] },
   ],
   proyectos: [
     {
@@ -305,7 +313,7 @@ const ESTADO_INICIAL = {
     },
   ],
   similitudes: [
-    // Regla: las coincidencias se detectan únicamente contra propuestas APROBADAS (en producción)
+    // Regla: coincidencias intra-programa entre propuestas vigentes (pendientes o aprobadas)
     { id: 1, projectId1: 4, projectId2: 5, project1Title: 'Plataforma de Ventas Online', project2Title: 'Sistema de Gestión de Inventarios', project1Student: 'María González', project2Student: 'María González', similitud: 0.45, createdAt: '18/11/2026' },
     { id: 2, projectId1: 1, projectId2: 7, project1Title: 'Sistema IoT para Agricultura', project2Title: 'Portal de Transparencia SENA', project1Student: 'Ana Martínez', project2Student: 'Laura Gómez', similitud: 0.38, createdAt: '16/11/2026' },
     { id: 3, projectId1: 3, projectId2: 5, project1Title: 'Plataforma E-learning para Música', project2Title: 'Sistema de Gestión de Inventarios', project1Student: 'Laura Gómez', project2Student: 'María González', similitud: 0.52, createdAt: '15/11/2026' },
@@ -384,6 +392,40 @@ function cargar() {
         parsed.nextSimilitudId = 4
         migrado = true
       }
+      // Migración motor: config con umbral y ventana del corpus
+      if (!parsed.config || typeof parsed.config.umbralSimilitud !== 'number' || typeof parsed.config.mesesCorpus !== 'number') {
+        parsed.config = {
+          umbralSimilitud: typeof parsed.config?.umbralSimilitud === 'number' ? parsed.config.umbralSimilitud : 0.2,
+          mesesCorpus: typeof parsed.config?.mesesCorpus === 'number' ? parsed.config.mesesCorpus : 12,
+        }
+        migrado = true
+      }
+      // Migración centros: versiones previas no tenían centros/nextCentroId ni ficha.centroId
+      if (!Array.isArray(parsed.centros)) {
+        parsed.centros = [
+          { id: 1, nombre: 'Centro de Teleinformática y Producción Industrial', ciudad: 'Popayán' },
+          { id: 2, nombre: 'Centro de Comercio y Servicios', ciudad: 'Popayán' },
+        ]
+        parsed.nextCentroId = 3
+        migrado = true
+      } else {
+        let centrosMigrados = false
+        parsed.centros.forEach((c, idx) => {
+          if (c.id == null) { c.id = idx + 1; centrosMigrados = true }
+          if (typeof c.ciudad !== 'string') { c.ciudad = ''; centrosMigrados = true }
+        })
+        if (centrosMigrados) migrado = true
+        const maxCentro = parsed.centros.reduce((m, c) => Math.max(m, Number(c.id) || 0), 0)
+        if (parsed.nextCentroId <= maxCentro) { parsed.nextCentroId = maxCentro + 1; migrado = true }
+      }
+      if (Array.isArray(parsed.fichas)) {
+        parsed.fichas.forEach((f) => {
+          if (!('centroId' in f)) {
+            f.centroId = null
+            migrado = true
+          }
+        })
+      }
       if (Array.isArray(parsed.users)) {
         parsed.users.forEach((u) => {
           if (u.role === 'instructor' && (u.areaEncargada || u.area || u.red || Array.isArray(u.programas))) {
@@ -393,8 +435,8 @@ function cargar() {
             delete u.programas
             migrado = true
           }
-          if ('estado' in u) {
-            delete u.estado
+          if (u.estado !== 'activo' && u.estado !== 'suspendido') {
+            u.estado = 'activo'
             migrado = true
           }
         })
@@ -514,6 +556,8 @@ export function findUserByEmail(email) {
 }
 
 export function validateCredentials(email, password) {
+  const u = findUserByEmail(email)
+  if (u && u.estado === 'suspendido') return false
   return state.passwords[email] === password
 }
 
@@ -527,6 +571,7 @@ export function createUser({ name, email, role, password = '123456' }) {
     name,
     email,
     role,
+    estado: 'activo',
   }
   state.users.push(user)
   state.passwords[email] = password
@@ -534,10 +579,13 @@ export function createUser({ name, email, role, password = '123456' }) {
   return user
 }
 
-export function updateUser({ id, name = null, email = null }) {
+const ROLES_VALIDOS = ['aprendiz', 'instructor', 'admin']
+
+export function updateUser({ id, name = null, email = null, role = null }) {
   const index = state.users.findIndex(u => u.id === Number(id))
-  if (index === -1) return
+  if (index === -1) return false
   const current = state.users[index]
+  if (role !== null && !ROLES_VALIDOS.includes(role)) return false
   if (email && current.email !== email) {
     const pass = state.passwords[current.email]
     delete state.passwords[current.email]
@@ -547,8 +595,28 @@ export function updateUser({ id, name = null, email = null }) {
     ...current,
     name: name ?? current.name,
     email: email ?? current.email,
+    role: role ?? current.role,
   }
   guardar()
+  return true
+}
+
+export function setUserEstado(userId, estado) {
+  if (estado !== 'activo' && estado !== 'suspendido') return false
+  const index = state.users.findIndex(u => u.id === Number(userId))
+  if (index === -1) return false
+  state.users[index] = { ...state.users[index], estado }
+  guardar()
+  return true
+}
+
+export function resetUserPassword(userId) {
+  const index = state.users.findIndex(u => u.id === Number(userId))
+  if (index === -1) return null
+  const temporal = `sena-${Math.random().toString(36).slice(2, 8)}`
+  state.passwords[state.users[index].email] = temporal
+  guardar()
+  return temporal
 }
 
 export function updateUserPassword(email, newPassword) {
@@ -598,7 +666,56 @@ export function getActiveFichas() {
   return state.fichas.filter(f => f.estado === 'activo')
 }
 
-export function createFicha({ nombre, numero, programa, instructorName, instructorId, codigo }) {
+// ------------------------------------------------- Centros de formación
+export function getCentros() {
+  return state.centros
+}
+
+export function findCentroById(id) {
+  return state.centros.find(c => c.id === Number(id)) || null
+}
+
+export function getFichasDeCentro(centroId) {
+  return state.fichas.filter(f => Number(f.centroId) === Number(centroId))
+}
+
+export function centroEnUso(id) {
+  return state.fichas.some(f => Number(f.centroId) === Number(id))
+}
+
+export function createCentro({ nombre, ciudad = '' }) {
+  const centro = {
+    id: state.nextCentroId++,
+    nombre: nombre.trim(),
+    ciudad: ciudad.trim(),
+  }
+  state.centros.push(centro)
+  guardar()
+  return centro
+}
+
+export function updateCentro({ id, nombre, ciudad = null }) {
+  const index = state.centros.findIndex(c => c.id === Number(id))
+  if (index === -1) return false
+  state.centros[index] = {
+    ...state.centros[index],
+    nombre: nombre ?? state.centros[index].nombre,
+    ciudad: ciudad ?? state.centros[index].ciudad,
+  }
+  guardar()
+  return true
+}
+
+export function deleteCentro(id) {
+  const index = state.centros.findIndex(c => c.id === Number(id))
+  if (index === -1) return false
+  if (centroEnUso(id)) return false
+  state.centros.splice(index, 1)
+  guardar()
+  return true
+}
+
+export function createFicha({ nombre, numero, programa, instructorName, instructorId, codigo, centroId = null }) {
   const programasActuales = getProgramas()
   const activo = getProgramaActivo()
   const ficha = {
@@ -607,6 +724,7 @@ export function createFicha({ nombre, numero, programa, instructorName, instruct
     numero,
     nombre,
     programa: programasActuales.includes(programa) ? programa : activo,
+    centroId: centroId != null && centroId !== '' ? Number(centroId) : null,
     aprendices: 0,
     proyectos: 0,
     estado: 'activo',
@@ -620,7 +738,7 @@ export function createFicha({ nombre, numero, programa, instructorName, instruct
   return ficha
 }
 
-export function updateFicha({ id, nombre, numero, estado = null, instructorName = null, instructorId = null }) {
+export function updateFicha({ id, nombre, numero, estado = null, instructorName = null, instructorId = null, centroId = null }) {
   const index = state.fichas.findIndex(f => f.id === Number(id))
   if (index !== -1) {
     state.fichas[index] = {
@@ -630,6 +748,7 @@ export function updateFicha({ id, nombre, numero, estado = null, instructorName 
       estado: estado ?? state.fichas[index].estado,
       instructorName: instructorName ?? state.fichas[index].instructorName,
       instructorId: instructorId ?? state.fichas[index].instructorId,
+      centroId: centroId ?? state.fichas[index].centroId,
     }
     guardar()
   }
@@ -797,6 +916,8 @@ export function updateProject({ id, title, description, keywords = null, objecti
     updatedAt: hoyFormato('dd/MM/yyyy'),
   }
   guardar()
+  // El contenido cambió: re-puntúa sus coincidencias y detecta nuevas.
+  detectarSimilitudes(state.proyectos[index].id)
 }
 
 export function updateUserFoto(id, foto) {
@@ -833,15 +954,16 @@ export function getAllSimilarities() {
   return state.similitudes
 }
 
-// Regla de negocio: solo coincidencias contra propuestas APROBADAS e intra-programa
-// (ADSO solo con ADSO, etc. — sin importar ficha; misma regla que detectarSimilitudes)
+// Regla de negocio: coincidencias intra-programa (ADSO solo con ADSO, etc. —
+// sin importar ficha) entre propuestas vigentes: pendientes o aprobadas.
+// Las rechazadas salieron del juego y no generan ni muestran coincidencias.
 export function getSimilitudesValidas() {
   return state.similitudes.filter((x) => {
     const p1 = findProjectById(x.projectId1)
     const p2 = findProjectById(x.projectId2)
     if (!p1 || !p2) return false
-    if (getProgramaDeProyecto(p1) !== getProgramaDeProyecto(p2)) return false
-    return p1.estado === 'aprobado' || p2.estado === 'aprobado'
+    if (p1.estado === 'rechazado' || p2.estado === 'rechazado') return false
+    return getProgramaDeProyecto(p1) === getProgramaDeProyecto(p2)
   })
 }
 
@@ -850,7 +972,7 @@ export function findSimilarityById(id) {
 }
 
 export function getSimilaritiesByProject(projectId) {
-  // Mismo idioma que getSimilitudesValidas: intra-programa + al menos un aprobado
+  // Mismo idioma que getSimilitudesValidas: intra-programa, sin rechazadas
   const pid = Number(projectId)
   return getSimilitudesValidas().filter((s) => s.projectId1 === pid || s.projectId2 === pid)
 }
@@ -859,36 +981,75 @@ export function updateSimilarityEstado() {
   // deprecated: similitud.estado eliminado (modelo 3 estados: el instructor decide sobre la propuesta)
 }
 
-// ------------------------------------------------- Detección (simulada)
-// Regla de negocio: una propuesta aprobada se compara contra el corpus
-// histórico APROBADO del mismo programa. En producción este cálculo vive
-// en el backend; aquí se simula con Jaccard sobre título + palabras clave.
-const STOPWORDS = new Set([
-  'de', 'la', 'el', 'los', 'las', 'un', 'una', 'para', 'con', 'del', 'al',
-  'en', 'y', 'o', 'a', 'que', 'por', 'su', 'es', 'son',
-])
+// ------------------------------------------------- Detección (motor local)
+// Regla de negocio: cada propuesta se compara contra el corpus vigente del
+// mismo programa (pendientes + aprobadas dentro de la ventana). Así dos
+// propuestas subidas seguidas sobre el mismo tema SÍ generan coincidencia.
+// El cálculo vive en ./similitud.js (TF-IDF + coseno con español).
 
-function tokenizar(texto) {
-  return String(texto || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 2 && !STOPWORDS.has(t))
+const UMBRAL_MIN = 0.05
+const UMBRAL_MAX = 0.95
+const UMBRAL_DEFECTO = 0.2
+const MESES_MIN = 1
+const MESES_MAX = 60
+const MESES_DEFECTO = 12
+
+// Niveles de color únicos para toda la app: 70 alto / 40 medio
+
+function normalizarUmbral(v) {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return UMBRAL_DEFECTO
+  return Math.min(UMBRAL_MAX, Math.max(UMBRAL_MIN, n))
 }
 
-function jaccard(a, b) {
-  const A = new Set(a)
-  const B = new Set(b)
-  if (!A.size || !B.size) return 0
-  let inter = 0
-  for (const t of A) {
-    if (B.has(t)) inter++
-  }
-  return inter / (A.size + B.size - inter)
+function normalizarMeses(v) {
+  const n = Math.round(Number(v))
+  if (!Number.isFinite(n)) return MESES_DEFECTO
+  return Math.min(MESES_MAX, Math.max(MESES_MIN, n))
 }
 
-const UMBRAL_SIMILITUD = 0.2
+export function getUmbralSimilitud() {
+  return normalizarUmbral(state.config?.umbralSimilitud ?? UMBRAL_DEFECTO)
+}
+
+export function setUmbralSimilitud(valor) {
+  const n = Number(valor)
+  if (!Number.isFinite(n) || n < UMBRAL_MIN || n > UMBRAL_MAX) return false
+  state.config = { ...(state.config || {}), umbralSimilitud: Math.round(n * 100) / 100 }
+  guardar()
+  return true
+}
+
+// Ventana del corpus en meses: las aprobadas más viejas dejan de contar
+// (siguen en el historial, pero ya no bloquean visualmente a las nuevas).
+export function getMesesCorpus() {
+  return normalizarMeses(state.config?.mesesCorpus ?? MESES_DEFECTO)
+}
+
+export function setMesesCorpus(valor) {
+  const n = Math.round(Number(valor))
+  if (!Number.isFinite(n) || n < MESES_MIN || n > MESES_MAX) return false
+  state.config = { ...(state.config || {}), mesesCorpus: n }
+  guardar()
+  return true
+}
+
+export function getConfigMotor() {
+  return { umbral: getUmbralSimilitud(), meses: getMesesCorpus() }
+}
+
+function mesesDesde(fecha) {
+  const [d, m, a] = String(fecha || '').split('/').map(Number)
+  if (!d || !m || !a) return 0
+  const ahora = new Date()
+  return (ahora.getFullYear() - a) * 12 + (ahora.getMonth() + 1 - m)
+}
+
+// ¿La propuesta sigue dentro de la ventana del corpus?
+export function enVentanaCorpus(proyecto) {
+  if (!proyecto) return false
+  return mesesDesde(proyecto.createdAt) <= getMesesCorpus()
+}
 
 export function getProgramaDeProyecto(proyecto) {
   if (!proyecto) return null
@@ -898,28 +1059,60 @@ export function getProgramaDeProyecto(proyecto) {
 export function detectarSimilitudes(projectId) {
   const propio = findProjectById(projectId)
   if (!propio) return 0
-  const tokensPropios = tokenizar(`${propio.title} ${propio.keywords}`)
   const programaPropio = getProgramaDeProyecto(propio)
+  const umbral = getUmbralSimilitud()
 
+  // Corpus vigente del mismo programa: pendientes + aprobadas dentro de la
+  // ventana. Las rechazadas no comparan ni son comparadas.
   const corpus = state.proyectos.filter(
     (p) =>
       p.id !== propio.id &&
-      p.estado === 'aprobado' &&
-      getProgramaDeProyecto(p) === programaPropio
+      p.estado !== 'rechazado' &&
+      getProgramaDeProyecto(p) === programaPropio &&
+      enVentanaCorpus(p)
   )
+  const vectores = new Map([[propio.id, vectorDeProyecto(propio)]])
+  for (const otro of corpus) vectores.set(otro.id, vectorDeProyecto(otro))
+  const idf = construirIdf([...vectores.values()])
+  const vecPropio = vectores.get(propio.id)
 
   let creadas = 0
+  let cambios = false
   for (const otro of corpus) {
-    const yaExiste = state.similitudes.some(
+    const score = similitudEntre(vecPropio, vectores.get(otro.id), idf)
+    const existente = state.similitudes.find(
       (s) =>
         (s.projectId1 === propio.id && s.projectId2 === otro.id) ||
         (s.projectId1 === otro.id && s.projectId2 === propio.id)
     )
-    if (yaExiste) continue
 
-    const tokensOtro = tokenizar(`${otro.title} ${otro.keywords}`)
-    const score = jaccard(tokensPropios, tokensOtro)
-    if (score < UMBRAL_SIMILITUD) continue
+    // Si cayó bajo el umbral (re-edición o umbral más exigente), la
+    // coincidencia deja de existir en vez de quedar como dato muerto.
+    if (score < umbral) {
+      if (existente) {
+        state.similitudes = state.similitudes.filter((s) => s.id !== existente.id)
+        cambios = true
+      }
+      continue
+    }
+
+    const redondeado = Math.round(score * 100) / 100
+    if (existente) {
+      // Re-sincroniza puntaje y títulos: la propuesta pudo editarse.
+      if (
+        existente.similitud !== redondeado ||
+        existente.project1Title !== propio.title ||
+        existente.project2Title !== otro.title
+      ) {
+        existente.similitud = redondeado
+        existente.project1Title = propio.title
+        existente.project2Title = otro.title
+        existente.project1Student = propio.studentName
+        existente.project2Student = otro.studentName
+        cambios = true
+      }
+      continue
+    }
 
     state.similitudes.unshift({
       id: state.nextSimilitudId++,
@@ -929,10 +1122,11 @@ export function detectarSimilitudes(projectId) {
       project2Title: otro.title,
       project1Student: propio.studentName,
       project2Student: otro.studentName,
-      similitud: Math.round(score * 100) / 100,
+      similitud: redondeado,
       createdAt: hoyFormato('dd/MM/yyyy'),
     })
     creadas++
+    cambios = true
 
     createNotification({
       mensaje: `Similitud del ${Math.round(score * 100)}% detectada entre '${propio.title}' y '${otro.title}'`,
@@ -942,7 +1136,32 @@ export function detectarSimilitudes(projectId) {
     })
   }
 
+  if (cambios) guardar()
   return creadas
+}
+
+// Recalibración masiva tras cambiar umbral o ventana: purga pares bajo el
+// umbral vigente, fuera de ventana o que toquen una rechazada, y re-ejecuta
+// la detección en el corpus (además re-puntúa con el motor vigente).
+export function recalcularSimilitudes() {
+  const umbral = getUmbralSimilitud()
+  const antes = state.similitudes.length
+  state.similitudes = state.similitudes.filter((s) => {
+    if ((s.similitud || 0) < umbral) return false
+    const p1 = findProjectById(s.projectId1)
+    const p2 = findProjectById(s.projectId2)
+    if (!p1 || !p2) return false
+    if (p1.estado === 'rechazado' || p2.estado === 'rechazado') return false
+    if (getProgramaDeProyecto(p1) !== getProgramaDeProyecto(p2)) return false
+    return enVentanaCorpus(p1) || enVentanaCorpus(p2)
+  })
+  const eliminadas = antes - state.similitudes.length
+  let creadas = 0
+  for (const p of state.proyectos) {
+    creadas += detectarSimilitudes(p.id)
+  }
+  guardar()
+  return { eliminadas, creadas }
 }
 
 // ---------------------------------------------------------------- Reportes
@@ -1055,6 +1274,14 @@ export function addObservacion(projectId, autor, texto, respuestaA = null) {
   guardar()
   notificarObservacion(observacion)
   return observacion
+}
+
+export function deleteObservacion(id) {
+  const index = state.observaciones.findIndex(o => o.id === Number(id))
+  if (index === -1) return false
+  state.observaciones.splice(index, 1)
+  guardar()
+  return true
 }
 
 function notificarObservacion(obs) {
@@ -1189,5 +1416,9 @@ export const displayNames = {
     aprendiz: 'Aprendiz',
     instructor: 'Instructor',
     admin: 'Administrador',
+  },
+  userStatus: {
+    activo: 'Activo',
+    suspendido: 'Suspendido',
   },
 }

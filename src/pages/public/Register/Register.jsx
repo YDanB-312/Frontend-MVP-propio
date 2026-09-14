@@ -7,6 +7,7 @@ import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
 import { Input } from '../../../components/Input/Input'
 import s from './Register.module.css'
+import { esEmailValido, esPasswordValida } from '../../../utils/validation'
 
 export default function Register() {
   const { register } = useAuth()
@@ -25,10 +26,10 @@ export default function Register() {
     const errs = {}
     if (form.nombre.trim().length < 2) errs.nombre = 'Ingresa tus nombres.'
     if (form.apellido.trim().length < 2) errs.apellido = 'Ingresa tus apellidos.'
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim())) {
+    if (!esEmailValido(form.correo.trim())) {
       errs.correo = 'Ingresa un correo electrónico válido.'
     }
-    if (form.password.length < 6) errs.password = 'La contraseña debe tener al menos 6 caracteres.'
+    if (!esPasswordValida(form.password)) errs.password = 'La contraseña debe tener al menos 6 caracteres.'
     if (form.confirmar !== form.password) errs.confirmar = 'Las contraseñas no coinciden.'
     return errs
   }

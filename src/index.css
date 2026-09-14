@@ -18,4 +18,35 @@ h1,h2,h3,h4{font-weight:600;line-height:var(--leading-tight);color:var(--c-text)
 ::-webkit-scrollbar-thumb{background:var(--s-300);border-radius:var(--r-full)}
 ::-webkit-scrollbar-thumb:hover{background:var(--s-400)}
 
+/* ========================================
+   FX GLOBALES — consola IA (CSS puro)
+   ======================================== */
+::view-transition-old(root),::view-transition-new(root){animation-duration:var(--dur-normal);animation-timing-function:var(--ease-out)}
+
+@keyframes fx-pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+@keyframes fx-blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes fx-scan-y{0%{top:-10%}100%{top:110%}}
+@keyframes fx-shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes fx-rise-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Mono para datos (porcentajes, fechas, IDs) */
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* Solo lector de pantalla */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Fondo rejilla de consola */
+.fx-grid-bg{
+  background-image:
+    linear-gradient(var(--grid-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+
+/* Render diferido para grids largos */
+.cv-auto{content-visibility:auto;contain-intrinsic-size:auto 320px}
+
+/* Entrada escalonada (se combina con --fx-i:0,1,2… via style) */
+.fx-rise{animation:fx-rise-in var(--dur-slow) var(--ease-out) both;animation-delay:calc(var(--fx-i,0)*45ms)}
+
 

@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, Plus, Trash, X } from 'phosphor-react'
+import { ArrowRight, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, PencilSimple, Plus, Trash, X } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Button from '../../../components/Button/Button'
 import Alert from '../../../components/Alert/Alert'
-import { Select, Textarea } from '../../../components/Input/Input'
+import { Input, Select, Textarea } from '../../../components/Input/Input'
+import FormField from '../../../components/FormField/FormField'
 import Avatar from '../../../components/Avatar/Avatar'
 import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
+import ObservacionHilo from
+'../../../components/ObservacionHilo/ObservacionHilo'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   findProjectById,
@@ -20,6 +23,8 @@ import {
   getSimilaritiesByProject,
   getObservaciones,
   addObservacion,
+  deleteObservacion,
+  updateProject,
   updateProjectEstado,
   createNotification,
   deleteProject,
@@ -39,6 +44,9 @@ export default function DetalleProyectoAdmin() {
   const [respondiendoA, setRespondiendoA] = useState(null)
   const [modalEliminar, setModalEliminar] = useState(false)
   const [fotoViendo, setFotoViendo] = useState(null)
+  const [obsAEliminar, setObsAEliminar] = useState(null)
+  const [, setTick] = useState(0)
+  const refrescarObs = () => setTick((t) => t + 1)
 
   const proyecto = findProjectById(id)
   const estudiante = proyecto ? findUserById(proyecto.studentId) : null
@@ -47,13 +55,19 @@ export default function DetalleProyectoAdmin() {
 
   const [nuevoEstado, setNuevoEstado] = useState(() => (proyecto ? proyecto.estado : 'pendiente'))
   const [guardado, setGuardado] = useState(false)
+  const [editando, setEditando] = useState(false)
+  const [form, setForm] = useState({ title: '', description: '', keywords: '' })
+  const [errores, setErrores] = useState({})
+  const [editMsg, setEditMsg] = useState(false)
 
-  // Sincroniza el selector al navegar entre proyectos sin remontar
+  // Sincroniza los selectores al navegar entre proyectos sin remontar
   useEffect(() => {
     if (proyecto) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setNuevoEstado(proyecto.estado)
       setGuardado(false)
+      setEditando(false)
+      setEditMsg(false)
     }
   }, [proyecto?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -105,6 +119,34 @@ export default function DetalleProyectoAdmin() {
 
   const ficha = findFichaById(proyecto.fichaId)
 
+  const iniciarEdicion = () => {
+    setForm({
+      title: proyecto.title || '',
+      description: proyecto.description || '',
+      keywords: proyecto.keywords || '',
+    })
+    setErrores({})
+    setEditMsg(false)
+    setEditando(true)
+  }
+
+  const guardarEdicion = (e) => {
+    e.preventDefault()
+    const errs = {}
+    if (form.title.trim().length < 5) errs.title = 'El título debe tener al menos 5 caracteres.'
+    if (form.description.trim().length < 20) errs.description = 'La descripción debe tener al menos 20 caracteres.'
+    setErrores(errs)
+    if (Object.keys(errs).length > 0) return
+    updateProject({
+      id: proyecto.id,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      keywords: form.keywords.trim(),
+    })
+    setEditando(false)
+    setEditMsg(true)
+  }
+
   return (
     <DashboardLayout role="admin" titulo="Detalle de Propuesta">
       <div className={s.page}>
@@ -123,8 +165,8 @@ export default function DetalleProyectoAdmin() {
           <Alert><CheckCircle size={14} /> Estado actualizado correctamente.</Alert>
         )}
 
-        <div className={s.grid}>
-          <div className={s.col}>
+        <div className={s.dossier}>
+          <div className={s.colPrincipal}>
             <DataPanel
               title="Información del proyecto"
               icon={<FileText />}
@@ -146,6 +188,13 @@ export default function DetalleProyectoAdmin() {
                   </Button>
                   <Button
                     type="button"
+                    variant="secondary"
+                    onClick={() => (editando ? setEditando(false) : iniciarEdicion())}
+                  >
+                    <PencilSimple size={14} /> {editando ? 'Cancelar edición' : 'Editar'}
+                  </Button>
+                  <Button
+                    type="button"
                     variant="dangerGhost"
                     onClick={() => setModalEliminar(true)}
                   >
@@ -154,17 +203,47 @@ export default function DetalleProyectoAdmin() {
                 </form>
               }
             >
-              {/* Sin fichaHref: no existe ruta /admin/detalle-ficha (se muestra como texto) */}
-              <InformacionProyecto proyecto={proyecto} ficha={ficha} fichaHref={null} />
+              {editMsg && (
+                <Alert><CheckCircle size={14} /> Contenido actualizado correctamente.</Alert>
+              )}
+              {editando ? (
+                <form className={s.obsForm} onSubmit={guardarEdicion} noValidate>
+                  <FormField label="Título" required error={errores.title}>
+                    <Input
+                      value={form.title}
+                      onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                      maxLength={120}
+                    />
+                  </FormField>
+                  <FormField label="Descripción" required error={errores.description}>
+                    <Textarea
+                      rows={4}
+                      value={form.description}
+                      onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                    />
+                  </FormField>
+                  <FormField label="Palabras clave" help="Separadas por comas.">
+                    <Input
+                      value={form.keywords}
+                      onChange={(e) => setForm((f) => ({ ...f, keywords: e.target.value }))}
+                    />
+                  </FormField>
+                  <Button type="submit">
+                    <CheckCircle size={14} /> Guardar contenido
+                  </Button>
+                </form>
+              ) : (
+                <InformacionProyecto proyecto={proyecto} ficha={ficha} fichaHref={ficha ? `/admin/detalle-ficha/${ficha.id}` : null} />
+              )}
             </DataPanel>
           </div>
 
-          <div className={s.col}>
+          <aside className={s.rail} aria-label="Aprendiz, similitudes y observaciones">
             <DataPanel title="Información del aprendiz" icon={<GraduationCap />}>
               {estudiante ? (
                 <div className={s.personCard}>
                   {estudiante.fotoPerfil ? (
-                    <button type="button" className={s.avatarBtn} title="Ver foto" onClick={() => setFotoViendo({ src: estudiante.fotoPerfil, alt: estudiante.name })}>
+                    <button type="button" className={s.avatarBtn} title="Ver foto" aria-label="Ver foto del aprendiz" onClick={() => setFotoViendo({ src: estudiante.fotoPerfil, alt: estudiante.name })}>
                       <Avatar name={estudiante.name} src={estudiante.fotoPerfil} size="md" />
                     </button>
                   ) : (
@@ -192,19 +271,13 @@ export default function DetalleProyectoAdmin() {
                     const pct = Math.round((sim.similitud || 0) * 100)
                     return (
                       <li key={sim.id}>
-                        <Link to={`/admin/detalle-similitud/${sim.id}`} className={s.simRow}>
+                        <Link to={`/admin/detalle-similitud/${sim.id}`} viewTransition className={s.simRow}>
                           <span className={s.simPair}>
                             vs.{' '}
                             {sim.projectId1 === proyecto.id ? sim.project2Title : sim.project1Title}
                           </span>
                           <span className={s.simRight}>
-                            <span
-                              className={`${s.pct} ${
-                                pct >= 60 ? s.pctHigh : pct >= 40 ? s.pctMid : s.pctLow
-                              }`}
-                            >
-                              {pct}%
-                            </span>
+                            <GradeBadge score={pct} size="sm" />
                           </span>
                         </Link>
                       </li>
@@ -225,6 +298,9 @@ export default function DetalleProyectoAdmin() {
                 grupos={agruparObservaciones(observaciones)}
                 permitirResponder
                 onRespuesta={(o) => setRespondiendoA(o)}
+                permitirEliminar
+                onEliminar={(o) => setObsAEliminar(o)}
+                className={s.hilosScroll}
               />
 
               <form className={s.obsForm} onSubmit={agregarObservacion}>
@@ -233,13 +309,14 @@ export default function DetalleProyectoAdmin() {
                   value={textoObs}
                   onChange={(e) => setTextoObs(e.target.value)}
                   placeholder="Escribe una observación sobre esta propuesta…"
+                  aria-label="Observación sobre esta propuesta"
                 />
                 <Button type="submit" disabled={!textoObs.trim()}>
                   <Plus size={14} /> Agregar observación
                 </Button>
               </form>
             </DataPanel>
-          </div>
+          </aside>
         </div>
       </div>
 
@@ -250,6 +327,23 @@ export default function DetalleProyectoAdmin() {
         textoConfirmar="Sí, eliminar"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}
+      />
+      <ConfirmModal
+        open={!!obsAEliminar}
+        titulo="Eliminar observación"
+        mensaje={
+          obsAEliminar
+            ? `¿Seguro que deseas eliminar la observación de "${String(obsAEliminar.autor).split(' | ')[0]}"? Esta acción no se puede deshacer.`
+            : ''
+        }
+        textoConfirmar="Sí, eliminar"
+        onConfirmar={() => {
+          if (respondiendoA?.id === obsAEliminar?.id) setRespondiendoA(null)
+          deleteObservacion(obsAEliminar.id)
+          setObsAEliminar(null)
+          refrescarObs()
+        }}
+        onCancelar={() => setObsAEliminar(null)}
       />
       {fotoViendo && <Lightbox src={fotoViendo.src} alt={fotoViendo.alt} caption={fotoViendo.alt} onClose={() => setFotoViendo(null)} />}
     </DashboardLayout>

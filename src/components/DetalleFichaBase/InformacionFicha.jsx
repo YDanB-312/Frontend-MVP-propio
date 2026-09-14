@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import Badge from '../Badge/Badge'
 import Button from '../Button/Button'
-import { displayNames, getRedDePrograma } from '../../data/mockData'
+import { displayNames, getRedDePrograma, findCentroById } from '../../data/mockData'
 import s from './DetalleFichaBase.module.css'
 import { ArrowRight, Users } from 'phosphor-react'
 
@@ -19,6 +19,7 @@ export default function InformacionFicha({
   directorioTo,
 }) {
   const red = getRedDePrograma(ficha.programa)
+  const centro = ficha.centroId ? findCentroById(ficha.centroId) : null
 
   return (
     <>
@@ -40,6 +41,10 @@ export default function InformacionFicha({
         <div className={s.infoCell}>
           <dt>Programa</dt>
           <dd>{ficha.programa || '—'}</dd>
+        </div>
+        <div className={s.infoCell}>
+          <dt>Centro de formación</dt>
+          <dd>{centro ? `${centro.nombre}${centro.ciudad ? ` · ${centro.ciudad}` : ''}` : '—'}</dd>
         </div>
         <div className={s.infoCell}>
           <dt>Instructor</dt>

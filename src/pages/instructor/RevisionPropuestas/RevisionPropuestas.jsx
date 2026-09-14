@@ -4,6 +4,8 @@ import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
 import Badge from '../../../components/Badge/Badge'
 import Button from '../../../components/Button/Button'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
 import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
@@ -16,32 +18,19 @@ import {
   getAllFichas,
   getSimilitudesValidas,
   getSimilaritiesByProject,
-  findUserById,
   findFichaById,
   updateProjectEstado,
   createNotification,
   displayNames,
 } from '../../../data/mockData'
+import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import s from '../../../components/ListaBase/ListaBase.module.css'
+import { getSimilitudInfo as similitudInfo } from '../../../utils/similitudInfo'
 import local from './RevisionPropuestas.module.css'
-import { CheckCircle, ClipboardText, Tray, XCircle } from 'phosphor-react'
+import { ArrowRight, CheckCircle, ClipboardText, Tray, XCircle } from 'phosphor-react'
+import { PAGINA_TABLA } from '../../../constants/pagination'
 
-const ITEMS_POR_PAGINA = 8
-
-const ESTADO_VARIANT = {
-  pendiente: 'warning',
-  aprobado: 'success',
-  rechazado: 'danger',
-}
-
-function similitudInfo(similitudes, projectId) {
-  const propias = similitudes.filter((x) => x.projectId1 === projectId || x.projectId2 === projectId)
-  if (propias.length === 0) return null
-  return {
-    pct: Math.max(...propias.map((x) => Math.round(x.similitud * 100))),
-    count: propias.length,
-  }
-}
+const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 export default function RevisionPropuestas() {
   const { user } = useAuth()
@@ -49,6 +38,7 @@ export default function RevisionPropuestas() {
   const [pagina, setPagina] = useState(1)
   const [modal, setModal] = useState(null)
   const [msgAprobacion, setMsgAprobacion] = useState(null)
+  const [selId, setSelId] = useState(null)
   const msgTimer = useRef(null)
 
   // Solo propuestas de fichas a su cargo
@@ -67,6 +57,11 @@ export default function RevisionPropuestas() {
     (pagina - 1) * ITEMS_POR_PAGINA,
     pagina * ITEMS_POR_PAGINA
   )
+
+  const seleccionada = paginados.find((p) => p.id === selId) || paginados[0] || null
+  const simsSel = seleccionada ? getSimilaritiesByProject(seleccionada.id) : []
+  const infoSel = seleccionada ? similitudInfo(similitudes, seleccionada.id) : null
+  const fichaSel = seleccionada?.fichaId ? findFichaById(seleccionada.fichaId) : null
 
   const abrirModal = (proyecto, accion) => setModal({ proyecto, accion })
 
@@ -120,6 +115,7 @@ export default function RevisionPropuestas() {
               onChange={(e) => {
                 setFiltroEstado(e.target.value)
                 setPagina(1)
+                setSelId(null)
               }}
             >
               <option value="todos">Todos</option>
@@ -146,90 +142,102 @@ export default function RevisionPropuestas() {
           />
         ) : (
           <>
-            <div className={s.tableWrap}>
-              <table className={s.table}>
-                <thead>
-                  <tr>
-                    <th>Propuesta</th>
-                    <th>Aprendiz</th>
-                    <th>Similitud</th>
-                    <th>Fecha</th>
-                    <th>Estado</th>
-                    <th className={s.colActions}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginados.map((p) => {
-                    const info = similitudInfo(similitudes, p.id)
-                    const est = findUserById(p.studentId)
-                    const fic = p.fichaId ? findFichaById(p.fichaId) : null
-                    return (
-                    <tr key={p.id}>
-                      <td data-label="Propuesta">
-                        <span className={s.title}>{p.title}</span>
-                        <span className={s.subText}>{fic ? `${fic.codigo} · ${fic.nombre}` : 'Sin ficha'}</span>
-                      </td>
-                      <td data-label="Aprendiz">
-                        <span className={local.student}>
-                          <Avatar name={p.studentName} src={est?.fotoPerfil} size="sm" />
-                          {p.studentName}
-                        </span>
-                      </td>
-                      <td data-label="Similitud">
-                        {info ? (
-                          <span className={local.simCell}>
-                            <span className={`${local.dot} ${info.pct >= 60 ? local.dotHigh : info.pct >= 40 ? local.dotMid : local.dotLow}`} />
-                            <span className={local.mono}>{info.pct}%</span>
-                            <span className={s.muted}>· {info.count}</span>
+            <div className={local.split}>
+              <ol className={local.cola} aria-label="Cola de revisión">
+                {paginados.map((p) => {
+                  const info = similitudInfo(similitudes, p.id)
+                  const activo = seleccionada?.id === p.id
+                  return (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        className={`${local.nodo} ${activo ? local.nodoActivo : ''}`}
+                        aria-current={activo ? 'true' : undefined}
+                        onClick={() => setSelId(p.id)}
+                      >
+                        <span className={`${local.dot} ${local[`dot-${p.estado}`]}`} aria-hidden="true" />
+                        <span className={local.nodoMain}>
+                          <span className={local.nodoTitulo}>{p.title}</span>
+                          <span className={local.nodoMeta}>
+                            <Avatar name={p.studentName} size="sm" />
+                            {p.studentName} · {p.createdAt}
                           </span>
-                        ) : (
-                          <span className={s.muted}>—</span>
-                        )}
-                      </td>
-                      <td data-label="Fecha" className={s.date}>{p.createdAt}</td>
-                      <td data-label="Estado">
-                        <Badge variant={ESTADO_VARIANT[p.estado] || 'neutral'}>
-                          {displayNames.projectStatus[p.estado] || p.estado}
-                        </Badge>
-                      </td>
-                      <td data-label="Acciones" className={s.colActions}>
-                        <div className={s.actions}>
-                          {p.estado === 'pendiente' ? (
-                            <>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => abrirModal(p, 'aprobado')}
-                              >
-                                <CheckCircle size={14} /> Aprobar
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="dangerGhost"
-                                onClick={() => abrirModal(p, 'rechazado')}
-                              >
-                                <XCircle size={14} /> Rechazar
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              as="link"
-                              to={`/instructor/detalle-proyecto/${p.id}`}
-                              size="sm"
-                              variant="secondary"
-                            >
-                              Ver detalle
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                        </span>
+                        <span className={local.nodoLado}>
+                          {info ? <GradeBadge score={info.pct} size="sm" /> : null}
+                          <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
+                            {displayNames.projectStatus[p.estado] || p.estado}
+                          </Badge>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ol>
+
+              {seleccionada && (
+                <ConsoleCard
+                  className={local.preview}
+                  glow={seleccionada.estado === 'pendiente'}
+                  aria-label={`Vista previa: ${seleccionada.title}`}
+                >
+                  <p className={`mono ${local.kicker}`}>
+                    {displayNames.projectStatus[seleccionada.estado] || seleccionada.estado} · {seleccionada.createdAt}
+                  </p>
+                  <h2 className={local.previewTitulo}>{seleccionada.title}</h2>
+                  <p className={local.previewMeta}>
+                    {seleccionada.studentName}
+                    {fichaSel ? ` · ${fichaSel.codigo} · ${fichaSel.nombre}` : ' · Sin ficha'}
+                  </p>
+                  <p className={local.previewDesc}>{seleccionada.description}</p>
+                  <div className={local.previewSims}>
+                    <span className={local.previewLabel}>Similitud máxima</span>
+                    {infoSel ? (
+                      <GradeBadge score={infoSel.pct} />
+                    ) : (
+                      <span className={s.muted}>Sin coincidencias</span>
+                    )}
+                    {simsSel.length > 0 && (
+                      <span className={s.muted}>
+                        · {simsSel.length} coincidencia{simsSel.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <div className={local.previewAcciones} aria-live="polite">
+                    {seleccionada.estado === 'pendiente' ? (
+                      <>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Aprobar ${seleccionada.title}`}
+                          onClick={() => abrirModal(seleccionada, 'aprobado')}
+                        >
+                          <CheckCircle size={14} /> Aprobar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="dangerGhost"
+                          aria-label={`Rechazar ${seleccionada.title}`}
+                          onClick={() => abrirModal(seleccionada, 'rechazado')}
+                        >
+                          <XCircle size={14} /> Rechazar
+                        </Button>
+                      </>
+                    ) : null}
+                    <Button
+                      as="link"
+                      to={`/instructor/detalle-proyecto/${seleccionada.id}`}
+                      viewTransition
+                      size="sm"
+                      variant="secondary"
+                    >
+                      Ver detalle <ArrowRight size={14} />
+                    </Button>
+                  </div>
+                </ConsoleCard>
+              )}
             </div>
 
             <Pagination

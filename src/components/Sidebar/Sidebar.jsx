@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, matchPath, useLocation } from 'react-router-dom'
 import s from './Sidebar.module.css'
 
 function CloseIcon() {
@@ -9,7 +9,12 @@ function CloseIcon() {
   )
 }
 
+// Navegación lateral: iconos + etiquetas, nada más.
 export default function Sidebar({ isOpen = false, onClose, role = '', links = [] }) {
+  const { pathname } = useLocation()
+  const items = links
+  const activoExtra = (link) =>
+    (link.activeFor || []).some((p) => matchPath({ path: `${p}/*`, end: false }, pathname))
   return (
     <>
       {isOpen && <div className={s.overlay} onClick={onClose} aria-hidden="true" />}
@@ -20,15 +25,18 @@ export default function Sidebar({ isOpen = false, onClose, role = '', links = []
         </button>
 
         <nav className={s.menu}>
-          {links.map(link => (
+          {items.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               end
+              viewTransition
               onClick={onClose}
-              className={({ isActive }) => (isActive ? `${s.link} ${s.linkActive}` : s.link)}
+              className={({ isActive }) =>
+                isActive || activoExtra(link) ? `${s.link} ${s.linkActive}` : s.link
+              }
             >
-              <span className={s.icon}>{link.icon}</span>
+              <span className={s.icon} aria-hidden="true">{link.icon}</span>
               <span>{link.label}</span>
             </NavLink>
           ))}

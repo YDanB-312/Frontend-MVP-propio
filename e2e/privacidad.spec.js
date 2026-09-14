@@ -46,6 +46,8 @@ test.describe('Privacidad: aprendiz vs propuestas ajenas', () => {
   test('detalle de similitud solo muestra observaciones de MI propuesta del par', async ({ page }) => {
     await login(page, 'aprendiz')
     await page.goto('/aprendiz/similitudes')
+    // Expandir el primer grupo y abrir su primera similitud
+    await page.getByRole('button', { name: /coincidencia/i }).first().click()
     await expect(page.locator('[class*="matchRow"]').first()).toBeVisible()
 
     // Abrir la primera similitud del listado

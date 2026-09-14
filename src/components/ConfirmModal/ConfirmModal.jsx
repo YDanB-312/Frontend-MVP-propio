@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
 import Actions from '../Actions/Actions'
 import Button from '../Button/Button'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 import s from './ConfirmModal.module.css'
 
 export default function ConfirmModal({
@@ -12,20 +12,14 @@ export default function ConfirmModal({
   textoConfirmar = 'Confirmar',
   textoCancelar = 'Cancelar',
 }) {
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e) => {
-      if (e.key === 'Escape') onCancelar?.()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [open, onCancelar])
+  const ref = useFocusTrap({ active: open, onEscape: onCancelar })
 
   if (!open) return null
 
   return (
     <div className={s.overlay} onClick={onCancelar} role="presentation">
       <div
+        ref={ref}
         className={s.modal}
         role="alertdialog"
         aria-modal="true"
@@ -40,7 +34,7 @@ export default function ConfirmModal({
           <Button variant="secondary" size="lg" onClick={onCancelar}>
             {textoCancelar}
           </Button>
-          <Button variant="primary" size="lg" onClick={onConfirmar} autoFocus>
+          <Button variant="primary" size="lg" onClick={onConfirmar}>
             {textoConfirmar}
           </Button>
         </Actions>

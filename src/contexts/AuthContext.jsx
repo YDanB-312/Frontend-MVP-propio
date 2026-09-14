@@ -1,13 +1,9 @@
 import { createContext, useContext, useState, useCallback } from 'react'
 import { findUserByEmail, validateCredentials, createUser, updateUserPassword, emailExists } from '../data/mockData'
+import { esPasswordValida } from '../utils/validation'
+import { RUTA_POR_ROL } from '../constants/routes'
 
 const AuthContext = createContext(null)
-
-const RUTA_POR_ROL = {
-  aprendiz: '/aprendiz/dashboard',
-  instructor: '/instructor/dashboard',
-  admin: '/admin/dashboard',
-}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -62,7 +58,7 @@ export function AuthProvider({ children }) {
     if (!validateCredentials(correo, actual)) {
       return { exito: false, mensaje: 'La contraseña actual no es correcta.' }
     }
-    if (!nueva || nueva.length < 6) {
+    if (!nueva || !esPasswordValida(nueva)) {
       return { exito: false, mensaje: 'La nueva contraseña debe tener al menos 6 caracteres.' }
     }
     updateUserPassword(correo, nueva)

@@ -6,25 +6,35 @@ import s from './Footer.module.css'
 const FOOTER_BY_ROLE = {
   aprendiz: {
     links: [
-      { label: 'Mis Propuestas', to: '/aprendiz/propuestas' },
+      { label: 'Dashboard', to: '/aprendiz/dashboard' },
+      { label: 'Propuestas', to: '/aprendiz/propuestas' },
       { label: 'Similitudes', to: '/aprendiz/similitudes' },
+      { label: 'Ficha', to: '/aprendiz/ficha' },
       { label: 'Alertas', to: '/aprendiz/alertas' },
       { label: 'Mi Perfil', to: '/aprendiz/perfil' },
+      { label: 'Reportar Falla', to: '/aprendiz/reportar-falla' },
     ],
   },
   instructor: {
     links: [
-      { label: 'Revision Propuestas', to: '/instructor/revision-propuestas' },
+      { label: 'Dashboard', to: '/instructor/dashboard' },
+      { label: 'Revisión Propuestas', to: '/instructor/revision-propuestas' },
       { label: 'Similitudes', to: '/instructor/similitudes' },
       { label: 'Fichas', to: '/instructor/fichas' },
+      { label: 'Alertas', to: '/instructor/alertas' },
       { label: 'Mi Perfil', to: '/instructor/perfil' },
+      { label: 'Reportar Falla', to: '/instructor/reportar-falla' },
     ],
   },
   admin: {
     links: [
+      { label: 'Dashboard', to: '/admin/dashboard' },
       { label: 'Usuarios', to: '/admin/usuarios' },
       { label: 'Propuestas', to: '/admin/proyectos' },
-      { label: 'Reportes de Fallas', to: '/admin/reportes-fallas' },
+      { label: 'Similitudes', to: '/admin/similitudes' },
+      { label: 'Fichas', to: '/admin/fichas' },
+      { label: 'Configuración', to: '/admin/configuracion' },
+      { label: 'Mi Perfil', to: '/admin/perfil' },
     ],
   },
 }
@@ -43,11 +53,11 @@ export default function Footer({ role }) {
         </div>
 
         {footerLinks && (
-          <div className={s.links}>
+          <nav className={s.links} aria-label="Navegación secundaria">
             {footerLinks.map(l => (
-              <Link key={l.to} to={l.to} className={s.link}>{l.label}</Link>
+              <Link key={l.to} to={l.to} viewTransition className={s.link}>{l.label}</Link>
             ))}
-          </div>
+          </nav>
         )}
 
         <div className={s.contact}>
