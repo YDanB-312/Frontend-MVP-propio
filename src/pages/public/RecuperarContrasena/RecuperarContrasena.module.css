@@ -69,11 +69,15 @@
 }
 
 .footer {
-  margin: 0;
+  margin: var(--sp-2) 0 0;
   font-size: var(--text-sm);
+  text-align: center;
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1_5);
   font-weight: 600;
   color: var(--c-primary);
   text-decoration: none;

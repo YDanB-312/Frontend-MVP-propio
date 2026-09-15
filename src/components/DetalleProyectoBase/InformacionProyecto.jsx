@@ -59,10 +59,6 @@ export default function InformacionProyecto({ proyecto, ficha, fichaHref }) {
           </dd>
         </div>
         <div className={s.detailRow}>
-          <dt>Tipo de proyecto</dt>
-          <dd>{proyecto.projectType === 'pagina_web' ? 'Página Web' : 'Aplicación'}</dd>
-        </div>
-        <div className={s.detailRow}>
           <dt>Integrantes</dt>
           <dd>{(proyecto.integrantes || []).join(', ') || proyecto.studentName || '—'}</dd>
         </div>

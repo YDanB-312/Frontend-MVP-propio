@@ -106,9 +106,11 @@ export default function DashboardAdmin() {
         </section>
 
         <div className={s.grid}>
-          <DataPanel title="Acciones rápidas" icon={<Sparkle size={18} />}>
-            <QuickActions items={quick} />
-          </DataPanel>
+          <div className={s.accionesPanel}>
+            <DataPanel title="Acciones rápidas" icon={<Sparkle size={18} />}>
+              <QuickActions items={quick} />
+            </DataPanel>
+          </div>
           <DataPanel title="Alertas recientes" icon={<Bell size={18} />} action={<Link to="/admin/notificaciones" viewTransition className={s.panelLink}>Ver todas</Link>}>
             {datos.alertas.length === 0 ? (
               <EmptyState title="Sin alertas" message="No tienes notificaciones recientes." />

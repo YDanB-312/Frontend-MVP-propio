@@ -31,6 +31,7 @@ export default function ProyectosAdmin() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroCentro, setFiltroCentro] = useState('todos')
+  const [filtroFicha, setFiltroFicha] = useState('todos')
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
@@ -40,6 +41,11 @@ export default function ProyectosAdmin() {
       ? [...new Set(REDES.flatMap((r) => r.programas))]
       : [...new Set(getAllFichas().filter((f) => String(f.centroId) === String(filtroCentro)).map((f) => f.programa))]
   ).sort()
+  const fichasFiltro = (
+    filtroCentro === 'todos'
+      ? getAllFichas()
+      : getAllFichas().filter((f) => String(f.centroId) === String(filtroCentro))
+  )
 
   const proyectos = getAllProjects()
 
@@ -63,8 +69,9 @@ export default function ProyectosAdmin() {
     const coincideEstado = filtroEstado === 'todos' || p.estado === filtroEstado
     const fichaP = p.fichaId ? findFichaById(p.fichaId) : null
     const coincideCentro = filtroCentro === 'todos' || (fichaP && String(fichaP.centroId) === String(filtroCentro))
+    const coincideFicha = filtroFicha === 'todos' || String(p.fichaId || '') === String(filtroFicha)
     const coincidePrograma = filtroPrograma === 'todos' || (fichaP && fichaP.programa === filtroPrograma)
-    return coincideQ && coincideEstado && coincideCentro && coincidePrograma
+    return coincideQ && coincideEstado && coincideCentro && coincideFicha && coincidePrograma
   })
 
   const paginados = filtrados.slice(
@@ -76,6 +83,7 @@ export default function ProyectosAdmin() {
     setBusqueda('')
     setFiltroEstado('todos')
     setFiltroCentro('todos')
+    setFiltroFicha('todos')
     setFiltroPrograma('todos')
     setPagina(1)
   }
@@ -122,14 +130,15 @@ export default function ProyectosAdmin() {
           </label>
           <label className={s.field}>
             <span className={s.label}>Centro</span>
-            <Select
-              value={filtroCentro}
-              onChange={(e) => {
-                setFiltroCentro(e.target.value)
-                setFiltroPrograma('todos')
-                setPagina(1)
-              }}
-            >
+              <Select
+                value={filtroCentro}
+                onChange={(e) => {
+                  setFiltroCentro(e.target.value)
+                  setFiltroFicha('todos')
+                  setFiltroPrograma('todos')
+                  setPagina(1)
+                }}
+              >
               <option value="todos">Todos</option>
               {centros.map((ct) => (
                 <option key={ct.id} value={String(ct.id)}>
@@ -151,6 +160,23 @@ export default function ProyectosAdmin() {
               {programasFiltro.map((prog) => (
                 <option key={prog} value={prog}>
                   {prog}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className={s.field}>
+            <span className={s.label}>Ficha</span>
+            <Select
+              value={filtroFicha}
+              onChange={(e) => {
+                setFiltroFicha(e.target.value)
+                setPagina(1)
+              }}
+            >
+              <option value="todos">Todas</option>
+              {fichasFiltro.map((f) => (
+                <option key={f.id} value={String(f.id)}>
+                  {f.codigo} · {f.nombre}
                 </option>
               ))}
             </Select>

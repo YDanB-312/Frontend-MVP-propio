@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
+import FilterBar from '../../../components/FilterBar/FilterBar'
 import DataTable from '../../../components/DataTable/DataTable'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import FormField from '../../../components/FormField/FormField'
@@ -33,7 +34,6 @@ import { PAGINA_TABLA } from '../../../constants/pagination'
 // Estilos reutilizados de las páginas originales (lista + formulario)
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import nu from '../../../components/FormularioBase/FormularioBase.module.css'
-import u from './Usuarios.module.css'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
@@ -58,6 +58,7 @@ export default function Usuarios() {
   /* ---------- Lista ---------- */
   const [busqueda, setBusqueda] = useState('')
   const [filtroRol, setFiltroRol] = useState('todos')
+  const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroCentro, setFiltroCentro] = useState('todos')
   const [filtroFicha, setFiltroFicha] = useState('todos')
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
@@ -78,11 +79,12 @@ export default function Usuarios() {
     const coincideQ =
       !q || norm(u.name).includes(q) || norm(u.email).includes(q)
     const coincideRol = filtroRol === 'todos' || u.role === filtroRol
+    const coincideEstado = filtroEstado === 'todos' || (u.estado || 'activo') === filtroEstado
     const fichaU = u.fichaId ? findFichaById(u.fichaId) : null
     const coincideCentro = filtroCentro === 'todos' || (fichaU && String(fichaU.centroId) === String(filtroCentro))
     const coincideFicha = filtroFicha === 'todos' || String(u.fichaId || '') === String(filtroFicha)
     const coincidePrograma = filtroPrograma === 'todos' || (u.programa || '') === filtroPrograma
-    return coincideQ && coincideRol && coincideCentro && coincideFicha && coincidePrograma
+    return coincideQ && coincideRol && coincideEstado && coincideCentro && coincideFicha && coincidePrograma
   })
 
   const paginados = filtrados.slice(
@@ -93,6 +95,7 @@ export default function Usuarios() {
   const limpiarFiltros = () => {
     setBusqueda('')
     setFiltroRol('todos')
+    setFiltroEstado('todos')
     setFiltroCentro('todos')
     setFiltroFicha('todos')
     setFiltroPrograma('todos')
@@ -263,7 +266,16 @@ export default function Usuarios() {
               </Alert>
             )}
 
-            <FilterBar title="Buscar y filtrar">
+            <FilterBar
+              title="Buscar y filtrar"
+              actions={
+                filtrados.length > 0 && (
+                  <Button type="button" variant="secondary" size="sm" onClick={limpiarFiltros}>
+                    Limpiar filtros
+                  </Button>
+                )
+              }
+            >
               <label className={s.field}>
                 <span className={s.label}>Buscar</span>
                 <Input
@@ -306,6 +318,20 @@ export default function Usuarios() {
                       {ct.nombre}
                     </option>
                   ))}
+                </Select>
+              </label>
+              <label className={s.field}>
+                <span className={s.label}>Estado</span>
+                <Select
+                  value={filtroEstado}
+                  onChange={(e) => {
+                    setFiltroEstado(e.target.value)
+                    setPagina(1)
+                  }}
+                >
+                  <option value="todos">Todos</option>
+                  <option value="activo">Activo</option>
+                  <option value="suspendido">Suspendido</option>
                 </Select>
               </label>
               <label className={s.field}>

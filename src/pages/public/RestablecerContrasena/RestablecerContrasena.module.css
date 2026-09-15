@@ -72,6 +72,9 @@
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1_5);
   font-weight: 600;
   color: var(--c-primary);
   text-decoration: none;

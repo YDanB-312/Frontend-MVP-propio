@@ -9,6 +9,7 @@ import Button from '../../../components/Button/Button'
 import { Input } from '../../../components/Input/Input'
 import Actions from '../../../components/Actions/Actions'
 import { ChartBar, CheckCircle, SlidersHorizontal, ArrowClockwise, Gauge, Database, MagnifyingGlass } from 'phosphor-react'
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import {
   getConfigMotor,
   setUmbralSimilitud,
@@ -24,6 +25,7 @@ export default function ConfigSimilitud() {
   const [meses, setMeses] = useState(() => cfg.meses)
   const [errores, setErrores] = useState({})
   const [msg, setMsg] = useState(null)
+  const [confirmRecalcular, setConfirmRecalcular] = useState(false)
   const [, setTick] = useState(0)
   const refrescar = () => setTick((t) => t + 1)
 
@@ -49,9 +51,10 @@ export default function ConfigSimilitud() {
     refrescar()
   }
 
-  const recalcular = () => {
+  const ejecutarRecalcular = () => {
     const { eliminadas, creadas } = recalcularSimilitudes()
     setMsg(`Recalibración lista: ${eliminadas} coincidencia(s) fuera de regla eliminadas, ${creadas} nueva(s) detectada(s).`)
+    setConfirmRecalcular(false)
     refrescar()
   }
 
@@ -113,7 +116,7 @@ export default function ConfigSimilitud() {
                 <Button type="submit">
                   <CheckCircle size={14} /> Guardar parámetros
                 </Button>
-                <Button type="button" variant="secondary" onClick={recalcular}>
+                <Button type="button" variant="secondary" onClick={() => setConfirmRecalcular(true)}>
                   <ArrowClockwise size={14} /> Recalcular base existente
                 </Button>
               </Actions>
@@ -131,6 +134,14 @@ export default function ConfigSimilitud() {
           </ConsoleCard>
         </div>
       </div>
+      <ConfirmModal
+        open={confirmRecalcular}
+        titulo="Recalcular coincidencias"
+        mensaje={`Se recalcularán las coincidencias con el umbral vigente de ${Math.round(vigente.umbral * 100)}% y ventana de ${vigente.meses} meses. Las que queden por debajo se eliminarán y se generarán las nuevas que superen el umbral. ¿Continuar?`}
+        textoConfirmar="Sí, recalcular"
+        onConfirmar={ejecutarRecalcular}
+        onCancelar={() => setConfirmRecalcular(false)}
+      />
     </DashboardLayout>
   )
 }

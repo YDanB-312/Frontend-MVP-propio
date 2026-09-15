@@ -185,15 +185,27 @@ export default function SimilitudesInstructor() {
         </FilterBar>
 
         {paginadas.length === 0 ? (
-          <EmptyState
-            icon={<MagnifyingGlass />}
-            title="Sin similitudes"
-            message={
-              similitudes.length === 0
-                ? 'No se han detectado similitudes entre los proyectos de tus aprendices.'
-                : 'No hay similitudes con el estado de propuesta seleccionado.'
-            }
-          />
+          similitudes.length === 0 ? (
+            getSimilitudesValidas().length === 0 ? (
+              <EmptyState
+                icon={<MagnifyingGlass />}
+                title="Sin coincidencias en el sistema"
+                message="Ninguna propuesta del sistema alcanza el umbral vigente. El motor está listo para cuando lleguen más propuestas."
+              />
+            ) : (
+              <EmptyState
+                icon={<MagnifyingGlass />}
+                title="Sin similitudes"
+                message={`Hay ${getSimilitudesValidas().length} coincidencia(s) válidas en el sistema, pero ninguna toca a tus aprendices o tu programa.`}
+              />
+            )
+          ) : (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="Sin similitudes"
+              message="No hay similitudes con el estado de propuesta seleccionado."
+            />
+          )
         ) : (
           <>
             <div className={local.grupos}>

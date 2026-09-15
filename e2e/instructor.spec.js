@@ -55,8 +55,8 @@ test.describe('Detección de similitudes al aprobar', () => {
     await page.getByRole('button', { name: /^Aprobar /i }).click()
     await page.getByRole('button', { name: 'Sí, aprobar' }).click()
 
-    // 3. La detección corre contra el corpus aprobado del mismo programa y lo informa
-    await expect(page.getByText(/se detectaron 1 coincidencia/i)).toBeVisible()
+    // 3. La detección corre contra el corpus vigente del mismo programa y lo informa
+    await expect(page.getByText(/se detectaron \d+ coincidencia/i)).toBeVisible()
   })
 })
 

@@ -20,13 +20,17 @@ export default function Similitudes() {
   const misProyectos = useMemo(() => getProjectsByStudent(user.id), [user.id])
   const idsPropios = useMemo(() => new Set(misProyectos.map((p) => p.id)), [misProyectos])
 
+  const todasValidas = useMemo(() => getSimilitudesValidas(), [])
   const sims = useMemo(
     () =>
-      getSimilitudesValidas()
+      todasValidas
         .filter((x) => idsPropios.has(x.projectId1) || idsPropios.has(x.projectId2))
         .sort((a, b) => b.similitud - a.similitud),
-    [idsPropios]
+    [todasValidas, idsPropios]
   )
+
+  const proyectosSinFichaOPrograma = () =>
+    misProyectos.length === 0
 
   // Agrupa por propuesta propia: una propuesta puede coincidir con muchas.
   const grupos = useMemo(() => {
@@ -74,11 +78,27 @@ export default function Similitudes() {
         />
 
         {sims.length === 0 ? (
-          <EmptyState
-            icon={<MagnifyingGlass />}
-            title="Sin similitudes detectadas"
-            message="Buenas noticias: ninguna de tus propuestas coincide con la base de datos por ahora."
-          />
+          proyectosSinFichaOPrograma() ? (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="Sin similitudes detectadas"
+              message="Aún no tienes propuestas vigentes para comparar. Registra tu primera propuesta."
+              actionLabel="Ir a mis propuestas"
+              onAction={() => window.location.assign('/aprendiz/propuestas')}
+            />
+          ) : todasValidas.length === 0 ? (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="Sin coincidencias en el sistema"
+              message="Ninguna propuesta del sistema alcanza el umbral vigente. El motor está listo para cuando lleguen más propuestas."
+            />
+          ) : (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="Sin similitudes detectadas"
+              message={`Buenas noticias: ninguna de tus propuestas coincide con la base de datos por ahora. Hay ${todasValidas.length} coincidencia(s) válidas en el sistema entre otras propuestas.`}
+            />
+          )
         ) : (
           <>
             <SectionHeader title="Ranking de coincidencias" count={sims.length} hint="agrupadas por tu propuesta" />

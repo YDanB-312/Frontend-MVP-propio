@@ -15,13 +15,13 @@ import Alert from '../../../components/Alert/Alert'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   getAllProjects,
-  getAllFichas,
   getSimilitudesValidas,
   getSimilaritiesByProject,
   findFichaById,
   updateProjectEstado,
   createNotification,
   displayNames,
+  instructorVeProyecto,
 } from '../../../data/mockData'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import s from '../../../components/ListaBase/ListaBase.module.css'
@@ -41,11 +41,10 @@ export default function RevisionPropuestas() {
   const [selId, setSelId] = useState(null)
   const msgTimer = useRef(null)
 
-  // Solo propuestas de fichas a su cargo
-  const idsMisFichas = new Set(
-    (user ? getAllFichas().filter((f) => f.instructorId === Number(user.id)) : []).map((f) => f.id)
-  )
-  const proyectos = getAllProjects().filter((p) => idsMisFichas.has(p.fichaId))
+  // Coherente con DashboardInstructor: proyecto propio O de ficha propia
+  const proyectos = user
+    ? getAllProjects().filter((p) => instructorVeProyecto(p, Number(user.id)))
+    : []
   const similitudes = getSimilitudesValidas()
 
   const filtrados =

@@ -4,9 +4,9 @@ test.describe('Admin: filtros combinados', () => {
   test('rol + programa aísla a la aprendiz de otro programa', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/usuarios')
-    const rail = page.locator('aside[aria-label="Filtros de usuarios"]')
-    await rail.locator('select').nth(0).selectOption('aprendiz')
-    await rail.locator('select').nth(3).selectOption('Produccion Multimedia')
+    const campo = (nombre) => page.locator('label', { hasText: new RegExp('^' + nombre) }).locator('select')
+    await campo('Rol').selectOption('aprendiz')
+    await campo('Programa').selectOption('Produccion Multimedia')
     await expect(page.getByText('Laura Sánchez Pérez')).toBeVisible()
     await expect(page.getByText('María González')).toHaveCount(0)
 
@@ -17,9 +17,9 @@ test.describe('Admin: filtros combinados', () => {
   test('centro + ficha encadenados filtran juntos', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/usuarios')
-    const rail = page.locator('aside[aria-label="Filtros de usuarios"]')
-    await rail.locator('select').nth(1).selectOption('1')
-    await rail.locator('select').nth(2).selectOption('2')
+    const campo = (nombre) => page.locator('label', { hasText: new RegExp('^' + nombre) }).locator('select')
+    await campo('Centro').selectOption('1')
+    await campo('Ficha').selectOption('2')
     await expect(page.getByText('Laura Gómez')).toBeVisible()
     await expect(page.getByText('María González')).toHaveCount(0)
   })

@@ -10,7 +10,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import StatChip from '../../../components/StatChip/StatChip'
-import { findProjectById, getSimilitudesValidas, getConfigMotor, getProgramaDeProyecto, REDES, displayNames } from '../../../data/mockData'
+import { findProjectById, findFichaById, getAllFichas, getCentros, getSimilitudesValidas, getConfigMotor, getProgramaDeProyecto, REDES, displayNames } from '../../../data/mockData'
 import { norm } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesAdmin.module.css'
@@ -28,11 +28,22 @@ const PROY_VARIANT = {
 export default function SimilitudesAdmin() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [filtroCentro, setFiltroCentro] = useState('todos')
+  const [filtroFicha, setFiltroFicha] = useState('todos')
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
   const similitudes = getSimilitudesValidas()
-  const programasFiltro = [...new Set(REDES.flatMap((r) => r.programas))].sort()
+  const centros = getCentros()
+  const fichasFiltro = (
+    filtroCentro === 'todos'
+      ? getAllFichas()
+      : getAllFichas().filter((f) => String(f.centroId) === String(filtroCentro))
+  )
+  const programasFiltro =
+    filtroCentro === 'todos'
+      ? [...new Set(REDES.flatMap((r) => r.programas))].sort()
+      : [...new Set(fichasFiltro.map((f) => f.programa))].sort()
 
   const filtradas = similitudes.filter((x) => {
     const p1 = findProjectById(x.projectId1)
@@ -50,7 +61,17 @@ export default function SimilitudesAdmin() {
       filtroPrograma === 'todos' ||
       getProgramaDeProyecto(p1) === filtroPrograma ||
       getProgramaDeProyecto(p2) === filtroPrograma
-    return coincideQ && coincideEstado && coincidePrograma
+    const ficha1 = p1?.fichaId ? findFichaById(p1.fichaId) : null
+    const ficha2 = p2?.fichaId ? findFichaById(p2.fichaId) : null
+    const coincideCentro =
+      filtroCentro === 'todos' ||
+      (ficha1 && String(ficha1.centroId) === String(filtroCentro)) ||
+      (ficha2 && String(ficha2.centroId) === String(filtroCentro))
+    const coincideFicha =
+      filtroFicha === 'todos' ||
+      String(p1?.fichaId || '') === String(filtroFicha) ||
+      String(p2?.fichaId || '') === String(filtroFicha)
+    return coincideQ && coincideEstado && coincidePrograma && coincideCentro && coincideFicha
   })
 
   const paginadas = filtradas.slice(
@@ -61,6 +82,8 @@ export default function SimilitudesAdmin() {
   const limpiarFiltros = () => {
     setBusqueda('')
     setFiltroEstado('todos')
+    setFiltroCentro('todos')
+    setFiltroFicha('todos')
     setFiltroPrograma('todos')
     setPagina(1)
   }
@@ -128,6 +151,41 @@ export default function SimilitudesAdmin() {
             </Select>
           </label>
           <label className={s.field}>
+            <span className={s.label}>Centro</span>
+            <Select
+              value={filtroCentro}
+              onChange={(e) => {
+                setFiltroCentro(e.target.value)
+                setFiltroFicha('todos')
+                setPagina(1)
+              }}
+            >
+              <option value="todos">Todos</option>
+              {centros.map((ct) => (
+                <option key={ct.id} value={String(ct.id)}>
+                  {ct.nombre}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className={s.field}>
+            <span className={s.label}>Ficha</span>
+            <Select
+              value={filtroFicha}
+              onChange={(e) => {
+                setFiltroFicha(e.target.value)
+                setPagina(1)
+              }}
+            >
+              <option value="todos">Todas</option>
+              {fichasFiltro.map((f) => (
+                <option key={f.id} value={String(f.id)}>
+                  {f.codigo} · {f.nombre}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className={s.field}>
             <span className={s.label}>Programa</span>
             <Select
               value={filtroPrograma}
@@ -150,17 +208,21 @@ export default function SimilitudesAdmin() {
         </FilterBar>
 
         {paginadas.length === 0 ? (
-          <EmptyState
-          icon={<MagnifyingGlass />}
-            title="Sin similitudes"
-            message={
-              similitudes.length === 0
-                ? 'No se han detectado similitudes entre proyectos.'
-                : 'Ninguna similitud coincide con los filtros aplicados.'
-            }
-            actionLabel={similitudes.length === 0 ? undefined : 'Limpiar filtros'}
-            onAction={similitudes.length === 0 ? undefined : limpiarFiltros}
-          />
+          similitudes.length === 0 ? (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="Sin coincidencias con el umbral vigente"
+              message={`Ninguna propuesta del sistema alcanza el umbral de ${umbralPct}% en la ventana de ${cfg.meses} meses. Baja el umbral o amplía la ventana y recalibra.`}
+            />
+          ) : (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="Sin similitudes"
+              message="Ninguna similitud coincide con los filtros aplicados."
+              actionLabel="Limpiar filtros"
+              onAction={limpiarFiltros}
+            />
+          )
         ) : (
           <>
             <DataTable

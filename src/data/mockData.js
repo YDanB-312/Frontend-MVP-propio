@@ -1,7 +1,7 @@
 import { vectorDeProyecto, construirIdf, similitudEntre } from './similitud.js'
 
 const KEY = 'proyectwin_mock_v2'
-const SEED_VERSION = 7
+const SEED_VERSION = 8
 
 function hoyFormato(formato) {
   const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
@@ -229,9 +229,9 @@ const ESTADO_INICIAL = {
     {
       id: 1, title: 'Sistema IoT para Agricultura', estado: 'pendiente', studentId: 4, instructorId: 2, fichaId: 1,
       createdAt: '15/11/2026', studentName: 'Ana Martínez', instructorName: 'Carlos Ruiz',
-      keywords: 'IoT, sensores, agricultura, monitoreo, automatización',
-      objetivoGeneral: 'Optimizar el uso del agua y los nutrientes en cultivos mediante el monitoreo continuo de variables ambientales con una red de sensores IoT.',
-      objetivosEspecificos: 'Diseñar una red de sensores IoT para medir humedad, temperatura y nutrientes del suelo.\nDesarrollar una plataforma web que visualice los datos en tiempo real.\nImplementar alertas tempranas ante condiciones críticas en el cultivo.',
+      keywords: 'IoT, sensores, agricultura, monitoreo, automatización, datos, plataforma, transparencia',
+      objetivoGeneral: 'Optimizar el uso del agua y los nutrientes en cultivos mediante el monitoreo continuo de variables ambientales con una red de sensores IoT y visualización de datos en plataforma.',
+      objetivosEspecificos: 'Diseñar una red de sensores IoT para medir humedad, temperatura y nutrientes del suelo.\nDesarrollar una plataforma web que visualice los datos en tiempo real y datos abiertos.\nImplementar alertas tempranas y transparencia de datos ante condiciones críticas en el cultivo.',
       objectives: '• Diseñar e implementar una red de sensores IoT para monitoreo de variables ambientales en cultivos.\n• Desarrollar una plataforma web para visualización de datos en tiempo real.\n• Implementar algoritmos de alerta temprana para condiciones críticas en los cultivos.\n• Generar reportes automáticos de rendimiento y predicciones basadas en datos históricos.',
       deliverables: '',
       technologies: '', areaAplicacion: 'Tecnología e Informática', projectType: 'aplicacion',
@@ -251,35 +251,35 @@ const ESTADO_INICIAL = {
     {
       id: 3, title: 'Plataforma E-learning para Música', estado: 'pendiente', studentId: 6, instructorId: 7, fichaId: 2,
       createdAt: '12/11/2026', studentName: 'Laura Gómez', instructorName: 'Carlos Rodríguez Díaz',
-      keywords: 'e-learning, música, educación, instrumentos, plataforma',
-      objectives: '• Crear una plataforma de aprendizaje musical con lecciones interactivas y multimedia.\n• Implementar sistema de seguimiento de progreso del estudiante.\n• Desarrollar reproductor de audio con control de velocidad y repetición.\n• Diseñar un sistema de evaluación y retroalimentación automática.',
+      keywords: 'e-learning, música, educación, instrumentos, plataforma, inventarios, stock, control, catálogo',
+      objectives: '• Crear una plataforma de aprendizaje musical con lecciones interactivas y multimedia.\n• Implementar sistema de seguimiento de progreso del estudiante y control de inventarios de instrumentos.\n• Desarrollar reproductor de audio con control de velocidad y repetición.\n• Diseñar un sistema de evaluación y retroalimentación automática.',
       deliverables: '',
       technologies: '', areaAplicacion: 'Tecnología e Informática', projectType: 'aplicacion',
       observaciones: 'Se requiere definir mejor el alcance del proyecto y especificar las tecnologías para la reproducción de audio/video.',
       integrantes: ['Laura Gómez', 'Ana Martínez'],
-      description: 'Plataforma web para aprendizaje de instrumentos musicales con lecciones interactivas, seguimiento de progreso y recursos multimedia para estudiantes de todos los niveles.',
+      description: 'Plataforma web para aprendizaje de instrumentos musicales con lecciones interactivas, catálogo de instrumentos, control de inventarios y stock, seguimiento de progreso y recursos multimedia para estudiantes de todos los niveles.',
     },
     {
       id: 4, title: 'Plataforma de Ventas Online', estado: 'pendiente', studentId: 1, instructorId: 2, fichaId: 1,
       createdAt: '10/11/2026', updatedAt: '18/11/2026', studentName: 'María González', instructorName: 'Carlos Ruiz',
-      keywords: 'e-commerce, ventas, pagos, catálogo, comercio',
-      objetivoGeneral: 'Facilitar la digitalización de pequeños comercios mediante una plataforma de ventas en línea con catálogo, carrito y pagos.',
-      objetivosEspecificos: 'Implementar un catálogo de productos con búsqueda y filtros.\nDesarrollar un carrito de compras con proceso de pago seguro.\nCrear un panel de administración para la gestión de pedidos.',
+      keywords: 'e-commerce, ventas, pagos, catálogo, comercio, inventarios, stock, control',
+      objetivoGeneral: 'Facilitar la digitalización de pequeños comercios mediante una plataforma de ventas en línea con catálogo, carrito y pagos, integrada al control de inventarios y stock.',
+      objetivosEspecificos: 'Implementar un catálogo de productos con búsqueda y filtros.\nDesarrollar un carrito de compras con proceso de pago seguro e inventario.\nCrear un panel de administración para la gestión de pedidos y stock.',
       objectives: '• Desarrollar un catálogo de productos con búsqueda y filtros.\n• Implementar carrito de compras y proceso de pago seguro.\n• Crear panel de administración para gestión de pedidos.\n• Generar reportes de ventas en tiempo real.',
       deliverables: '',
       technologies: '', areaAplicacion: 'Tecnología e Informática', projectType: 'aplicacion',
       observaciones: '', integrantes: ['María González', 'Juan Pérez'],
-      description: 'Aplicación web de comercio electrónico para pequeños comercios con catálogo de productos, carrito de compras y pasarela de pagos.',
+      description: 'Aplicación web de comercio electrónico para pequeños comercios con catálogo de productos, carrito de compras, control de inventarios y stock, y pasarela de pagos.',
     },
     {
       id: 5, title: 'Sistema de Gestión de Inventarios', estado: 'aprobado', studentId: 1, instructorId: 2, fichaId: 1,
       createdAt: '02/11/2026', updatedAt: '16/11/2026', studentName: 'María González', instructorName: 'Carlos Ruiz',
-      keywords: 'inventarios, stock, almacén, control, reportes',
+      keywords: 'inventarios, stock, almacén, control, reportes, ventas, comercio, catálogo, plataforma',
       objectives: '• Registrar entradas y salidas de mercancía.\n• Configurar alertas de stock mínimo.\n• Generar reportes de trazabilidad por lote.\n• Implementar búsqueda avanzada de productos.',
       deliverables: '',
       technologies: '', areaAplicacion: 'Logística y Operaciones', projectType: 'aplicacion',
       observaciones: '', integrantes: ['María González'],
-      description: 'Herramienta para control de inventarios de almacén con alertas de stock, registro de entradas y salidas, y reportes de trazabilidad.',
+      description: 'Herramienta para control de inventarios y ventas de almacén con catálogo de productos, comercio electrónico, alertas de stock y reportes de trazabilidad.',
     },
     {
       id: 6, title: 'App de Bienestar Deportivo', estado: 'pendiente', studentId: 5, instructorId: 2, fichaId: 1,
@@ -294,12 +294,12 @@ const ESTADO_INICIAL = {
     {
       id: 7, title: 'Portal de Transparencia SENA', estado: 'aprobado', studentId: 6, instructorId: 7, fichaId: 2,
       createdAt: '05/11/2026', studentName: 'Laura Gómez', instructorName: 'Carlos Rodríguez Díaz',
-      keywords: 'transparencia, datos abiertos, presupuesto, contratación',
-      objectives: '• Publicar indicadores institucionales.\n• Implementar visualizaciones de datos interactivas.\n• Garantizar accesibilidad y diseño inclusivo.\n• Integrar fuentes de datos institucionales.',
+      keywords: 'transparencia, datos abiertos, presupuesto, contratación, IoT, sensores, monitoreo, plataforma, datos',
+      objectives: '• Publicar indicadores institucionales con monitoreo en tiempo real de sensores.\n• Implementar visualizaciones de datos interactivas y plataforma de datos abiertos.\n• Garantizar accesibilidad y diseño inclusivo.\n• Integrar fuentes de datos institucionales e IoT.',
       deliverables: '',
       technologies: '', areaAplicacion: 'Gobierno y Ciudadanía', projectType: 'pagina_web',
       observaciones: '', integrantes: ['Laura Gómez'],
-      description: 'Portal web de datos abiertos que publica información sobre presupuesto, contratación e indicadores institucionales del SENA.',
+      description: 'Portal web de datos abiertos que publica información sobre presupuesto, contratación e indicadores institucionales del SENA, con monitoreo de sensores IoT, visualización de datos y plataforma en tiempo real.',
     },
     {
       id: 8, title: 'Chatbot de Atención Académica', estado: 'rechazado', studentId: 4, instructorId: 2, fichaId: 1,
@@ -314,9 +314,9 @@ const ESTADO_INICIAL = {
   ],
   similitudes: [
     // Regla: coincidencias intra-programa entre propuestas vigentes (pendientes o aprobadas)
-    { id: 1, projectId1: 4, projectId2: 5, project1Title: 'Plataforma de Ventas Online', project2Title: 'Sistema de Gestión de Inventarios', project1Student: 'María González', project2Student: 'María González', similitud: 0.45, createdAt: '18/11/2026' },
-    { id: 2, projectId1: 1, projectId2: 7, project1Title: 'Sistema IoT para Agricultura', project2Title: 'Portal de Transparencia SENA', project1Student: 'Ana Martínez', project2Student: 'Laura Gómez', similitud: 0.38, createdAt: '16/11/2026' },
-    { id: 3, projectId1: 3, projectId2: 5, project1Title: 'Plataforma E-learning para Música', project2Title: 'Sistema de Gestión de Inventarios', project1Student: 'Laura Gómez', project2Student: 'María González', similitud: 0.52, createdAt: '15/11/2026' },
+    { id: 1, projectId1: 4, projectId2: 5, project1Title: 'Plataforma de Ventas Online', project2Title: 'Sistema de Gestión de Inventarios', project1Student: 'María González', project2Student: 'María González', similitud: 0.64, createdAt: '18/11/2026' },
+    { id: 2, projectId1: 1, projectId2: 7, project1Title: 'Sistema IoT para Agricultura', project2Title: 'Portal de Transparencia SENA', project1Student: 'Ana Martínez', project2Student: 'Laura Gómez', similitud: 0.48, createdAt: '16/11/2026' },
+    { id: 3, projectId1: 3, projectId2: 5, project1Title: 'Plataforma E-learning para Música', project2Title: 'Sistema de Gestión de Inventarios', project1Student: 'Laura Gómez', project2Student: 'María González', similitud: 0.40, createdAt: '15/11/2026' },
   ],
   bugReports: [
     { id: 1, titulo: 'Pantalla blanca en Dashboard', descripcion: 'Error al cargar la página de Dashboard, muestra pantalla blanca después de iniciar sesión', tipo: 'sistema', prioridad: 'critica', estado: 'pendiente', reporterId: 7, reporterName: 'Carlos Rodríguez Díaz', createdAt: '12/04/2026' },
@@ -957,13 +957,18 @@ export function getAllSimilarities() {
 // Regla de negocio: coincidencias intra-programa (ADSO solo con ADSO, etc. —
 // sin importar ficha) entre propuestas vigentes: pendientes o aprobadas.
 // Las rechazadas salieron del juego y no generan ni muestran coincidencias.
+// Además respeta el umbral y la ventana vigentes (coherente con recalcular).
 export function getSimilitudesValidas() {
+  const umbral = getUmbralSimilitud()
   return state.similitudes.filter((x) => {
     const p1 = findProjectById(x.projectId1)
     const p2 = findProjectById(x.projectId2)
     if (!p1 || !p2) return false
     if (p1.estado === 'rechazado' || p2.estado === 'rechazado') return false
-    return getProgramaDeProyecto(p1) === getProgramaDeProyecto(p2)
+    if (getProgramaDeProyecto(p1) !== getProgramaDeProyecto(p2)) return false
+    if ((x.similitud || 0) < umbral) return false
+    if (!enVentanaCorpus(p1) && !enVentanaCorpus(p2)) return false
+    return true
   })
 }
 
