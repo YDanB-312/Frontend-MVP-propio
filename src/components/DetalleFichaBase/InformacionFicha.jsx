@@ -1,13 +1,28 @@
 import { Link } from 'react-router-dom'
 import Badge from '../Badge/Badge'
 import Button from '../Button/Button'
-import { displayNames, getRedDePrograma, findCentroById } from '../../data/mockData'
+import { FICHA_ESTADO_VARIANT } from '../../constants/badgeVariants'
+import { useApi } from '../../lib/useApi'
+import { redes } from '../../lib/recursos'
 import s from './DetalleFichaBase.module.css'
 import { ArrowRight, Users } from 'phosphor-react'
 
+// Etiquetas legibles del estado de la ficha (columnas reales de la API).
+const ESTADO_LABEL = {
+  activo: 'Activo',
+  inactivo: 'Inactivo',
+  finalizado: 'Finalizado',
+  archivado: 'Archivado',
+}
+
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
+
 /**
  * Contenido compartido "Información de la ficha" — usado por
- * DetalleFicha (aprendiz) y DetalleFichaInstructor.
+ * DetalleFicha (aprendiz), DetalleFichaInstructor y DetalleFichaAdmin.
  * Diseño canónico: celdas DataPanel/infoCell (infoGridInstructor).
  */
 export default function InformacionFicha({
@@ -18,8 +33,20 @@ export default function InformacionFicha({
   showDirectorioLink = false,
   directorioTo,
 }) {
-  const red = getRedDePrograma(ficha.programa)
-  const centro = ficha.centroId ? findCentroById(ficha.centroId) : null
+  // Catálogo de redes: la ficha trae el id en program.knowledge_network_id.
+  const { data: listaRedes } = useApi(() => redes.listar(), [], { inicial: [] })
+
+  const programa = ficha.program || null
+  const centro = ficha.trainingCenter || null
+  const instructor = ficha.instructor?.generalUser
+
+  // Red de conocimiento: relación anidada si viene incluida, o catálogo.
+  const red = programa?.knowledgeNetwork?.nombre
+    || programa?.knowledge_network?.nombre
+    || (listaRedes || []).find((r) => Number(r.id) === Number(programa?.knowledge_network_id))?.nombre
+    || null
+
+  const instructorNombre = instructor ? nombreCompleto(instructor) : null
 
   return (
     <>
@@ -40,29 +67,29 @@ export default function InformacionFicha({
         </div>
         <div className={s.infoCell}>
           <dt>Programa</dt>
-          <dd>{ficha.programa || '—'}</dd>
+          <dd>{programa?.nombre || '—'}</dd>
         </div>
         <div className={s.infoCell}>
           <dt>Centro de formación</dt>
-          <dd>{centro ? `${centro.nombre}${centro.ciudad ? ` · ${centro.ciudad}` : ''}` : '—'}</dd>
+          <dd>{centro ? `${centro.name}${centro.city ? ` · ${centro.city}` : ''}` : '—'}</dd>
         </div>
         <div className={s.infoCell}>
           <dt>Instructor</dt>
           <dd>
-            {instructorHref ? (
+            {instructorHref && instructorNombre ? (
               <Link to={instructorHref} className={s.link}>
-                {ficha.instructorName || 'Sin asignar'}
+                {instructorNombre}
               </Link>
             ) : (
-              ficha.instructorName || 'Sin asignar'
+              instructorNombre || 'Sin asignar'
             )}
           </dd>
         </div>
         <div className={s.infoCell}>
           <dt>Estado</dt>
           <dd>
-            <Badge variant={ficha.estado === 'activo' ? 'success' : ficha.estado === 'finalizado' ? 'info' : 'neutral'}>
-              {displayNames.classGroupStatus[ficha.estado] || ficha.estado}
+            <Badge variant={FICHA_ESTADO_VARIANT[ficha.estado] || 'neutral'}>
+              {ESTADO_LABEL[ficha.estado] || ficha.estado}
             </Badge>
           </dd>
         </div>

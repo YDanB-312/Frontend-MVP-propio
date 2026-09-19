@@ -11,6 +11,7 @@ export default function ConfirmModal({
   onCancelar,
   textoConfirmar = 'Confirmar',
   textoCancelar = 'Cancelar',
+  children,
 }) {
   const ref = useFocusTrap({ active: open, onEscape: onCancelar })
 
@@ -30,6 +31,7 @@ export default function ConfirmModal({
         <div className={s.iconWrap} aria-hidden="true">⚠</div>
         <h2 id="confirm-modal-title" className={s.title}>{titulo}</h2>
         {mensaje && <p id="confirm-modal-message" className={s.message}>{mensaje}</p>}
+        {children && <div className={s.content}>{children}</div>}
         <Actions>
           <Button variant="secondary" size="lg" onClick={onCancelar}>
             {textoCancelar}

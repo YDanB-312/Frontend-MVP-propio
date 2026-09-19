@@ -5,25 +5,43 @@ import PageHeader from '../../../components/PageHeader/PageHeader'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import { ArchiveBox, ChartBar, GearSix, ShareNetwork, SlidersHorizontal, Buildings } from 'phosphor-react'
-import { getRedes, getCentros, getConfigMotor } from '../../../data/mockData'
+import { useApi } from '../../../lib/useApi'
+import { redes, centros, motor } from '../../../lib/recursos'
 import s from './Configuracion.module.css'
 
 export default function Configuracion() {
-  const umbral = Math.round(getConfigMotor().umbral * 100)
-  const meses = getConfigMotor().meses
+  // Fuente única: la API. Conteos de catálogos y lectura vigente del motor.
+  const { data } = useApi(
+    async () => {
+      const [listaRedes, listaCentros, configMotor] = await Promise.all([
+        redes.listar(),
+        centros.listar(),
+        motor.obtener(),
+      ])
+      return { listaRedes, listaCentros, configMotor }
+    },
+    [],
+    { inicial: null }
+  )
+
+  const listaRedes = data?.listaRedes || []
+  const listaCentros = data?.listaCentros || []
+  const configMotor = data?.configMotor || { umbral: 0.2, meses: 12 }
+  const umbral = Math.round(configMotor.umbral * 100)
+  const meses = configMotor.meses
 
   const items = [
     {
       to: '/admin/redes-conocimiento',
       icon: <ShareNetwork size={24} weight="regular" />,
       titulo: 'Redes de conocimiento',
-      descripcion: `${getRedes().length} redes con sus programas de formación`,
+      descripcion: `${listaRedes.length} redes con sus programas de formación`,
     },
     {
-      to: '/admin/centros',
+      to: '/admin/training-centers',
       icon: <Buildings size={24} weight="regular" />,
       titulo: 'Centros de formación',
-      descripcion: `${getCentros().length} sedes regionales registradas`,
+      descripcion: `${listaCentros.length} sedes regionales registradas`,
     },
     {
       to: '/admin/config-similitud',

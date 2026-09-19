@@ -1,31 +1,29 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CheckCircle, Warning, ArrowLeft } from 'phosphor-react'
+import { ArrowLeft, CheckCircle, Warning } from 'phosphor-react'
 import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
-import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
-import { Input } from '../../../components/Input/Input'
+import { Input, PasswordInput } from '../../../components/Input/Input'
+import { apiResetPassword } from '../../../lib/api'
+import { esPasswordValida } from '../../../utils/validation'
 import s from './RestablecerContrasena.module.css'
-import { esEmailValido, esPasswordValida } from '../../../utils/validation'
 
 export default function RestablecerContrasena() {
-  const { cambiarContrasena } = useAuth()
   const [searchParams] = useSearchParams()
-  const [email, setEmail] = useState(searchParams.get('email') || '')
+  const token = searchParams.get('token') || ''
+  const correo = searchParams.get('correo') || ''
+
   const [password, setPassword] = useState('')
   const [confirmar, setConfirmar] = useState('')
   const [error, setError] = useState('')
+  const [enviando, setEnviando] = useState(false)
   const [exito, setExito] = useState(false)
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setError('')
 
-    if (!esEmailValido(email.trim())) {
-      setError('Ingresa un correo electrónico válido.')
-      return
-    }
     if (!esPasswordValida(password)) {
       setError('La contraseña debe tener al menos 6 caracteres.')
       return
@@ -35,12 +33,37 @@ export default function RestablecerContrasena() {
       return
     }
 
-    const actualizada = cambiarContrasena(email, password)
-    if (!actualizada) {
-      setError('No encontramos una cuenta registrada con ese correo.')
-      return
+    setEnviando(true)
+    try {
+      await apiResetPassword({ correo, token, password, password_confirmation: confirmar })
+      setExito(true)
+    } catch (err) {
+      setError(err?.data?.message || 'El enlace es inválido o venció. Solicita uno nuevo.')
+    } finally {
+      setEnviando(false)
     }
-    setExito(true)
+  }
+
+  // Sin token no hay nada que restablecer: el enlace vino mal o ya se usó.
+  if (!token || !correo) {
+    return (
+      <AuthLayout>
+        <div className={s.wrapper}>
+          <Warning size={48} weight="light" className={s.successIcon} />
+          <header className={s.header}>
+            <h1 className={s.title}>Enlace inválido</h1>
+            <p className={s.subtitle}>
+              Este enlace no es válido o ya se usó. Solicita uno nuevo para restablecer tu contraseña.
+            </p>
+          </header>
+          <div className={s.actions}>
+            <Button as="link" to="/recuperar-contrasena">
+              Solicitar un nuevo enlace
+            </Button>
+          </div>
+        </div>
+      </AuthLayout>
+    )
   }
 
   if (exito) {
@@ -79,19 +102,12 @@ export default function RestablecerContrasena() {
             </p>
           )}
 
-          <FormField label="Correo electrónico" required>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu.correo@ejemplo.com"
-              autoComplete="email"
-            />
+          <FormField label="Correo electrónico">
+            <Input type="email" value={correo} readOnly />
           </FormField>
 
           <FormField label="Nueva contraseña" help="Mínimo 6 caracteres" required>
-            <Input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -100,8 +116,7 @@ export default function RestablecerContrasena() {
           </FormField>
 
           <FormField label="Confirmar nueva contraseña" required>
-            <Input
-              type="password"
+            <PasswordInput
               value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)}
               placeholder="••••••••"
@@ -109,8 +124,8 @@ export default function RestablecerContrasena() {
             />
           </FormField>
 
-          <Button type="submit" size="lg" fullWidth>
-            Restablecer contraseña
+          <Button type="submit" size="lg" fullWidth disabled={enviando}>
+            {enviando ? 'Guardando…' : 'Restablecer contraseña'}
           </Button>
         </form>
 

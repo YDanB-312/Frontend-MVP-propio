@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FolderOpen, MagnifyingGlass, ChartBar, Users, PencilSimple, Prohibit, Key, Trash, CheckCircle } from 'phosphor-react'
+import { FolderOpen, MagnifyingGlass, ChartBar, Users, PencilSimple, Prohibit, Key, Trash, CheckCircle, Warning } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import DataPanel from '../../../components/DataPanel/DataPanel'
@@ -11,85 +11,209 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import Alert from '../../../components/Alert/Alert'
 import FormField from '../../../components/FormField/FormField'
-import { Input, Select } from '../../../components/Input/Input'
+import { Input, PasswordInput, Select } from '../../../components/Input/Input'
 import Actions from '../../../components/Actions/Actions'
+import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
-import {
-  findUserById,
-  findFichaById,
-  findCentroById,
-  getProjectsByStudent,
-  getSimilitudesValidas,
-  updateUser,
-  deleteUser,
-  setUserEstado,
-  resetUserPassword,
-  setUserFicha,
-  getActiveFichas,
-  getRedDePrograma,
-  emailExists,
-  displayNames,
-} from '../../../data/mockData'
+import { useApi } from '../../../lib/useApi'
+import { usuarios, aprendices, fichas, proyectos, similitudes } from '../../../lib/recursos'
 import { esEmailValido } from '../../../utils/validation'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { fechaDesdeApi } from '../../../utils/helpers'
+
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import formStyles from '../../../components/FormularioBase/FormularioBase.module.css'
-import { getSimilitudInfo as similitudInfo } from '../../../utils/similitudInfo'
 
+const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }
+const PROYECTO_ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
+// Campos que acepta PUT /general-users (requiere los escalares obligatorios).
+function payloadCuenta(cuenta, extra = {}) {
+  return {
+    nombre: cuenta.nombre,
+    apellido: cuenta.apellido,
+    correo: cuenta.correo,
+    rol: cuenta.rol,
+    estado: cuenta.estado,
+    ...extra,
+  }
+}
+
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
+
+// Contraseña temporal legible para el reinicio del admin: sena-xxxxxx.
+function passwordTemporal() {
+  const abc = 'abcdefghijkmnpqrstuvwxyz23456789'
+  let out = ''
+  for (let i = 0; i < 6; i++) out += abc[Math.floor(Math.random() * abc.length)]
+  return `sena-${out}`
+}
 
 export default function DetalleUsuario() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user: sesion } = useAuth()
+  const { user: sesion, sincronizarSesion } = useAuth()
   const [modalEliminar, setModalEliminar] = useState(false)
-  const [, setTick] = useState(0)
-  const refrescar = () => setTick((t) => t + 1)
+  // Cambio del propio correo: exige la contraseña actual del admin.
+  const [correoPendiente, setCorreoPendiente] = useState(null)
+  const [correoPass, setCorreoPass] = useState('')
+  const [correoError, setCorreoError] = useState('')
+  const [guardandoCorreo, setGuardandoCorreo] = useState(false)
 
   // Edición
   const [editando, setEditando] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', fichaId: '', role: 'aprendiz' })
   const [errores, setErrores] = useState({})
   const [guardado, setGuardado] = useState(false)
+  const [accionMsg, setAccionMsg] = useState(null)
   const [claveTemporal, setClaveTemporal] = useState(null)
 
-  const usuario = findUserById(id)
-  const proyectos = usuario && usuario.role === 'aprendiz' ? getProjectsByStudent(usuario.id) : []
-  const similitudes = getSimilitudesValidas()
+  // Fuente única: la API. Usuario + relaciones + propuestas/similitudes del aprendiz.
+  const { data, cargando, error, recargar } = useApi(
+    async () => {
+      const [usuario, listaAprendices, listaFichas, listaProyectos, listaSimilitudes] = await Promise.all([
+        usuarios.obtener(id),
+        aprendices.listar('generalUser,classGroup.program,classGroup.trainingCenter'),
+        fichas.listar('program,trainingCenter,instructor', {}),
+        proyectos.listar({ included: 'creator,classGroup.program,apprentices.generalUser' }),
+        similitudes.listar(),
+      ])
+      return { usuario, listaAprendices, listaFichas, listaProyectos, listaSimilitudes }
+    },
+    [id],
+    { inicial: null }
+  )
 
-  if (!usuario) {
+  if (cargando || error || !data?.usuario) {
     return (
       <DashboardLayout role="admin" titulo="Detalle de Usuario">
         <div className={s.wrapper}>
-          <EmptyState
-            icon={<MagnifyingGlass />}
-            title="Usuario no encontrado"
-            message="El usuario que buscas no existe o fue eliminado."
-            actionLabel="Volver a usuarios"
-            onAction={() => navigate('/admin/usuarios')}
-          />
+          {error ? (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="No se pudo cargar el usuario"
+              message={error.message || 'Ocurrió un error al consultar la API.'}
+              actionLabel="Reintentar"
+              onAction={recargar}
+            />
+          ) : cargando ? (
+            <ApiState cargando error={null} />
+          ) : (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="Usuario no encontrado"
+              message="El usuario que buscas no existe o fue eliminado."
+              actionLabel="Volver a usuarios"
+              onAction={() => navigate('/admin/usuarios')}
+            />
+          )}
         </div>
       </DashboardLayout>
     )
   }
 
-  const ficha = usuario.fichaId ? findFichaById(usuario.fichaId) : null
+  const usuario = data.usuario
+  const listaFichas = data.listaFichas || []
+  const listaSimilitudes = data.listaSimilitudes || []
+  const nombre = nombreCompleto(usuario)
 
-  const confirmarEliminar = () => {
-    deleteUser(usuario.id)
-    navigate('/admin/usuarios')
+  // Perfil de aprendiz (si aplica) y su ficha dentro del catálogo.
+  const perfilAprendiz = (data.listaAprendices || []).find((a) => Number(a.id_usuario) === Number(usuario.id)) || null
+  const ficha = perfilAprendiz?.classGroup
+    || (perfilAprendiz?.id_class_group ? listaFichas.find((f) => Number(f.id) === Number(perfilAprendiz.id_class_group)) : null)
+    || null
+
+  // Propuestas del aprendiz: creador O integrante del equipo (misma regla que
+  // usa el propio aprendiz en su dashboard, para que los conteos coincidan).
+  const proyectosDelUsuario = usuario.rol === 'aprendiz'
+    ? (data.listaProyectos || []).filter((p) =>
+        Number(p.id_creador) === Number(usuario.id)
+        || (p.apprentices || []).some((a) => Number(a.generalUser?.id) === Number(usuario.id))
+      )
+    : []
+
+  // Fichas a cargo (instructores): bloquean el borrado, igual que el backend (409).
+  const fichasACargo = usuario.rol === 'instructor' && usuario.instructor
+    ? listaFichas.filter((f) => Number(f.instructor?.id) === Number(usuario.instructor.id))
+    : []
+
+  // El borrado también se bloquea por historial académico (espejo del backend).
+  const listaProyectos = data.listaProyectos || []
+  const propuestasCreadas = listaProyectos.filter((p) => Number(p.id_creador) === Number(usuario.id))
+  const propuestasAsignadas = usuario.rol === 'instructor' && usuario.instructor
+    ? listaProyectos.filter((p) => Number(p.id_instructor_asignado) === Number(usuario.instructor.id))
+    : []
+  const propuestasEnEquipo = usuario.rol === 'aprendiz'
+    ? listaProyectos.filter(
+        (p) => Number(p.id_creador) !== Number(usuario.id)
+          && (p.apprentices || []).some((a) => Number(a.generalUser?.id) === Number(usuario.id))
+      )
+    : []
+
+  const motivoNoEliminar = propuestasCreadas.length > 0
+    ? `No se puede eliminar: es autor de ${propuestasCreadas.length} propuesta(s). Suspende la cuenta para conservar el historial.`
+    : propuestasAsignadas.length > 0
+      ? `No se puede eliminar: tiene ${propuestasAsignadas.length} propuesta(s) asignada(s). Reasígnalas primero.`
+      : propuestasEnEquipo.length > 0
+        ? `No se puede eliminar: participa en ${propuestasEnEquipo.length} propuesta(s). Suspende la cuenta para conservar el historial.`
+        : fichasACargo.length > 0
+          ? `No se puede eliminar: tiene ${fichasACargo.length} ficha(s) a cargo. Reasígnalas primero.`
+          : ''
+  const noEliminable = motivoNoEliminar !== ''
+
+  // Máximo porcentaje y conteo de coincidencias de una propuesta.
+  const similitudInfoDe = (projectId) => {
+    const propias = listaSimilitudes.filter(
+      (sim) => Number(sim.id_proyecto_1) === Number(projectId) || Number(sim.id_proyecto_2) === Number(projectId)
+    )
+    if (propias.length === 0) return null
+    return {
+      pct: Math.max(...propias.map((sim) => Math.round(Number(sim.porcentaje) || 0))),
+      count: propias.length,
+    }
+  }
+
+  const estado = usuario.estado === false ? 'suspendido' : 'activo'
+  const esMiCuenta = Number(sesion?.id) === Number(usuario.id)
+
+  const detalles =
+    usuario.rol === 'aprendiz'
+      ? [
+          { label: 'Rol', value: ROL_LABEL[usuario.rol] || usuario.rol },
+          { label: 'Estado', value: estado === 'suspendido' ? 'Suspendido' : 'Activo' },
+          { label: 'Ficha', value: ficha ? `${ficha.nombre} (${ficha.codigo})` : 'Sin ficha asignada' },
+          { label: 'Programa', value: perfilAprendiz?.program?.nombre || ficha?.program?.nombre || 'No asignado' },
+        ]
+      : [
+          { label: 'Rol', value: ROL_LABEL[usuario.rol] || usuario.rol },
+          { label: 'Estado', value: estado === 'suspendido' ? 'Suspendido' : 'Activo' },
+          { label: 'Ficha', value: ficha ? `${ficha.nombre} (${ficha.codigo})` : 'Sin ficha asignada' },
+        ]
+
+  const confirmarEliminar = async () => {
+    try {
+      await usuarios.eliminar(usuario.id)
+      navigate('/admin/usuarios')
+    } catch (err) {
+      setModalEliminar(false)
+      setAccionMsg(err?.data?.message || 'No se pudo eliminar el usuario.')
+    }
   }
 
   const iniciarEdicion = () => {
     setForm({
-      name: usuario.name || '',
-      email: usuario.email || '',
-      fichaId: usuario.fichaId ? String(usuario.fichaId) : '',
-      role: usuario.role || 'aprendiz',
+      name: nombre,
+      email: usuario.correo || '',
+      fichaId: perfilAprendiz?.id_class_group ? String(perfilAprendiz.id_class_group) : '',
+      role: usuario.rol || 'aprendiz',
     })
     setErrores({})
     setGuardado(false)
     setClaveTemporal(null)
+    setAccionMsg(null)
     setEditando(true)
   }
 
@@ -101,129 +225,187 @@ export default function DetalleUsuario() {
 
   const validar = () => {
     const err = {}
-    // Nombre de solo lectura: no se valida ni se guarda
-    if (Number(sesion?.id) === Number(usuario.id) && form.role !== 'admin') {
+    if (esMiCuenta && form.role !== 'admin') {
       err.role = 'No puedes quitarte tu propio rol de administrador.'
     }
     if (!form.email.trim()) err.email = 'El correo es obligatorio.'
-    else if (!esEmailValido(form.email.trim()))
-      err.email = 'Ingresa un correo válido.'
-    else if (form.email.trim().toLowerCase() !== usuario.email.toLowerCase() && emailExists(form.email.trim().toLowerCase()))
-      err.email = 'Ya existe un usuario con este correo.'
-
+    else if (!esEmailValido(form.email.trim())) err.email = 'Ingresa un correo válido.'
     return err
   }
 
-  const onSubmitEdicion = (e) => {
+  const onSubmitEdicion = async (e) => {
     e.preventDefault()
     const err = validar()
     if (Object.keys(err).length) {
       setErrores(err)
       return
     }
-    const nuevoNombre = form.name.trim()
     const nuevoEmail = form.email.trim().toLowerCase()
-    if (nuevoNombre !== usuario.name || nuevoEmail !== usuario.email || form.role !== usuario.role) {
-      updateUser({ id: usuario.id, name: nuevoNombre, email: nuevoEmail, role: form.role })
+    // Cambiar el correo propio (usuario de acceso) exige la contraseña actual.
+    if (esMiCuenta && nuevoEmail !== usuario.correo) {
+      setCorreoPendiente(nuevoEmail)
+      setCorreoPass('')
+      setCorreoError('')
+      return
     }
-    if (usuario.role === 'aprendiz') {
-      const actual = usuario.fichaId ? String(usuario.fichaId) : ''
-      if (form.fichaId !== actual) {
-        // '' explícito = quitar ficha; si ya estaba sin ficha no hay nada que guardar
-        setUserFicha(usuario.id, form.fichaId === '' ? null : Number(form.fichaId))
+    await guardarCambios(nuevoEmail)
+  }
+
+  const confirmarCambioCorreo = async () => {
+    if (!correoPass) {
+      setCorreoError('Ingresa tu contraseña actual.')
+      return
+    }
+    setGuardandoCorreo(true)
+    setCorreoError('')
+    try {
+      await usuarios.cambiarCorreo(correoPendiente, correoPass)
+      sincronizarSesion(null, correoPendiente)
+      setCorreoPendiente(null)
+      setCorreoPass('')
+      await recargar()
+      setEditando(false)
+      setGuardado(true)
+    } catch (err) {
+      setCorreoError(err?.data?.message || 'No fue posible cambiar el correo.')
+    } finally {
+      setGuardandoCorreo(false)
+    }
+  }
+
+  const guardarCambios = async (nuevoEmail) => {
+    try {
+      // El correo propio nunca se cambia por aquí: solo con contraseña.
+      const correoAEnviar = esMiCuenta ? usuario.correo : nuevoEmail
+      if (correoAEnviar !== usuario.correo || form.role !== usuario.rol) {
+        await usuarios.actualizar(usuario.id, payloadCuenta(usuario, { correo: correoAEnviar, rol: form.role }))
       }
+      // 2) Ficha del aprendiz: solo si ya tiene perfil y cambió la selección.
+      if (usuario.rol === 'aprendiz' && perfilAprendiz) {
+        const actual = perfilAprendiz.id_class_group ? String(perfilAprendiz.id_class_group) : ''
+        const destino = form.fichaId ? listaFichas.find((f) => Number(f.id) === Number(form.fichaId)) : null
+        if (form.fichaId !== actual) {
+          // '' = quitar ficha; con ficha destino se hereda su programa.
+          await aprendices.actualizar(perfilAprendiz.id, {
+            codigo: perfilAprendiz.codigo,
+            id_class_group: destino ? Number(destino.id) : null,
+            id_usuario: perfilAprendiz.id_usuario,
+            id_programa: destino ? destino.id_programa : perfilAprendiz.id_programa,
+          })
+        }
+      }
+      await recargar()
+      setEditando(false)
+      setGuardado(true)
+    } catch (err2) {
+      const campos = err2?.data?.errors || {}
+      // El backend responde en inglés para `unique`; se traduce al mensaje de la UI.
+      const correoDuplicado = campos.correo || campos.email
+      setErrores({
+        email: correoDuplicado
+          ? 'Ya existe un usuario con este correo.'
+          : (err2?.data?.message || 'No se pudo actualizar el usuario.'),
+      })
     }
-    setEditando(false)
-    setGuardado(true)
-    refrescar()
-    setTimeout(() => setGuardado(false), 3500)
   }
 
-  const fichasActivas = getActiveFichas()
-
-  const detalles =
-    usuario.role === 'aprendiz'
-      ? [
-          { label: 'Rol', value: displayNames.userRole[usuario.role] || usuario.role },
-          { label: 'Estado', value: displayNames.userStatus[usuario.estado] || 'Activo' },
-          { label: 'Ficha', value: ficha ? `${ficha.nombre} (${ficha.codigo})` : 'Sin ficha asignada' },
-          { label: 'Programa', value: usuario.programa || 'No asignado' },
-        ]
-      : [
-          { label: 'Rol', value: displayNames.userRole[usuario.role] || usuario.role },
-          { label: 'Estado', value: displayNames.userStatus[usuario.estado] || 'Activo' },
-          { label: 'Ficha', value: ficha ? `${ficha.nombre} (${ficha.codigo})` : 'Sin ficha asignada' },
-        ]
-
-  const esMiCuenta = Number(sesion?.id) === Number(usuario.id)
-
-  const restablecerClave = () => {
-    const temporal = resetUserPassword(usuario.id)
-    setClaveTemporal(temporal)
-    setGuardado(false)
-    refrescar()
+  const restablecerClave = async () => {
+    const temporal = passwordTemporal()
+    try {
+      await usuarios.actualizar(usuario.id, payloadCuenta(usuario, { password: temporal }))
+      setClaveTemporal(temporal)
+      setGuardado(false)
+      setAccionMsg(null)
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudo restablecer la contraseña.')
+    }
   }
+
+  const cambiarEstado = async (nuevo) => {
+    setAccionMsg(null)
+    try {
+      await usuarios.actualizar(usuario.id, payloadCuenta(usuario, { estado: nuevo }))
+      await recargar()
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado.')
+    }
+  }
+
+  const fichasActivas = listaFichas.filter((f) => f.estado === 'activo')
 
   return (
     <DashboardLayout role="admin" titulo="Detalle de Usuario">
       <div className={s.wrapper}>
         <PerfilBase
           user={usuario}
-          role={usuario.role}
+          role={usuario.rol}
           soloLectura
-          titulo={usuario.name}
-          subtitulo={`Cuenta ${displayNames.userRole[usuario.role] || usuario.role}`}
+          titulo={nombre}
+          subtitulo={`Cuenta ${ROL_LABEL[usuario.rol] || usuario.rol}`}
           breadcrumb={[
             { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
             { label: 'Usuarios', to: '/admin/usuarios', icon: <Users size={14} /> },
-            { label: usuario.name },
+            { label: nombre },
           ]}
           detalles={detalles}
         />
 
         <div className={s.barraInspector}>
-        <Actions align="start" wrap>
-          <Button type="button" variant="secondary" onClick={iniciarEdicion}>
-            <PencilSimple size={14} /> Editar
-          </Button>
-          {usuario.estado === 'suspendido' ? (
+          <Actions align="start" wrap>
+            <Button type="button" variant="secondary" onClick={iniciarEdicion}>
+              <PencilSimple size={14} /> Editar
+            </Button>
+            {estado === 'suspendido' ? (
+              <Button type="button" variant="secondary" onClick={() => cambiarEstado(true)}>
+                <CheckCircle size={14} /> Activar cuenta
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="secondary"
+                title={esMiCuenta ? 'No puedes suspender tu propia cuenta' : 'Suspender cuenta'}
+                disabled={esMiCuenta}
+                onClick={() => cambiarEstado(false)}
+              >
+                <Prohibit size={14} /> Suspender
+              </Button>
+            )}
+            <Button type="button" variant="secondary" onClick={restablecerClave}>
+              <Key size={14} /> Restablecer contraseña
+            </Button>
             <Button
               type="button"
-              variant="secondary"
-              onClick={() => { setUserEstado(usuario.id, 'activo'); refrescar() }}
+              variant="dangerGhost"
+              disabled={esMiCuenta || noEliminable}
+              title={
+                esMiCuenta
+                  ? 'No puedes eliminar tu propia cuenta'
+                  : noEliminable
+                    ? motivoNoEliminar
+                    : undefined
+              }
+              onClick={() => setModalEliminar(true)}
             >
-              <CheckCircle size={14} /> Activar cuenta
+              <Trash size={14} /> Eliminar
             </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="secondary"
-              title={esMiCuenta ? 'No puedes suspender tu propia cuenta' : 'Suspender cuenta'}
-              disabled={esMiCuenta}
-              onClick={() => { setUserEstado(usuario.id, 'suspendido'); refrescar() }}
-            >
-              <Prohibit size={14} /> Suspender
-            </Button>
-          )}
-          <Button type="button" variant="secondary" onClick={restablecerClave}>
-            <Key size={14} /> Restablecer contraseña
-          </Button>
-          <Button
-            type="button"
-            variant="dangerGhost"
-            disabled={proyectos.length > 0}
-            title={proyectos.length > 0 ? 'No se puede eliminar: tiene propuestas asociadas' : undefined}
-            onClick={() => setModalEliminar(true)}
-          >
-            <Trash size={14} /> Eliminar
-          </Button>
-        </Actions>
+          </Actions>
         </div>
+
+        {/* Por qué no se puede eliminar: el backend responde 409 en estos casos. */}
+        {motivoNoEliminar && (
+          <Alert variant="warning">
+            <Warning size={14} /> {motivoNoEliminar}
+          </Alert>
+        )}
 
         {claveTemporal && (
           <Alert>
             <Key size={14} /> Nueva contraseña temporal: <strong>{claveTemporal}</strong>. Compártela con el usuario por un canal seguro.
           </Alert>
+        )}
+
+        {accionMsg && (
+          <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
         )}
 
         {guardado && (
@@ -235,11 +417,7 @@ export default function DetalleUsuario() {
             <form className={formStyles.form} onSubmit={onSubmitEdicion} noValidate>
               <div className={formStyles.grid2}>
                 <FormField label="Nombre completo" help="El nombre identifica propuestas y equipos; no se puede cambiar.">
-                  <Input
-                    name="name"
-                    value={form.name}
-                    readOnly
-                  />
+                  <Input name="name" value={form.name} readOnly />
                 </FormField>
                 <FormField label="Correo electrónico" required error={errores.email}>
                   <Input
@@ -263,39 +441,34 @@ export default function DetalleUsuario() {
                   <option value="admin">Administrador</option>
                 </Select>
               </FormField>
-              {usuario.role === 'aprendiz' && (
+              {usuario.rol === 'aprendiz' && perfilAprendiz && (
                 <FormField
                   label="Ficha"
-                  help="Solo fichas activas, de cualquier centro o programa. Las propuestas conservan su ficha original."
+                  help="Solo fichas activas. Las propuestas conservan su ficha original."
                 >
                   <Select name="fichaId" value={form.fichaId} onChange={onChange}>
                     <option value="">Sin ficha</option>
-                    {fichasActivas.map((f) => {
-                      const centro = f.centroId ? findCentroById(f.centroId) : null
-                      return (
-                        <option key={f.id} value={String(f.id)}>
-                          {f.codigo} — {f.nombre}{centro ? ` (${centro.nombre})` : ''}
-                        </option>
-                      )
-                    })}
+                    {fichasActivas.map((f) => (
+                      <option key={f.id} value={String(f.id)}>
+                        {f.codigo} — {f.nombre}{f.trainingCenter ? ` (${f.trainingCenter.name})` : ''}
+                      </option>
+                    ))}
                   </Select>
                 </FormField>
               )}
-              {usuario.role === 'aprendiz' && form.fichaId !== '' && (() => {
-                const destino = findFichaById(form.fichaId)
-                const actual = usuario.fichaId ? findFichaById(usuario.fichaId) : null
-                if (!destino || (actual && destino.id === actual.id)) return null
+              {/* Aviso de traslado: qué cambia al mover al aprendiz de ficha */}
+              {usuario.rol === 'aprendiz' && perfilAprendiz && form.fichaId !== '' && (() => {
+                const destino = listaFichas.find((f) => Number(f.id) === Number(form.fichaId))
+                const actual = perfilAprendiz.id_class_group
+                  ? listaFichas.find((f) => Number(f.id) === Number(perfilAprendiz.id_class_group))
+                  : null
+                if (!destino || (actual && Number(destino.id) === Number(actual.id))) return null
                 const avisos = []
-                if (destino.programa !== usuario.programa) {
-                  avisos.push(`cambia de programa (${usuario.programa || '—'} → ${destino.programa})`)
+                if ((destino.program?.nombre || null) !== (actual?.program?.nombre || null)) {
+                  avisos.push(`cambia de programa (${actual?.program?.nombre || '—'} → ${destino.program?.nombre || '—'})`)
                 }
-                const centroD = destino.centroId ? findCentroById(destino.centroId) : null
-                const centroA = actual?.centroId ? findCentroById(actual.centroId) : null
-                if ((centroD?.id || null) !== (centroA?.id || null)) {
-                  avisos.push(`cambia de centro (${centroA?.nombre || '—'} → ${centroD?.nombre || '—'})`)
-                }
-                if (actual && getRedDePrograma(destino.programa) !== getRedDePrograma(actual.programa)) {
-                  avisos.push('cambia de red de conocimiento')
+                if ((destino.trainingCenter?.id || null) !== (actual?.trainingCenter?.id || null)) {
+                  avisos.push(`cambia de centro (${actual?.trainingCenter?.name || '—'} → ${destino.trainingCenter?.name || '—'})`)
                 }
                 if (avisos.length === 0) return null
                 return <Alert>Este traslado {avisos.join(' · ')}.</Alert>
@@ -308,9 +481,9 @@ export default function DetalleUsuario() {
           </DataPanel>
         )}
 
-        {usuario.role === 'aprendiz' && (
-          <DataPanel title={`Propuestas del aprendiz (${proyectos.length})`} icon={<FolderOpen />}>
-            {proyectos.length === 0 ? (
+        {usuario.rol === 'aprendiz' && (
+          <DataPanel title={`Propuestas del aprendiz (${proyectosDelUsuario.length})`} icon={<FolderOpen />}>
+            {proyectosDelUsuario.length === 0 ? (
               <EmptyState
                 icon={<FolderOpen />}
                 title="Sin propuestas"
@@ -318,14 +491,14 @@ export default function DetalleUsuario() {
               />
             ) : (
               <ul className={s.list}>
-                {proyectos.map((p) => {
-                  const info = similitudInfo(similitudes, p.id)
+                {proyectosDelUsuario.map((p) => {
+                  const info = similitudInfoDe(p.id)
                   return (
                     <li key={p.id}>
                       <Link to={`/admin/detalle-proyecto/${p.id}`} className={s.row}>
                         <span className={s.rowInfo}>
-                          <span className={s.rowTitle}>{p.title}</span>
-                          <span className={s.rowMeta}>Enviado el {p.createdAt}</span>
+                          <span className={s.rowTitle}>{p.titulo}</span>
+                          <span className={s.rowMeta}>Enviado el {fechaDesdeApi(p.created_at)}</span>
                         </span>
                         {info && (
                           <span title={`${info.pct}% · ${info.count} coincidencia${info.count !== 1 ? 's' : ''}`}>
@@ -333,7 +506,7 @@ export default function DetalleUsuario() {
                           </span>
                         )}
                         <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
-                          {displayNames.projectStatus[p.estado] || p.estado}
+                          {PROYECTO_ESTADO_LABEL[p.estado] || p.estado}
                         </Badge>
                       </Link>
                     </li>
@@ -348,12 +521,30 @@ export default function DetalleUsuario() {
       <ConfirmModal
         open={!!modalEliminar}
         titulo="Eliminar usuario"
-        mensaje={`¿Seguro que deseas eliminar a "${usuario.name}"? Se eliminará su cuenta y no se podrá recuperar. Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar a "${nombre}"? Se eliminará su cuenta y no se podrá recuperar. Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
         textoCancelar="Cancelar"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}
       />
+
+      <ConfirmModal
+        open={!!correoPendiente}
+        titulo="Cambiar correo electrónico"
+        mensaje={`Vas a cambiar tu correo de "${usuario.correo}" a "${correoPendiente}". Confirma tu identidad con la contraseña actual.`}
+        textoConfirmar={guardandoCorreo ? 'Guardando…' : 'Cambiar correo'}
+        textoCancelar="Cancelar"
+        onConfirmar={confirmarCambioCorreo}
+        onCancelar={() => setCorreoPendiente(null)}
+      >
+        <FormField label="Contraseña actual" required error={correoError}>
+          <PasswordInput
+            value={correoPass}
+            onChange={(e) => { setCorreoPass(e.target.value); setCorreoError('') }}
+            autoComplete="current-password"
+          />
+        </FormField>
+      </ConfirmModal>
     </DashboardLayout>
   )
 }

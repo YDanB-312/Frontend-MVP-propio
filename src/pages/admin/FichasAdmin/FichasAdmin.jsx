@@ -8,38 +8,43 @@ import FormField from '../../../components/FormField/FormField'
 import Badge from '../../../components/Badge/Badge'
 import Alert from '../../../components/Alert/Alert'
 import Button from '../../../components/Button/Button'
-import { Input, Select, Textarea } from '../../../components/Input/Input'
+import { Input, Select } from '../../../components/Input/Input'
 import Actions from '../../../components/Actions/Actions'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
+import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash } from 'phosphor-react'
-import {
-  getAllFichas,
-  getAllUsers,
-  createFicha,
-  generarCodigoFichaUnico,
-  deleteFicha,
-  getEstudiantesDeFicha,
-  getProjectsByFicha,
-  getCentros,
-  findCentroById,
-  REDES,
-  displayNames,
-} from '../../../data/mockData'
-import { norm } from '../../../utils/helpers'
+import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash, Warning } from 'phosphor-react'
+import { useApi } from '../../../lib/useApi'
+import { fichas, centros, programas, redes, instructores, proyectos } from '../../../lib/recursos'
+import { toFieldErrors } from '../../../lib/api'
+import { norm, generarCodigoFicha, fechaDesdeApi } from '../../../utils/helpers'
 import { FICHA_ESTADO_VARIANT as ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import c from '../../../components/FormularioBase/FormularioBase.module.css'
+import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
+
+const ESTADO_LABEL = {
+  activo: 'Activo',
+  inactivo: 'Inactivo',
+  finalizado: 'Finalizado',
+  archivado: 'Archivado',
+}
+
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
 
 export default function FichasAdmin() {
   const [searchParams] = useSearchParams()
   const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
   const [creadaMsg, setCreadaMsg] = useState(false)
+  const [accionMsg, setAccionMsg] = useState(null)
   const msgTimer = useRef(null)
 
   /* ---------- Lista ---------- */
@@ -49,26 +54,53 @@ export default function FichasAdmin() {
   const [filtroInstructor, setFiltroInstructor] = useState('todos')
   const [pagina, setPagina] = useState(1)
   const [aEliminar, setAEliminar] = useState(null)
-  const [, setTick] = useState(0)
-  const refrescar = () => setTick((t) => t + 1)
 
-  // Admin: todas las fichas de la plataforma
-  const fichas = getAllFichas()
-  const centros = getCentros()
-  const instructores = getAllUsers().filter((u) => u.role === 'instructor')
+  // Fuente única: la API. Fichas + catálogos + propuestas (conteo).
+  const { data, cargando, error, recargar } = useApi(
+    async () => {
+      const [listaFichas, listaCentros, listaProgramas, listaRedes, listaInstructores, listaProyectos] = await Promise.all([
+        fichas.listar('program,trainingCenter,instructor.generalUser,apprentices.generalUser'),
+        centros.listar(),
+        programas.listar(),
+        redes.listar(),
+        instructores.listar('generalUser'),
+        proyectos.listar(),
+      ])
+      return { listaFichas, listaCentros, listaProgramas, listaRedes, listaInstructores, listaProyectos }
+    },
+    [],
+    { inicial: null }
+  )
 
-  const filtradas = fichas.filter((f) => {
+  const listaFichas = data?.listaFichas || []
+  const listaCentros = data?.listaCentros || []
+  const listaProgramas = data?.listaProgramas || []
+  const listaRedes = data?.listaRedes || []
+  const listaInstructores = data?.listaInstructores || []
+  const listaProyectos = data?.listaProyectos || []
+
+  // Propuestas por ficha (id_class_group).
+  const propuestasPorFicha = new Map()
+  for (const p of listaProyectos) {
+    const key = Number(p.id_class_group)
+    propuestasPorFicha.set(key, (propuestasPorFicha.get(key) || 0) + 1)
+  }
+
+  const centrosPorId = new Map(listaCentros.map((ct) => [Number(ct.id), ct]))
+
+  const filtradas = listaFichas.filter((f) => {
     const q = norm(busqueda.trim())
+    const instructorNombre = nombreCompleto(f.instructor?.generalUser)
     const coincideQ =
       !q ||
       norm(f.nombre).includes(q) ||
       norm(f.codigo).includes(q) ||
       norm(f.numero).includes(q) ||
-      norm(f.programa).includes(q) ||
-      norm(f.instructorName).includes(q)
+      norm(f.program?.nombre).includes(q) ||
+      norm(instructorNombre).includes(q)
     const coincideEstado = filtroEstado === 'todos' || f.estado === filtroEstado
-    const coincideCentro = filtroCentro === 'todos' || String(f.centroId || '') === String(filtroCentro)
-    const coincideInstructor = filtroInstructor === 'todos' || String(f.instructorId || '') === String(filtroInstructor)
+    const coincideCentro = filtroCentro === 'todos' || String(f.training_center_id || '') === String(filtroCentro)
+    const coincideInstructor = filtroInstructor === 'todos' || String(f.id_instructor || '') === String(filtroInstructor)
     return coincideQ && coincideEstado && coincideCentro && coincideInstructor
   })
 
@@ -103,20 +135,28 @@ export default function FichasAdmin() {
 
   function abrirCreacion() {
     setCreadaMsg(false)
+    setCodigo(generarCodigoFicha())
     setCreando(true)
   }
 
-  const confirmarEliminar = () => {
+  const confirmarEliminar = async () => {
     if (!aEliminar) return
-    deleteFicha(aEliminar.id)
-    setAEliminar(null)
-    refrescar()
+    setAccionMsg(null)
+    try {
+      await fichas.eliminar(aEliminar.id)
+      setAEliminar(null)
+      await recargar()
+    } catch (err) {
+      setAEliminar(null)
+      setAccionMsg(err?.data?.message || 'No se pudo eliminar la ficha.')
+    }
   }
 
   /* ---------- Creación ---------- */
-  const [codigo, setCodigo] = useState(() => generarCodigoFichaUnico())
-  const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', descripcion: '', centroId: '', instructorId: '' })
+  const [codigo, setCodigo] = useState(() => generarCodigoFicha())
+  const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', centroId: '', instructorId: '' })
   const [errores, setErrores] = useState({})
+  const [guardando, setGuardando] = useState(false)
 
   const onChange = (e) => {
     const { name, value } = e.target
@@ -130,7 +170,7 @@ export default function FichasAdmin() {
     setErrores((err) => ({ ...err, red: undefined, programa: undefined }))
   }
 
-  const regenerarCodigo = () => setCodigo(generarCodigoFichaUnico())
+  const regenerarCodigo = () => setCodigo(generarCodigoFicha())
 
   const validar = () => {
     const err = {}
@@ -148,32 +188,63 @@ export default function FichasAdmin() {
     return err
   }
 
-  const programasDeRed = REDES.find((r) => r.nombre === form.red)?.programas || []
-  const instructoresActivos = instructores.filter((i) => i.estado !== 'suspendido')
+  const programasDeRed = form.red
+    ? listaProgramas.filter((p) => Number(p.knowledge_network_id) === Number(form.red))
+    : []
+  const instructoresActivos = listaInstructores.filter((i) => i.generalUser?.estado !== false)
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
     const err = validar()
     if (Object.keys(err).length) {
       setErrores(err)
       return
     }
-    const instructor = instructoresActivos.find((i) => String(i.id) === String(form.instructorId))
-    createFicha({
-      nombre: form.nombre.trim(),
+    const payload = {
       numero: form.numero.trim(),
-      programa: form.programa,
-      instructorName: instructor?.name || '',
-      instructorId: instructor ? Number(instructor.id) : null,
-      codigo,
-      centroId: form.centroId === '' ? null : Number(form.centroId),
-    })
-    setForm({ red: '', programa: '', nombre: '', numero: '', descripcion: '', centroId: '', instructorId: '' })
-    setErrores({})
-    setCodigo(generarCodigoFichaUnico())
-    setCreando(false)
-    refrescar()
-    mostrarCreada()
+      nombre: form.nombre.trim(),
+      estado: 'activo',
+      id_programa: Number(form.programa),
+      id_instructor: form.instructorId === '' ? null : Number(form.instructorId),
+      training_center_id: form.centroId === '' ? null : Number(form.centroId),
+    }
+    setGuardando(true)
+    try {
+      let codigoEfectivo = codigo
+      try {
+        await fichas.crear({ ...payload, codigo: codigoEfectivo })
+      } catch (error) {
+        const campos = toFieldErrors(error?.data)
+        if (campos.codigo) {
+          // Colisión del código aleatorio: regenerar y reintentar una vez.
+          codigoEfectivo = generarCodigoFicha()
+          setCodigo(codigoEfectivo)
+          await fichas.crear({ ...payload, codigo: codigoEfectivo })
+        } else if (campos.numero) {
+          setErrores({ numero: campos.numero })
+          return
+        } else if (campos.id_programa) {
+          setErrores({ programa: 'El programa no existe en el servidor.' })
+          return
+        } else if (campos.training_center_id) {
+          setErrores({ centroId: 'El centro no existe en el servidor.' })
+          return
+        } else {
+          setErrores({ numero: error?.data?.message || 'No se pudo crear la ficha en el servidor.' })
+          return
+        }
+      }
+      await recargar()
+      setForm({ red: '', programa: '', nombre: '', numero: '', centroId: '', instructorId: '' })
+      setErrores({})
+      setCodigo(generarCodigoFicha())
+      setCreando(false)
+      mostrarCreada()
+    } catch (error) {
+      setErrores({ numero: error?.data?.message || 'No se pudo crear la ficha en el servidor.' })
+    } finally {
+      setGuardando(false)
+    }
   }
 
   return (
@@ -216,8 +287,8 @@ export default function FichasAdmin() {
                 <FormField label="Red de conocimiento" required error={errores.red}>
                   <Select name="red" value={form.red} onChange={alCambiarRed}>
                     <option value="">Selecciona una red…</option>
-                    {REDES.map((r) => (
-                      <option key={r.nombre} value={r.nombre}>
+                    {listaRedes.map((r) => (
+                      <option key={r.id} value={String(r.id)}>
                         {r.nombre}
                       </option>
                     ))}
@@ -228,8 +299,8 @@ export default function FichasAdmin() {
                   <Select name="programa" value={form.programa} onChange={onChange} disabled={!form.red}>
                     <option value="">{form.red ? 'Selecciona un programa…' : 'Elige primero la red…'}</option>
                     {programasDeRed.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
+                      <option key={p.id} value={String(p.id)}>
+                        {p.nombre}
                       </option>
                     ))}
                   </Select>
@@ -240,9 +311,9 @@ export default function FichasAdmin() {
                 <FormField label="Centro de formación" required error={errores.centroId}>
                   <Select name="centroId" value={form.centroId} onChange={onChange}>
                     <option value="">Selecciona un centro…</option>
-                    {centros.map((ct) => (
+                    {listaCentros.map((ct) => (
                       <option key={ct.id} value={String(ct.id)}>
-                        {ct.nombre}{ct.ciudad ? ` · ${ct.ciudad}` : ''}
+                        {ct.name}{ct.city ? ` · ${ct.city}` : ''}
                       </option>
                     ))}
                   </Select>
@@ -253,7 +324,7 @@ export default function FichasAdmin() {
                     <option value="">Selecciona un instructor…</option>
                     {instructoresActivos.map((i) => (
                       <option key={i.id} value={String(i.id)}>
-                        {i.name}
+                        {nombreCompleto(i.generalUser)}
                       </option>
                     ))}
                   </Select>
@@ -266,7 +337,7 @@ export default function FichasAdmin() {
                   value={form.nombre}
                   onChange={onChange}
                   placeholder="Ej. Análisis y Desarrollo 2718"
-                  maxLength={80}
+                  maxLength={MAX_NOMBRE}
                 />
               </FormField>
 
@@ -277,13 +348,13 @@ export default function FichasAdmin() {
                   value={form.numero}
                   onChange={onChange}
                   placeholder="Ej. 3142101"
-                  maxLength={8}
+                  maxLength={MAX_NUMERO_FICHA}
                 />
               </FormField>
 
               <FormField
                 label="Código de la ficha"
-                help="El sistema genera un código único automáticamente. Los aprendices lo usarán para unirse."
+                help="El sistema genera un código único automáticamente."
               >
                 <div className={c.codigoRow}>
                   <code className={c.codigo}>{codigo}</code>
@@ -293,19 +364,9 @@ export default function FichasAdmin() {
                 </div>
               </FormField>
 
-              <FormField label="Descripción" help="Opcional. Describe el enfoque o jornada de la ficha.">
-                <Textarea
-                  name="descripcion"
-                  rows={4}
-                  value={form.descripcion}
-                  onChange={onChange}
-                  placeholder="Ej. Ficha enfocada en desarrollo de software con énfasis en proyectos productivos…"
-                />
-              </FormField>
-
               <Actions form>
-                <Button type="submit">
-                  <CheckCircle size={14} /> Crear ficha
+                <Button type="submit" disabled={guardando}>
+                  <CheckCircle size={14} /> {guardando ? 'Creando…' : 'Crear ficha'}
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => setCreando(false)}>
                   Cancelar
@@ -314,11 +375,15 @@ export default function FichasAdmin() {
             </form>
           </DataPanel>
         ) : (
-          <>
+          <ApiState cargando={cargando} error={error} onReintentar={recargar}>
             {creadaMsg && (
               <Alert>
                 <CheckCircle size={14} /> Ficha creada correctamente.
               </Alert>
+            )}
+
+            {accionMsg && (
+              <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
             )}
 
             <FilterBar title="Buscar y filtrar">
@@ -343,9 +408,9 @@ export default function FichasAdmin() {
                   }}
                 >
                   <option value="todos">Todos</option>
-                  {centros.map((ct) => (
+                  {listaCentros.map((ct) => (
                     <option key={ct.id} value={String(ct.id)}>
-                      {ct.nombre}
+                      {ct.name}
                     </option>
                   ))}
                 </Select>
@@ -363,6 +428,7 @@ export default function FichasAdmin() {
                   <option value="activo">Activo</option>
                   <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
+                  <option value="archivado">Archivado</option>
                 </Select>
               </label>
               <label className={s.field}>
@@ -375,9 +441,9 @@ export default function FichasAdmin() {
                   }}
                 >
                   <option value="todos">Todos</option>
-                  {instructores.map((i) => (
+                  {listaInstructores.map((i) => (
                     <option key={i.id} value={String(i.id)}>
-                      {i.name}
+                      {nombreCompleto(i.generalUser)}
                     </option>
                   ))}
                 </Select>
@@ -392,12 +458,12 @@ export default function FichasAdmin() {
                 icon={<Books />}
                 title="No hay fichas"
                 message={
-                  fichas.length === 0
+                  listaFichas.length === 0
                     ? 'Aún no se han creado fichas de formación. Crea la primera.'
                     : 'Ninguna ficha coincide con los filtros aplicados.'
                 }
-                actionLabel={fichas.length === 0 ? 'Crear primera ficha' : 'Limpiar filtros'}
-                onAction={fichas.length === 0 ? abrirCreacion : limpiarFiltros}
+                actionLabel={listaFichas.length === 0 ? 'Crear primera ficha' : 'Limpiar filtros'}
+                onAction={listaFichas.length === 0 ? abrirCreacion : limpiarFiltros}
               />
             ) : (
               <>
@@ -416,7 +482,7 @@ export default function FichasAdmin() {
                         <>
                           <span className={s.title}>{f.nombre}</span>
                           <br />
-                          <span className={s.subText}>N° {f.numero} · {f.programa}</span>
+                          <span className={s.subText}>N° {f.numero} · {f.program?.nombre || 'Sin programa'}</span>
                         </>
                       ),
                     },
@@ -424,41 +490,41 @@ export default function FichasAdmin() {
                       key: 'centro',
                       header: 'Centro',
                       render: (f) => {
-                        const centro = f.centroId ? findCentroById(f.centroId) : null
-                        return centro?.nombre || <span className={s.muted}>—</span>
+                        const centro = f.trainingCenter || centrosPorId.get(Number(f.training_center_id))
+                        return centro?.name || <span className={s.muted}>—</span>
                       },
                     },
                     {
                       key: 'instructor',
                       header: 'Instructor',
-                      render: (f) => f.instructorName || <span className={s.muted}>Sin asignar</span>,
+                      render: (f) => nombreCompleto(f.instructor?.generalUser) || <span className={s.muted}>Sin asignar</span>,
                     },
                     {
                       key: 'aprendices',
                       header: 'Aprendices',
-                      render: (f) => <span className={s.count}>{getEstudiantesDeFicha(f.id).length || f.aprendices}</span>,
+                      render: (f) => <span className={s.count}>{(f.apprentices || []).length}</span>,
                     },
                     {
                       key: 'propuestas',
                       header: 'Propuestas',
-                      render: (f) => <span className={s.count}>{getProjectsByFicha(f.id).length}</span>,
+                      render: (f) => <span className={s.count}>{propuestasPorFicha.get(Number(f.id)) || 0}</span>,
                     },
                     {
                       key: 'estado',
                       header: 'Estado',
                       render: (f) => (
                         <Badge variant={ESTADO_VARIANT[f.estado] || 'neutral'}>
-                          {displayNames.classGroupStatus[f.estado] || f.estado}
+                          {ESTADO_LABEL[f.estado] || f.estado}
                         </Badge>
                       ),
                     },
-                    { key: 'createdAt', header: 'Creada' },
+                    { key: 'created_at', header: 'Creada', render: (f) => fechaDesdeApi(f.created_at) },
                     {
                       key: 'acciones',
                       header: 'Acciones',
                       align: 'end',
                       render: (f) => {
-                        const conDatos = getEstudiantesDeFicha(f.id).length > 0 || getProjectsByFicha(f.id).length > 0
+                        const conDatos = (f.apprentices || []).length > 0 || (propuestasPorFicha.get(Number(f.id)) || 0) > 0
                         return (
                           <div className={s.actions}>
                             <Button
@@ -499,7 +565,7 @@ export default function FichasAdmin() {
                 />
               </>
             )}
-          </>
+          </ApiState>
         )}
       </div>
 
@@ -508,7 +574,7 @@ export default function FichasAdmin() {
         titulo="Eliminar ficha"
         mensaje={
           aEliminar
-            ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Los aprendices asignados quedarán sin ficha. Esta acción no se puede deshacer.`
+                ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`
             : ''
         }
         textoConfirmar="Sí, eliminar"

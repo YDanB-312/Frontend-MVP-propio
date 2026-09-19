@@ -13,13 +13,13 @@ test.describe('Distribución de detalles y accesos', () => {
     await expect(page.locator('aside[aria-label="Aprendiz, similitudes y observaciones"]')).toBeVisible()
   })
 
-  test('seguridad enlaza a recuperación por correo', async ({ page }) => {
-    await login(page, 'aprendiz')
-    await page.goto('/aprendiz/perfil')
-    await page.getByRole('link', { name: /Recupérala por correo/i }).click()
-    await page.waitForURL('**/recuperar-contrasena')
-    await expect(page.getByText('Recuperar contraseña')).toBeVisible()
-  })
+test('seguridad enlaza a recuperación por correo', async ({ page }) => {
+  await login(page, 'aprendiz')
+  await page.goto('/aprendiz/perfil')
+  await page.getByRole('link', { name: /Recupérala por correo/i }).click()
+  await page.waitForURL('**/recuperar-contrasena')
+  await expect(page.getByRole('heading', { name: /Recuperar contraseña/i })).toBeVisible()
+})
 
   test('detalle de ficha aprendiz lista sus propuestas', async ({ page }) => {
     await login(page, 'aprendiz')

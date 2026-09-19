@@ -3,31 +3,76 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import ApiState from '../../../components/ApiState/ApiState'
 import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import { useAuth } from '../../../contexts/AuthContext'
-import { findUserById, findFichaById, getAllFichas } from '../../../data/mockData'
+import { useApi } from '../../../lib/useApi'
+import { usuarios, aprendices, fichas } from '../../../lib/recursos'
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import { CaretRight, GraduationCap, MagnifyingGlass } from 'phosphor-react'
+
+function nombreUsuario(u) {
+  if (!u) return 'Usuario'
+  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
+}
 
 export default function DetalleInstructor() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
-  const miPerfil = findUserById(user.id)
-  const miFicha = findFichaById(miPerfil?.fichaId)
-  const instructorId = searchParams.get('id') || miFicha?.instructorId
-  const instructor = instructorId ? findUserById(instructorId) : null
+  // Mi ficha (para resolver el instructor cuando no llega ?id=).
+  const { data: aprendicesApi, cargando: cargandoAprendices } = useApi(() => aprendices.listar(), [], { inicial: [] })
+  const { data: fichasApi, cargando: cargandoFichas, error: errorFichas, recargar: recargarFichas } =
+    useApi(() => fichas.listar(), [], { inicial: [] })
 
-  if (!instructor || instructor.role !== 'instructor') {
+  const miAprendiz = aprendicesApi.find((a) => Number(a.id_usuario) === Number(user.id)) || null
+  const miFicha = miAprendiz
+    ? fichasApi.find((f) => Number(f.id) === Number(miAprendiz.id_class_group)) || null
+    : null
+
+  const paramId = searchParams.get('id')
+  const instructorId = paramId ? Number(paramId) : (miFicha?.instructor?.generalUser?.id ?? null)
+
+  const { data: instructor, cargando, error, recargar } = useApi(
+    () => (instructorId ? usuarios.perfil(instructorId) : Promise.resolve(null)),
+    [instructorId],
+    { inicial: null }
+  )
+
+  const fichasInstructor = instructorId
+    ? fichasApi.filter((f) => Number(f.instructor?.generalUser?.id) === Number(instructorId))
+    : []
+
+  const cargandoTotal = cargando || cargandoFichas || cargandoAprendices
+
+  if (cargandoTotal) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Mi Instructor">
+        <div className={s.wrapper}><ApiState cargando /></div>
+      </DashboardLayout>
+    )
+  }
+
+  if (error || errorFichas) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Mi Instructor">
+        <div className={s.wrapper}>
+          <ApiState error={error || errorFichas} onReintentar={() => { recargar(); recargarFichas() }} />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!instructor || instructor.rol !== 'instructor') {
     return (
       <DashboardLayout role="aprendiz" titulo="Mi Instructor">
         <div className={s.wrapper}>
           <EmptyState
             icon={<MagnifyingGlass />}
             title="Sin instructor asignado"
-            message="Aún no tienes una ficha con instructor asignado. Únete a una ficha para conocer a tu instructor."
-            actionLabel="Unirme a una ficha"
+            message="Aún no tienes una ficha con instructor asignado. Cuando coordinación te asigne una ficha, verás aquí a tu instructor."
+            actionLabel="Ir a Mi Ficha"
             actionIcon={<GraduationCap size={14} />}
             onAction={() => navigate('/aprendiz/ficha')}
           />
@@ -35,8 +80,6 @@ export default function DetalleInstructor() {
       </DashboardLayout>
     )
   }
-
-  const fichas = getAllFichas().filter((f) => f.instructorId === instructor.id)
 
   return (
     <DashboardLayout role="aprendiz" titulo="Mi Instructor">
@@ -54,12 +97,12 @@ export default function DetalleInstructor() {
           detalles={[{ label: 'Rol', value: 'Instructor SENA' }]}
         />
 
-        <DataPanel title={`Fichas de ${instructor.name.split(' ')[0]} (${fichas.length})`} icon={<GraduationCap />}>
-          {fichas.length === 0 ? (
+        <DataPanel title={`Fichas de ${nombreUsuario(instructor).split(' ')[0]} (${fichasInstructor.length})`} icon={<GraduationCap />}>
+          {fichasInstructor.length === 0 ? (
             <p className={s.muted}>Este instructor no tiene fichas asignadas actualmente.</p>
           ) : (
             <ul className={s.list}>
-              {fichas.map((f, i) => (
+              {fichasInstructor.map((f, i) => (
                 <li key={f.id} className="fx-rise" style={{ '--fx-i': i }}>
                   <Link to={`/aprendiz/detalle-ficha/${f.id}`} viewTransition className={s.row}>
                     <span className={s.rowInfo}>
@@ -67,7 +110,7 @@ export default function DetalleInstructor() {
                       <span className={s.rowCodigo}>{f.codigo}</span>
                     </span>
                     <span className={s.rowSide}>
-                      <Badge variant="info">{f.programa}</Badge>
+                      <Badge variant="info">{f.program?.nombre || '—'}</Badge>
                       <Badge variant={f.estado === 'activo' ? 'success' : 'danger'}>
                         {f.estado === 'activo' ? 'Activa' : 'Inactiva'}
                       </Badge>

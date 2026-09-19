@@ -305,6 +305,13 @@
   gap: var(--sp-3);
 }
 
+.codigoWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
 .cardTitle {
   margin: 0;
   font-family: var(--font-display);

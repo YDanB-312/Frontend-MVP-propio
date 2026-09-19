@@ -11,88 +11,115 @@ import { Input, Select } from '../../../components/Input/Input'
 import Actions from '../../../components/Actions/Actions'
 import Avatar from '../../../components/Avatar/Avatar'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
-import {
-  findFichaById,
-  getEstudiantesDeFicha,
-  getProjectsByFicha,
-  getAllUsers,
-  findUserById,
-  getCentros,
-  updateFicha,
-  deleteFicha,
-  REDES,
-  displayNames,
-} from '../../../data/mockData'
+import { useApi } from '../../../lib/useApi'
+import { fichas, programas, redes, instructores, centros, proyectos } from '../../../lib/recursos'
+import { toFieldErrors } from '../../../lib/api'
+import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
-import { Books, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, MagnifyingGlass, PencilLine, Trash } from 'phosphor-react'
+import { Books, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, MagnifyingGlass, PencilLine, Trash, Warning } from 'phosphor-react'
 
 const ESTADOS_FICHA = ['activo', 'inactivo', 'finalizado', 'archivado']
+const ESTADO_LABEL = { activo: 'Activo', inactivo: 'Inactivo', finalizado: 'Finalizado', archivado: 'Archivado' }
+const PROYECTO_ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
+
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
+
+function formDesde(ficha) {
+  if (!ficha) return null
+  return {
+    nombre: ficha.nombre || '',
+    numero: ficha.numero || '',
+    estado: ficha.estado || 'activo',
+    red: ficha.program?.knowledge_network_id ? String(ficha.program.knowledge_network_id) : '',
+    programa: ficha.id_programa ? String(ficha.id_programa) : '',
+    centroId: ficha.training_center_id ? String(ficha.training_center_id) : '',
+    instructorId: ficha.id_instructor ? String(ficha.id_instructor) : '',
+  }
+}
 
 export default function DetalleFichaAdmin() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [editando, setEditando] = useState(false)
-  const [form, setForm] = useState(() => {
-    const f = findFichaById(id)
-    return f
-      ? {
-          nombre: f.nombre,
-          numero: f.numero || '',
-          estado: f.estado || 'activo',
-          red: '',
-          programa: f.programa || '',
-          centroId: f.centroId ? String(f.centroId) : '',
-          instructorId: f.instructorId ? String(f.instructorId) : '',
-        }
-      : null
-  })
+  const [form, setForm] = useState(null)
   const [errores, setErrores] = useState({})
   const [guardado, setGuardado] = useState(false)
+  const [accionMsg, setAccionMsg] = useState(null)
   const [modalEliminar, setModalEliminar] = useState(false)
 
-  const ficha = findFichaById(id)
-  const estudiantes = ficha ? getEstudiantesDeFicha(ficha.id) : []
-  const proyectos = ficha ? getProjectsByFicha(ficha.id) : []
-  const instructores = getAllUsers().filter((u) => u.role === 'instructor' && u.estado !== 'suspendido')
-  const centros = getCentros()
-  const tieneDatos = estudiantes.length > 0 || proyectos.length > 0
+  // Fuente única: la API. Ficha con relaciones + catálogos + propuestas.
+  const { data, cargando, error, recargar } = useApi(
+    async () => {
+      const [ficha, listaProgramas, listaRedes, listaInstructores, listaCentros, listaProyectos] = await Promise.all([
+        fichas.obtener(id),
+        programas.listar(),
+        redes.listar(),
+        instructores.listar('generalUser'),
+        centros.listar(),
+        proyectos.listar(),
+      ])
+      return { ficha, listaProgramas, listaRedes, listaInstructores, listaCentros, listaProyectos }
+    },
+    [id],
+    { inicial: null }
+  )
 
-  // Sincroniza el formulario al navegar entre fichas sin remontar
+  const ficha = data?.ficha || null
+
+  // Sincroniza el formulario al navegar entre fichas o recargar.
   useEffect(() => {
     if (ficha) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setForm({
-        nombre: ficha.nombre,
-        numero: ficha.numero || '',
-        estado: ficha.estado || 'activo',
-        red: '',
-        programa: ficha.programa || '',
-        centroId: ficha.centroId ? String(ficha.centroId) : '',
-        instructorId: ficha.instructorId ? String(ficha.instructorId) : '',
-      })
+      setForm(formDesde(ficha))
       setEditando(false)
       setGuardado(false)
     }
   }, [ficha?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!ficha) {
+  if (cargando || error || !ficha) {
     return (
       <DashboardLayout role="admin" titulo="Detalle de Ficha">
         <div className={s.page}>
-          <EmptyState
-            icon={<MagnifyingGlass />}
-            title="Ficha no encontrada"
-            message="La ficha que buscas no existe o fue eliminada."
-            actionLabel="Volver a fichas"
-            onAction={() => navigate('/admin/fichas')}
-          />
+          {error ? (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="No se pudo cargar la ficha"
+              message={error.message || 'Ocurrió un error al consultar la API.'}
+              actionLabel="Reintentar"
+              onAction={recargar}
+            />
+          ) : cargando ? (
+            <ApiState cargando error={null} />
+          ) : (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="Ficha no encontrada"
+              message="La ficha que buscas no existe o fue eliminada."
+              actionLabel="Volver a fichas"
+              onAction={() => navigate('/admin/fichas')}
+            />
+          )}
         </div>
       </DashboardLayout>
     )
   }
+
+  const listaProgramas = data.listaProgramas || []
+  const listaRedes = data.listaRedes || []
+  const listaInstructores = data.listaInstructores || []
+  const listacentros = data.listaCentros || []
+
+  const estudiantes = ficha.apprentices || []
+  const proyectosDeLaFicha = (data.listaProyectos || []).filter((p) => Number(p.id_class_group) === Number(ficha.id))
+  const instructoresActivos = listaInstructores.filter((i) => i.generalUser?.estado !== false)
 
   const onChange = (e) => {
     const { name, value } = e.target
@@ -108,9 +135,9 @@ export default function DetalleFichaAdmin() {
     setGuardado(false)
   }
 
-  const programasDeRed = form.red
-    ? (REDES.find((r) => r.nombre === form.red)?.programas || [])
-    : [...new Set(REDES.flatMap((r) => r.programas))].sort()
+  const programasDeRed = form?.red
+    ? listaProgramas.filter((p) => Number(p.knowledge_network_id) === Number(form.red))
+    : listaProgramas
 
   const validar = () => {
     const err = {}
@@ -121,53 +148,60 @@ export default function DetalleFichaAdmin() {
     return err
   }
 
-  const guardarEdicion = (e) => {
+  const guardarEdicion = async (e) => {
     e.preventDefault()
     const err = validar()
     if (Object.keys(err).length) {
       setErrores(err)
       return
     }
-    const instructor = instructores.find((i) => String(i.id) === String(form.instructorId))
-    updateFicha({
-      id: ficha.id,
-      nombre: form.nombre.trim(),
-      numero: form.numero.trim(),
-      estado: form.estado,
-      programa: form.programa,
-      centroId: form.centroId === '' ? null : Number(form.centroId),
-      instructorName: form.instructorId === '' ? '' : instructor?.name || ficha.instructorName,
-      instructorId: form.instructorId === '' ? null : Number(form.instructorId),
-    })
-    setEditando(false)
-    setGuardado(true)
+    try {
+      await fichas.actualizar(ficha.id, {
+        codigo: ficha.codigo,
+        nombre: form.nombre.trim(),
+        numero: form.numero.trim(),
+        estado: form.estado,
+        id_programa: Number(form.programa),
+        id_instructor: form.instructorId === '' ? null : Number(form.instructorId),
+        training_center_id: form.centroId === '' ? null : Number(form.centroId),
+      })
+      await recargar()
+      setEditando(false)
+      setGuardado(true)
+    } catch (error2) {
+      const campos = toFieldErrors(error2?.data)
+      if (campos.id_programa) {
+        setErrores({ programa: 'El programa no existe en el servidor.' })
+        return
+      }
+      setErrores({ nombre: error2?.data?.message || 'No se pudo guardar la ficha en el servidor.' })
+    }
   }
 
   const cancelarEdicion = () => {
     setEditando(false)
     setErrores({})
-    setForm({
-      nombre: ficha.nombre,
-      numero: ficha.numero || '',
-      estado: ficha.estado || 'activo',
-      red: '',
-      programa: ficha.programa || '',
-      centroId: ficha.centroId ? String(ficha.centroId) : '',
-      instructorId: ficha.instructorId ? String(ficha.instructorId) : '',
-    })
+    setForm(formDesde(ficha))
   }
 
-  const confirmarEliminar = () => {
-    deleteFicha(ficha.id)
-    navigate('/admin/fichas')
+  const confirmarEliminar = async () => {
+    try {
+      await fichas.eliminar(ficha.id)
+      navigate('/admin/fichas')
+    } catch (err) {
+      setModalEliminar(false)
+      setAccionMsg(err?.data?.message || 'No se pudo eliminar la ficha.')
+    }
   }
+
+  const tieneDatos = estudiantes.length > 0 || proyectosDeLaFicha.length > 0
 
   return (
     <DashboardLayout role="admin" titulo="Detalle de Ficha">
       <div className={s.page}>
         <PageHeader
           title={ficha.nombre}
-          subtitle={`Código ${ficha.codigo} · N° ${ficha.numero} · ${ficha.programa}`}
+          subtitle={`Código ${ficha.codigo} · N° ${ficha.numero} · ${ficha.program?.nombre || 'Sin programa'}`}
           icon={<Books />}
           breadcrumb={[
             { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
@@ -178,6 +212,10 @@ export default function DetalleFichaAdmin() {
 
         {guardado && (
           <Alert><CheckCircle size={14} /> Ficha actualizada correctamente.</Alert>
+        )}
+
+        {accionMsg && (
+          <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
         )}
 
         <DataPanel
@@ -204,12 +242,12 @@ export default function DetalleFichaAdmin() {
             </div>
           }
         >
-          {!editando ? (
+          {!editando || !form ? (
             <InformacionFicha
               ficha={ficha}
               estudiantesCount={estudiantes.length}
-              proyectosCount={proyectos.length}
-              instructorHref={ficha.instructorId ? `/admin/detalle-usuario/${ficha.instructorId}` : null}
+              proyectosCount={proyectosDeLaFicha.length}
+              instructorHref={ficha.instructor?.generalUser?.id ? `/admin/detalle-usuario/${ficha.instructor.generalUser.id}` : null}
             />
           ) : (
             <form className={s.form} onSubmit={guardarEdicion} noValidate>
@@ -218,7 +256,7 @@ export default function DetalleFichaAdmin() {
                   name="nombre"
                   value={form.nombre}
                   onChange={onChange}
-                  maxLength={80}
+                  maxLength={MAX_NOMBRE}
                 />
               </FormField>
               <FormField label="Número de ficha" required error={errores.numero} help="Solo dígitos, sin espacios. Ej. 3142101">
@@ -227,24 +265,25 @@ export default function DetalleFichaAdmin() {
                   inputMode="numeric"
                   value={form.numero}
                   onChange={onChange}
-                  maxLength={8}
+                  maxLength={MAX_NUMERO_FICHA}
                 />
               </FormField>
               <FormField label="Red de conocimiento" help="Solo para cambiar el programa.">
                 <Select name="red" value={form.red} onChange={alCambiarRed}>
                   <option value="">Mantener programa actual…</option>
-                  {REDES.map((r) => (
-                    <option key={r.nombre} value={r.nombre}>
+                  {listaRedes.map((r) => (
+                    <option key={r.id} value={String(r.id)}>
                       {r.nombre}
                     </option>
                   ))}
                 </Select>
               </FormField>
               <FormField label="Programa de formación" required error={errores.programa}>
-                <Select name="programa" value={form.programa} onChange={onChange} disabled={!!form.red && programasDeRed.length === 0}>
+                <Select name="programa" value={form.programa} onChange={onChange}>
+                  <option value="">Selecciona un programa…</option>
                   {programasDeRed.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
+                    <option key={p.id} value={String(p.id)}>
+                      {p.nombre}
                     </option>
                   ))}
                 </Select>
@@ -252,9 +291,9 @@ export default function DetalleFichaAdmin() {
               <FormField label="Centro de formación">
                 <Select name="centroId" value={form.centroId} onChange={onChange}>
                   <option value="">Sin centro</option>
-                  {centros.map((ct) => (
+                  {listacentros.map((ct) => (
                     <option key={ct.id} value={String(ct.id)}>
-                      {ct.nombre}{ct.ciudad ? ` · ${ct.ciudad}` : ''}
+                      {ct.name}{ct.city ? ` · ${ct.city}` : ''}
                     </option>
                   ))}
                 </Select>
@@ -262,9 +301,9 @@ export default function DetalleFichaAdmin() {
               <FormField label="Instructor a cargo">
                 <Select name="instructorId" value={form.instructorId} onChange={onChange}>
                   <option value="">Sin asignar</option>
-                  {instructores.map((i) => (
+                  {instructoresActivos.map((i) => (
                     <option key={i.id} value={String(i.id)}>
-                      {i.name}
+                      {nombreCompleto(i.generalUser)}
                     </option>
                   ))}
                 </Select>
@@ -273,7 +312,7 @@ export default function DetalleFichaAdmin() {
                 <Select name="estado" value={form.estado} onChange={onChange}>
                   {ESTADOS_FICHA.map((est) => (
                     <option key={est} value={est}>
-                      {displayNames.classGroupStatus[est] || est}
+                      {ESTADO_LABEL[est] || est}
                     </option>
                   ))}
                 </Select>
@@ -296,14 +335,14 @@ export default function DetalleFichaAdmin() {
           ) : (
             <ul className={s.studentList}>
               {estudiantes.map((est) => {
-                const perfil = findUserById(est.id)
+                const perfil = est.generalUser || {}
                 return (
                   <li key={est.id}>
-                    <Link to={`/admin/detalle-usuario/${est.id}`} viewTransition className={s.studentRow}>
-                      <Avatar name={est.name} src={perfil?.fotoPerfil} size="md" />
+                    <Link to={`/admin/detalle-usuario/${perfil.id}`} viewTransition className={s.studentRow}>
+                      <Avatar name={nombreCompleto(perfil)} src={perfil.foto_url} size="md" />
                       <span className={s.studentInfo}>
-                        <span className={s.studentName}>{est.name}</span>
-                        <span className={s.studentEmail}>{est.email}</span>
+                        <span className={s.studentName}>{nombreCompleto(perfil)}</span>
+                        <span className={s.studentEmail}>{perfil.correo}</span>
                       </span>
                       <span className={s.arrow} aria-hidden="true">→</span>
                     </Link>
@@ -314,20 +353,20 @@ export default function DetalleFichaAdmin() {
           )}
         </DataPanel>
 
-        <DataPanel title={`Propuestas (${proyectos.length})`} icon={<FolderOpen />}>
-          {proyectos.length === 0 ? (
+        <DataPanel title={`Propuestas (${proyectosDeLaFicha.length})`} icon={<FolderOpen />}>
+          {proyectosDeLaFicha.length === 0 ? (
             <p className={s.muted}>Esta ficha aún no tiene propuestas asociadas.</p>
           ) : (
             <ul className={s.studentList}>
-              {proyectos.map((p) => (
+              {proyectosDeLaFicha.map((p) => (
                 <li key={p.id}>
                   <Link to={`/admin/detalle-proyecto/${p.id}`} viewTransition className={s.studentRow}>
                     <span className={s.studentInfo}>
-                      <span className={s.studentName}>{p.title}</span>
-                      <span className={s.studentEmail}>{p.studentName} · {p.createdAt}</span>
+                      <span className={s.studentName}>{p.titulo}</span>
+                      <span className={s.studentEmail}>{nombreCompleto(p.creator) || 'Sin autor'} · {fechaDesdeApi(p.created_at)}</span>
                     </span>
                     <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
-                      {displayNames.projectStatus[p.estado] || p.estado}
+                      {PROYECTO_ESTADO_LABEL[p.estado] || p.estado}
                     </Badge>
                     <span className={s.arrow} aria-hidden="true">→</span>
                   </Link>
@@ -341,7 +380,7 @@ export default function DetalleFichaAdmin() {
       <ConfirmModal
         open={modalEliminar}
         titulo="Eliminar ficha"
-        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Los aprendices asignados quedarán sin ficha. Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
         textoCancelar="Cancelar"
         onConfirmar={confirmarEliminar}

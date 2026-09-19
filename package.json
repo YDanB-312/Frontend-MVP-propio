@@ -8,9 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "test": "playwright test",
-    "test:e2e": "playwright test",
+    "test:e2e": "node e2e/run-aislado.mjs",
     "test:unit": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e:aislado": "node e2e/run-aislado.mjs"
   },
   "dependencies": {
     "phosphor-react": "^1.4.1",

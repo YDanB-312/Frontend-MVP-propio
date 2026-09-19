@@ -1,4 +1,4 @@
-import { test, expect, login } from './helpers'
+import { test, expect, login, logout } from './helpers'
 
 const TEMA_A = {
   titulo: 'Tienda virtual de artesanías E2E',
@@ -32,19 +32,49 @@ async function crearPropuesta(page, tema) {
 }
 
 test.describe('Detector de similitud entre propuestas', () => {
-  test('dos propuestas pendientes del mismo tema generan coincidencia', async ({ page }) => {
+  test('una pendiente no ve a otra pendiente; tras aprobar, la editada sí la detecta', async ({ page }) => {
+    // Títulos únicos por corrida: el reseed es por archivo, y un reintento
+    // acumularía propuestas duplicadas con el mismo texto.
+    const suf = String(Date.now())
+    const temaA = { ...TEMA_A, titulo: `${TEMA_A.titulo} ${suf}` }
+    const temaB = { ...TEMA_B, titulo: `${TEMA_B.titulo} ${suf}` }
+
     await login(page, 'aprendiz')
     await page.getByRole('link', { name: 'Propuestas' }).first().click()
     await page.waitForURL('**/aprendiz/propuestas')
 
-    await crearPropuesta(page, TEMA_A)
+    await crearPropuesta(page, temaA)
 
     await page.goto('/aprendiz/propuestas')
-    await crearPropuesta(page, TEMA_B)
+    await crearPropuesta(page, temaB)
 
-    // La segunda propuesta sí ve a la primera (pendiente vs pendiente)
-    await expect(page.getByRole('heading', { name: /Proyectos con similitud/i })).toBeVisible()
-    await expect(page.getByText(TEMA_A.titulo)).toBeVisible()
+    // Regla de negocio: solo las aprobadas entran al corpus, así que dos
+    // pendientes del mismo tema NO se comparan entre sí (aunque el seed sí
+    // tenga aprobadas parecidas: la que debe faltar es la pendiente).
+    await expect(page.getByText(temaA.titulo)).toHaveCount(0)
+
+    // El instructor aprueba la primera propuesta.
+    await logout(page)
+    await login(page, 'instructor')
+    await page.goto('/instructor/revision-propuestas')
+    const nodo = page.getByRole('button', { name: temaA.titulo }).first()
+    await expect(nodo).toBeVisible({ timeout: 15000 })
+    await nodo.click()
+    await page.getByRole('button', { name: `Aprobar ${temaA.titulo}` }).click()
+    await page.getByRole('button', { name: /Sí, aprobar/i }).click()
+    await expect(page.getByRole('button', { name: `Aprobar ${temaA.titulo}` })).toHaveCount(0, { timeout: 10000 })
+
+    // El aprendiz edita y guarda la segunda propuesta: al guardar, el motor
+    // vuelve a puntuar y ahora sí encuentra a la aprobada.
+    await logout(page)
+    await login(page, 'aprendiz')
+    await page.goto('/aprendiz/propuestas')
+    await page.getByRole('link', { name: temaB.titulo }).first().click()
+    await page.waitForURL('**/aprendiz/detalle-proyecto/**')
+    await page.getByRole('button', { name: /^Editar$/ }).click()
+    await page.getByRole('button', { name: /Guardar cambios/i }).click()
+    await expect(page.getByText(/Propuesta actualizada correctamente/i)).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText(temaA.titulo)).toBeVisible()
   })
 
   test('el ranking agrupa por propuesta y colapsa', async ({ page }) => {

@@ -5,14 +5,32 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import ApiState from '../../../components/ApiState/ApiState'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
 import ScoreDial from '../../../components/ScoreDial/ScoreDial'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
-import { toPct } from '../../../utils/similitudInfo'
 import { useAuth } from '../../../contexts/AuthContext'
-import { findProjectById, findSimilarityById, getSimilitudesValidas } from '../../../data/mockData'
+import { useApi } from '../../../lib/useApi'
+import { proyectos, similitudes as similitudesApi } from '../../../lib/recursos'
+import { formatearFecha } from '../../../utils/helpers'
 import s from './ResultadoAnalisis.module.css'
+
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+
+function nombreUsuario(u) {
+  if (!u) return 'Usuario'
+  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
+}
+
+// Una propuesta es del aprendiz si la creó o si figura en su equipo.
+function esMia(proyecto, userId) {
+  if (!proyecto) return false
+  if (Number(proyecto.id_creador) === Number(userId)) return true
+  return (proyecto.apprentices || []).some(
+    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
+  )
+}
 
 export default function ResultadoAnalisis() {
   const { user } = useAuth()
@@ -25,35 +43,72 @@ export default function ResultadoAnalisis() {
     return () => clearTimeout(t)
   }, [])
 
-  const { propio, propias, seleccionada } = useMemo(() => {
-    const projectId = Number(searchParams.get('projectId'))
-    const similitudId = Number(searchParams.get('similitudId'))
+  // Propuestas y similitudes: fuente única la API.
+  const { data: proyectosApi, cargando: cargandoProy, error: errorProy, recargar: recargarProy } = useApi(
+    () => proyectos.listar({ included: INCLUDE_PROYECTOS }),
+    [],
+    { inicial: [] }
+  )
+  const { data: similitudesApiData, cargando: cargandoSim, error: errorSim, recargar: recargarSim } = useApi(
+    () => similitudesApi.listar(),
+    [],
+    { inicial: [] }
+  )
 
-    let base = null
+  const cargando = cargandoProy || cargandoSim
+  const error = errorProy || errorSim
+  const recargar = () => { recargarProy(); recargarSim() }
+
+  const paramProyecto = searchParams.get('projectId')
+  const paramSimilitud = searchParams.get('similitudId')
+  const projectId = paramProyecto ? Number(paramProyecto) : null
+  const similitudId = paramSimilitud ? Number(paramSimilitud) : null
+
+  const { base, propias, seleccionada } = useMemo(() => {
+    const mapa = new Map(proyectosApi.map((p) => [Number(p.id), p]))
+    let propio = null
+
     if (projectId) {
-      base = findProjectById(projectId)
+      propio = mapa.get(projectId) || null
     } else if (similitudId) {
-      const sim = findSimilarityById(similitudId)
+      const sim = similitudesApiData.find((x) => Number(x.id) === similitudId)
       if (sim) {
-        const p1 = findProjectById(sim.projectId1)
-        const p2 = findProjectById(sim.projectId2)
-        base = [p1, p2].find((p) => p && p.studentId === user.id) || p1
+        const p1 = mapa.get(Number(sim.id_proyecto_1))
+        const p2 = mapa.get(Number(sim.id_proyecto_2))
+        propio = [p1, p2].find((p) => p && esMia(p, user.id)) || p1
       }
     }
-    if (!base) return { propio: null, propias: [], seleccionada: null }
 
-    const lista = getSimilitudesValidas()
-      .filter((x) => x.projectId1 === base.id || x.projectId2 === base.id)
-      .sort((a, b) => b.similitud - a.similitud)
+    if (!propio) return { base: null, propias: [], seleccionada: null }
+
+    const lista = similitudesApiData
+      .filter((x) => Number(x.id_proyecto_1) === Number(propio.id) || Number(x.id_proyecto_2) === Number(propio.id))
+      .sort((a, b) => Number(b.porcentaje) - Number(a.porcentaje))
 
     return {
-      propio: base,
+      base: propio,
       propias: lista,
-      seleccionada: similitudId ? lista.find((x) => x.id === similitudId) || null : null,
+      seleccionada: similitudId ? lista.find((x) => Number(x.id) === similitudId) || null : null,
     }
-  }, [searchParams, user.id])
+  }, [proyectosApi, similitudesApiData, projectId, similitudId, user.id])
 
-  if (!propio) {
+  if (cargando) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Resultado del Análisis">
+        <div className={s.wrapper}><ApiState cargando /></div>
+      </DashboardLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Resultado del Análisis">
+        <div className={s.wrapper}><ApiState error={error} onReintentar={recargar} /></div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!base) {
     return (
       <DashboardLayout role="aprendiz" titulo="Resultado del Análisis">
         <div className={s.wrapper}>
@@ -70,8 +125,7 @@ export default function ResultadoAnalisis() {
     )
   }
 
-  const esPropio = Number(propio.studentId) === Number(user.id) || (propio.integrantes || []).includes(user.nombre)
-  if (!esPropio) {
+  if (!esMia(base, user.id)) {
     return (
       <DashboardLayout role="aprendiz" titulo="Resultado del Análisis">
         <div className={s.wrapper}>
@@ -95,7 +149,7 @@ export default function ResultadoAnalisis() {
           <EmptyState
             icon={<CheckCircle size={40} weight="light" />}
             title="Sin coincidencias detectadas"
-            message={`Buenas noticias: "${propio.title}" no presenta similitudes con ningún otro proyecto de la base de datos.`}
+            message={`Buenas noticias: "${base.titulo}" no presenta similitudes con ningún otro proyecto de la base de datos.`}
             actionLabel="Ir a mis proyectos"
             actionIcon={<ArrowLeft size={14} />}
             onAction={() => navigate('/aprendiz/propuestas')}
@@ -107,7 +161,7 @@ export default function ResultadoAnalisis() {
 
   const maxima = seleccionada || propias[0]
   const total = propias.length
-  const pctMax = toPct(maxima.similitud)
+  const pctMax = Math.round(Number(maxima.porcentaje) || 0)
   const nivel = pctMax >= 70 ? 'alta' : pctMax >= 40 ? 'media' : 'baja'
 
   const recomendaciones =
@@ -137,7 +191,7 @@ export default function ResultadoAnalisis() {
           <p className={`mono ${s.kicker}`}>VEREDICTO DEL MOTOR · {total} coincidencia{total !== 1 ? 's' : ''}</p>
           <h1 className={s.title}>Resultado del análisis</h1>
           <p className={s.subtitle}>
-            {propio.title} · {total} coincidencia{total !== 1 ? 's' : ''} detectada{total !== 1 ? 's' : ''}
+            {base.titulo} · {total} coincidencia{total !== 1 ? 's' : ''} detectada{total !== 1 ? 's' : ''}
           </p>
         </header>
 
@@ -164,9 +218,9 @@ export default function ResultadoAnalisis() {
           <SectionHeader title={`Proyectos con similitud (${total})`} hint="ranking por puntaje" />
           <ol className={s.matchList}>
             {propias.map((sim, i) => {
-              const pct = toPct(sim.similitud)
-              const otroId = sim.projectId1 === propio.id ? sim.projectId2 : sim.projectId1
-              const otro = findProjectById(otroId)
+              const pct = Math.round(Number(sim.porcentaje) || 0)
+              const otroId = Number(sim.id_proyecto_1) === Number(base.id) ? sim.id_proyecto_2 : sim.id_proyecto_1
+              const otro = proyectosApi.find((p) => Number(p.id) === Number(otroId))
               const esMaxima = sim.id === maxima.id
               return (
                 <li key={sim.id} className="fx-rise" style={{ '--fx-i': i }}>
@@ -177,10 +231,10 @@ export default function ResultadoAnalisis() {
                   >
                     <span className={`mono ${s.matchRank}`}>#{i + 1}</span>
                     <span className={s.matchInfo}>
-                      <span className={s.matchTitle}>{otro?.title || 'Proyecto no disponible'}</span>
+                      <span className={s.matchTitle}>{otro?.titulo || 'Proyecto no disponible'}</span>
                       <span className={s.matchMeta}>
-                        <User size={12} /> {otro?.studentName || sim.project2Student}
-                        <CalendarBlank size={12} /> {sim.createdAt}
+                        <User size={12} /> {nombreUsuario(otro?.creator)}
+                        <CalendarBlank size={12} /> {formatearFecha(sim.fecha)}
                       </span>
                     </span>
                     <span className={s.matchRight}>
@@ -211,7 +265,7 @@ export default function ResultadoAnalisis() {
           <Button as="link" to="/aprendiz/propuestas" viewTransition>
             <ArrowLeft size={14} /> Volver a mis proyectos
           </Button>
-          <Button as="link" to={`/aprendiz/detalle-proyecto/${propio.id}`} variant="secondary" viewTransition>
+          <Button as="link" to={`/aprendiz/detalle-proyecto/${base.id}`} variant="secondary" viewTransition>
             Ver mi proyecto <ArrowRight size={14} />
           </Button>
         </Actions>

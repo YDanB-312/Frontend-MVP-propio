@@ -6,7 +6,18 @@ test.describe('Admin: eliminar usuarios', () => {
     await page.goto('/admin/detalle-usuario/1')
     const btn = page.getByRole('button', { name: /^Eliminar$/i })
     await expect(btn).toBeDisabled()
-    await expect(btn).toHaveAttribute('title', /propuestas/i)
+    await expect(btn).toHaveAttribute('title', /propuesta/i)
+    // El motivo también se muestra en pantalla, no solo en el tooltip.
+    await expect(page.getByText(/No se puede eliminar/i)).toBeVisible()
+  })
+
+  test('un instructor con fichas a cargo tampoco se puede eliminar', async ({ page }) => {
+    await login(page, 'admin')
+    await page.goto('/admin/detalle-usuario/8') // Andrés: instructor con ficha y sin propuestas asignadas
+    const btn = page.getByRole('button', { name: /^Eliminar$/i })
+    await expect(btn).toBeDisabled()
+    await expect(btn).toHaveAttribute('title', /ficha/i)
+    await expect(page.getByText(/No se puede eliminar/i)).toBeVisible()
   })
 
   test('sin propuestas elimina con confirmación y vuelve al listado', async ({ page }) => {

@@ -1,20 +1,38 @@
 import { Sun, Moon } from 'phosphor-react'
 import { useTheme } from '../../contexts/useTheme'
-import { getConfigMotor } from '../../data/mockData'
+import { useApi } from '../../lib/useApi'
+import { motor as apiMotor } from '../../lib/recursos'
 import s from './GovernmentBar.module.css'
 
 export default function GovernmentBar() {
   const { theme, alternarTema } = useTheme()
-  const motor = getConfigMotor()
+
+  // Configuración del motor de similitudes (endpoint público de solo lectura).
+  const { data: motor, error } = useApi(() => apiMotor.obtener(), [])
+  const umbralPct = motor ? Math.round(Number(motor.umbral) * 100) : null
+  const etiquetaMotor = error
+    ? 'MOTOR · NO DISPONIBLE'
+    : umbralPct != null
+      ? `MOTOR · UMBRAL ${umbralPct}% · CORPUS ${motor.meses}M`
+      : 'MOTOR · CONECTANDO…'
 
   return (
     <div className={s.bar}>
       <div className={s.container}>
         <p className={s.accessibility}>Portal del SENA - República de Colombia</p>
-        <p className={`mono ${s.motor}`} aria-label={`Motor de similitud: umbral ${Math.round(motor.umbral * 100)} por ciento, corpus de ${motor.meses} meses`}>
+        <p
+          className={`mono ${s.motor}`}
+          aria-label={
+            umbralPct != null
+              ? `Motor de similitud: umbral ${umbralPct} por ciento, corpus de ${motor.meses} meses`
+              : 'Motor de similitud'
+          }
+        >
           <span className={s.dot} aria-hidden="true" />
-          <span className={s.motorFull}>MOTOR · UMBRAL {Math.round(motor.umbral * 100)}% · CORPUS {motor.meses}M</span>
-          <span className={s.motorCorto} aria-hidden="true">UMBRAL {Math.round(motor.umbral * 100)}%</span>
+          <span className={s.motorFull}>{etiquetaMotor}</span>
+          <span className={s.motorCorto} aria-hidden="true">
+            {umbralPct != null ? `UMBRAL ${umbralPct}%` : 'MOTOR'}
+          </span>
         </p>
         <button
           type="button"

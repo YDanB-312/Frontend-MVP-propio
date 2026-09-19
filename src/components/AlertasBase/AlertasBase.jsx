@@ -1,16 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, MagnifyingGlass, CheckCircle, ChatCircle, GearSix } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
 import Badge from '../Badge/Badge'
 import Button from '../Button/Button'
 import EmptyState from '../EmptyState/EmptyState'
+import ApiState from '../ApiState/ApiState'
 import { useAuth } from '../../contexts/AuthContext'
-import {
-  getNotificationsByUser,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-} from '../../data/mockData'
+import { useApi } from '../../lib/useApi'
+import { notificaciones as apiNotificaciones } from '../../lib/recursos'
+import { fechaDesdeApi } from '../../utils/helpers'
 import s from './AlertasBase.module.css'
 
 const TIPO_CONFIG = {
@@ -21,33 +20,54 @@ const TIPO_CONFIG = {
   sistema: { icon: <GearSix size={18} />, label: 'Sistema', variant: 'primary' },
 }
 
+// La API guarda el destino como 'proyecto:<id>' o 'reporte:<id>'.
+function decodificarEnlace(enlace) {
+  if (!enlace) return {}
+  const [tipo, valor] = String(enlace).split(':')
+  if (tipo === 'proyecto') return { projectId: Number(valor) }
+  if (tipo === 'reporte') return { reporteId: Number(valor) }
+  return {}
+}
+
 export default function AlertasBase({ titulo, subtitle, detallePath, emptyActionLabel, emptyActionTo }) {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [, setTick] = useState(0)
-  const refrescar = () => setTick(t => t + 1)
 
-  const notificaciones = useMemo(() => {
+  // Notificaciones del usuario autenticado (fuente única: la API).
+  const { data, cargando, error, recargar } = useApi(
+    () => apiNotificaciones.listar(),
+    [user?.id],
+    { inicial: [] }
+  )
+
+  const alertas = useMemo(() => {
     if (!user) return []
-    return [...getNotificationsByUser(Number(user.id))].sort((a, b) => b.id - a.id)
-  }, [user])
+    return (data || [])
+      .filter((n) => Number(n.id_usuario) === Number(user.id))
+      .sort((a, b) => Number(b.id) - Number(a.id))
+  }, [data, user])
 
-  const sinLeer = useMemo(() => notificaciones.filter(n => !n.leido).length, [notificaciones])
+  const sinLeer = useMemo(() => alertas.filter((n) => !n.leida).length, [alertas])
 
-  const marcarTodas = () => {
-    if (!user) return
-    markAllNotificationsAsRead(Number(user.id))
-    refrescar()
+  const marcarTodas = async () => {
+    const pendientes = alertas.filter((n) => !n.leida)
+    await Promise.all(pendientes.map((n) => apiNotificaciones.marcarLeida(n, true).catch(() => null)))
+    await recargar()
   }
 
-  const handleClick = (n) => {
-    if (!n.leido) {
-      markNotificationAsRead(n.id)
-      refrescar()
+  const handleClick = async (n) => {
+    if (!n.leida) {
+      try {
+        await apiNotificaciones.marcarLeida(n, true)
+        await recargar()
+      } catch {
+        // Si falla la marca, igualmente se navega al destino.
+      }
     }
-    if (n.projectId) navigate(`${detallePath}/detalle-proyecto/${n.projectId}`)
-    // Solo el admin tiene detalle-reporte; en otros roles solo se marca como leída
-    else if (n.reporteId && detallePath === '/admin') navigate(`${detallePath}/detalle-reporte/${n.reporteId}`)
+    const { projectId, reporteId } = decodificarEnlace(n.enlace)
+    if (projectId) navigate(`${detallePath}/detalle-proyecto/${projectId}`)
+    // Solo el admin tiene detalle-reporte; en otros roles solo se marca como leída.
+    else if (reporteId && detallePath === '/admin') navigate(`${detallePath}/detalle-reporte/${reporteId}`)
   }
 
   return (
@@ -63,48 +83,52 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
         }
       />
 
-      {sinLeer > 0 && (
-        <p className={s.summary}>
-          Tienes <strong className={`mono ${s.sinLeer}`}>{sinLeer}</strong> alerta{sinLeer !== 1 ? 's' : ''} sin leer.
-        </p>
-      )}
+      <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+        {sinLeer > 0 && (
+          <p className={s.summary}>
+            Tienes <strong className={`mono ${s.sinLeer}`}>{sinLeer}</strong> alerta{sinLeer !== 1 ? 's' : ''} sin leer.
+          </p>
+        )}
 
-      {notificaciones.length === 0 ? (
-        <EmptyState
-          icon={<Bell size={40} />}
-          title="Sin alertas por ahora"
-          message="Cuando haya novedades sobre tus proyectos o similitudes, aparecerán aquí."
-          actionLabel={emptyActionLabel}
-          onAction={emptyActionTo ? () => navigate(emptyActionTo) : undefined}
-        />
-      ) : (
-        <ul className={s.list}>
-          {notificaciones.map(n => {
-            const info = TIPO_CONFIG[n.tipo] || TIPO_CONFIG.sistema
-            return (
-              <li key={n.id}>
-                <button
-                  type="button"
-                  className={`${s.item} ${s[`tipo-${n.tipo}`] || ''} ${!n.leido ? s.unread : ''}`}
-                  onClick={() => handleClick(n)}
-                  title={n.projectId || (n.reporteId && detallePath === '/admin') ? 'Abrir detalle' : 'Marcar como leída'}
-                >
-                  <span className={s.rail} aria-hidden="true" />
-                  <span className={s.icon} aria-hidden="true">{info.icon}</span>
-                  <span className={s.body}>
-                    <span className={s.top}>
-                      <Badge variant={info.variant}>{info.label}</Badge>
-                      {!n.leido && <span className={s.unreadDot}>Nueva</span>}
-                      <time className={`mono ${s.date}`}>{n.createdAt}</time>
+        {alertas.length === 0 ? (
+          <EmptyState
+            icon={<Bell size={40} />}
+            title="Sin alertas por ahora"
+            message="Cuando haya novedades sobre tus proyectos o similitudes, aparecerán aquí."
+            actionLabel={emptyActionLabel}
+            onAction={emptyActionTo ? () => navigate(emptyActionTo) : undefined}
+          />
+        ) : (
+          <ul className={s.list}>
+            {alertas.map((n) => {
+              const info = TIPO_CONFIG[n.tipo] || TIPO_CONFIG.sistema
+              const { projectId, reporteId } = decodificarEnlace(n.enlace)
+              const puedeAbrir = Boolean(projectId) || Boolean(reporteId && detallePath === '/admin')
+              return (
+                <li key={n.id}>
+                  <button
+                    type="button"
+                    className={`${s.item} ${s[`tipo-${n.tipo}`] || ''} ${!n.leida ? s.unread : ''}`}
+                    onClick={() => handleClick(n)}
+                    title={puedeAbrir ? 'Abrir detalle' : 'Marcar como leída'}
+                  >
+                    <span className={s.rail} aria-hidden="true" />
+                    <span className={s.icon} aria-hidden="true">{info.icon}</span>
+                    <span className={s.body}>
+                      <span className={s.top}>
+                        <Badge variant={info.variant}>{info.label}</Badge>
+                        {!n.leida && <span className={s.unreadDot}>Nueva</span>}
+                        <time className={`mono ${s.date}`}>{fechaDesdeApi(n.fecha)}</time>
+                      </span>
+                      <span className={s.message}>{n.titulo}</span>
                     </span>
-                    <span className={s.message}>{n.mensaje}</span>
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      )}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </ApiState>
     </div>
   )
 }

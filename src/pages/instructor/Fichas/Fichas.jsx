@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -8,30 +8,33 @@ import FormField from '../../../components/FormField/FormField'
 import Badge from '../../../components/Badge/Badge'
 import Alert from '../../../components/Alert/Alert'
 import Button from '../../../components/Button/Button'
-import { Input, Select, Textarea } from '../../../components/Input/Input'
+import { Input, Select } from '../../../components/Input/Input'
 import Actions from '../../../components/Actions/Actions'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash } from 'phosphor-react'
+import { ArrowClockwise, Books, ChartBar, CheckCircle, Copy, Eye, Plus, Trash } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
-import {
-  getFichasDelInstructor,
-  createFicha,
-  generarCodigoFichaUnico,
-  deleteFicha,
-  getEstudiantesDeFicha,
-  getProjectsByFicha,
-  getCentros,
-  REDES,
-  displayNames,
-} from '../../../data/mockData'
+import { useApi } from '../../../lib/useApi'
+import { toFieldErrors } from '../../../lib/api'
+import { fichas, instructores, aprendices, proyectos, redes, programas, centros } from '../../../lib/recursos'
+import { FICHA_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { generarCodigoFicha } from '../../../utils/helpers'
+import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 // Estilos reutilizados de las páginas originales (lista + formulario)
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import c from '../../../components/FormularioBase/FormularioBase.module.css'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
+
+const ESTADO_LABEL = {
+  activo: 'Activo',
+  inactivo: 'Inactivo',
+  finalizado: 'Finalizado',
+  archivado: 'Archivado',
+}
 
 export default function Fichas() {
   const { user } = useAuth()
@@ -45,6 +48,7 @@ export default function Fichas() {
       setCreando(true)
     }
   }, [searchParams])
+
   const [creadaMsg, setCreadaMsg] = useState(false)
   const msgTimer = useRef(null)
 
@@ -53,20 +57,34 @@ export default function Fichas() {
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [pagina, setPagina] = useState(1)
   const [aEliminar, setAEliminar] = useState(null)
-  const [, setTick] = useState(0)
-  const refrescar = () => setTick((t) => t + 1)
+  const [copiado, setCopiado] = useState(null)
 
-  // Modelo Classroom: solo las fichas creadas por este instructor
-  const fichas = getFichasDelInstructor(Number(user?.id))
+  // Catálogos y datos: fuente única la API.
+  const { data: instructoresApi } = useApi(() => instructores.listar(), [], { inicial: [] })
+  const { data: aprendicesApi } = useApi(() => aprendices.listar(), [], { inicial: [] })
+  const { data: todosProyectos } = useApi(() => proyectos.listar(), [], { inicial: [] })
+  const { data: fichasApi, cargando, error, recargar } = useApi(() => fichas.listar(), [], { inicial: [] })
 
-  const filtradas = fichas.filter((f) => {
+  // Fila de perfil del instructor (instructors) del usuario autenticado.
+  const miFila = useMemo(
+    () => instructoresApi.find((i) => Number(i.id_usuario) === Number(user?.id)) || null,
+    [instructoresApi, user?.id]
+  )
+
+  // Modelo Classroom: solo las fichas creadas por este instructor.
+  const fichasPropias = useMemo(
+    () => fichasApi.filter((f) => Number(f.instructor?.id) === Number(miFila?.id)),
+    [fichasApi, miFila?.id]
+  )
+
+  const filtradas = fichasPropias.filter((f) => {
     const q = busqueda.trim().toLowerCase()
     const coincideQ =
       !q ||
       f.nombre.toLowerCase().includes(q) ||
-      f.codigo.toLowerCase().includes(q) ||
-      (f.numero || '').toLowerCase().includes(q) ||
-      (f.programa || '').toLowerCase().includes(q)
+      (f.codigo || '').toLowerCase().includes(q) ||
+      String(f.numero || '').toLowerCase().includes(q) ||
+      (f.program?.nombre || '').toLowerCase().includes(q)
     const coincideEstado = filtroEstado === 'todos' || f.estado === filtroEstado
     return coincideQ && coincideEstado
   })
@@ -89,18 +107,26 @@ export default function Fichas() {
     setCreando(true)
   }
 
-  const confirmarEliminar = () => {
+  const confirmarEliminar = async () => {
     if (!aEliminar) return
-    deleteFicha(aEliminar.id)
+    try {
+      await fichas.eliminar(aEliminar.id)
+    } catch {
+      // Si falla, la lista recargará y la ficha seguirá allí.
+    }
     setAEliminar(null)
-    refrescar()
+    await recargar()
   }
 
   /* ---------- Creación ---------- */
-  const [codigo, setCodigo] = useState(() => generarCodigoFichaUnico())
-  const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', descripcion: '', centroId: '' })
-  const centros = getCentros()
+  const { data: redesApi } = useApi(() => redes.listar(), [], { inicial: [] })
+  const { data: programasApi } = useApi(() => programas.listar(), [], { inicial: [] })
+  const { data: centrosApi } = useApi(() => centros.listar(), [], { inicial: [] })
+
+  const [codigo, setCodigo] = useState(() => generarCodigoFicha([]))
+  const [form, setForm] = useState({ red: '', programaId: '', nombre: '', numero: '', centroId: '' })
   const [errores, setErrores] = useState({})
+  const [guardando, setGuardando] = useState(false)
 
   const onChange = (e) => {
     const { name, value } = e.target
@@ -110,16 +136,44 @@ export default function Fichas() {
 
   function alCambiarRed(e) {
     const { value } = e.target
-    setForm((f) => ({ ...f, red: value, programa: '' }))
-    setErrores((err) => ({ ...err, red: undefined, programa: undefined }))
+    setForm((f) => ({ ...f, red: value, programaId: '' }))
+    setErrores((err) => ({ ...err, red: undefined, programaId: undefined }))
   }
 
-  const regenerarCodigo = () => setCodigo(generarCodigoFichaUnico())
+  const regenerarCodigo = () => setCodigo(generarCodigoFicha(fichasApi))
+
+  // Copia el código para compartirlo con los aprendices.
+  async function copiarCodigo(valor) {
+    try {
+      await navigator.clipboard.writeText(valor)
+    } catch {
+      try {
+        const campo = document.createElement('textarea')
+        campo.value = valor
+        campo.setAttribute('readonly', '')
+        campo.style.position = 'absolute'
+        campo.style.left = '-9999px'
+        document.body.appendChild(campo)
+        campo.select()
+        document.execCommand('copy')
+        document.body.removeChild(campo)
+      } catch {
+        return
+      }
+    }
+    setCopiado(valor)
+    setTimeout(() => setCopiado((actual) => (actual === valor ? null : actual)), 1800)
+  }
+
+  // Programas pertenecientes a la red seleccionada.
+  const programasDeRed = programasApi.filter(
+    (p) => Number(p.knowledge_network_id) === Number(form.red)
+  )
 
   const validar = () => {
     const err = {}
     if (!form.red) err.red = 'Selecciona la red de conocimiento.'
-    if (!form.programa) err.programa = 'Selecciona el programa de formación.'
+    if (!form.programaId) err.programaId = 'Selecciona el programa de formación.'
     if (!form.centroId) err.centroId = 'Selecciona el centro de formación.'
     if (!form.nombre.trim()) err.nombre = 'El nombre de la ficha es obligatorio.'
     const numero = form.numero.trim()
@@ -131,30 +185,62 @@ export default function Fichas() {
     return err
   }
 
-  const programasDeRed = REDES.find((r) => r.nombre === form.red)?.programas || []
+  const crearEnApi = async (codigoUsado) => fichas.crear({
+    codigo: codigoUsado,
+    numero: form.numero.trim(),
+    nombre: form.nombre.trim(),
+    estado: 'activo',
+    id_programa: Number(form.programaId),
+    id_instructor: Number(miFila.id),
+    training_center_id: Number(form.centroId),
+  })
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
     const err = validar()
     if (Object.keys(err).length) {
       setErrores(err)
       return
     }
-    createFicha({
-      nombre: form.nombre.trim(),
-      numero: form.numero.trim(),
-      programa: form.programa,
-      instructorName: user?.nombre || '',
-      instructorId: Number(user?.id) || null,
-      codigo,
-      centroId: form.centroId === '' ? null : Number(form.centroId),
-    })
-    setForm({ red: '', programa: '', nombre: '', numero: '', descripcion: '', centroId: '' })
-    setErrores({})
-    setCodigo(generarCodigoFichaUnico())
-    setCreando(false)
-    refrescar()
-    mostrarCreada()
+    if (!miFila) {
+      setErrores({ numero: 'No se encontró tu perfil de instructor para asignar la ficha.' })
+      return
+    }
+    setGuardando(true)
+    let codigoEfectivo = codigo
+    try {
+      try {
+        await crearEnApi(codigoEfectivo)
+      } catch (error) {
+        const campos = toFieldErrors(error?.data)
+        // El código es único: si choca, se regenera y se reintenta una vez.
+        if (campos.codigo) {
+          codigoEfectivo = generarCodigoFicha(fichasApi)
+          setCodigo(codigoEfectivo)
+          await crearEnApi(codigoEfectivo)
+        } else if (campos.id_programa || campos.programa) {
+          setErrores({ programaId: 'El programa no existe en el servidor.' })
+          return
+        } else if (campos.training_center_id || campos.centro_id) {
+          setErrores({ centroId: 'El centro no existe en el servidor.' })
+          return
+        } else if (campos.numero) {
+          setErrores({ numero: campos.numero })
+          return
+        } else {
+          setErrores({ numero: error?.data?.message || 'No se pudo crear la ficha. Intenta de nuevo.' })
+          return
+        }
+      }
+      setForm({ red: '', programaId: '', nombre: '', numero: '', centroId: '' })
+      setErrores({})
+      setCodigo(generarCodigoFicha(fichasApi))
+      setCreando(false)
+      await recargar()
+      mostrarCreada()
+    } finally {
+      setGuardando(false)
+    }
   }
 
   return (
@@ -194,20 +280,20 @@ export default function Fichas() {
                 <FormField label="Red de conocimiento" required error={errores.red}>
                   <Select name="red" value={form.red} onChange={alCambiarRed}>
                     <option value="">Selecciona una red…</option>
-                    {REDES.map((r) => (
-                      <option key={r.nombre} value={r.nombre}>
+                    {redesApi.map((r) => (
+                      <option key={r.id} value={String(r.id)}>
                         {r.nombre}
                       </option>
                     ))}
                   </Select>
                 </FormField>
 
-                <FormField label="Programa de formación" required error={errores.programa}>
-                  <Select name="programa" value={form.programa} onChange={onChange} disabled={!form.red}>
+                <FormField label="Programa de formación" required error={errores.programaId}>
+                  <Select name="programaId" value={form.programaId} onChange={onChange} disabled={!form.red}>
                     <option value="">{form.red ? 'Selecciona un programa…' : 'Elige primero la red…'}</option>
                     {programasDeRed.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
+                      <option key={p.id} value={String(p.id)}>
+                        {p.nombre}
                       </option>
                     ))}
                   </Select>
@@ -217,9 +303,9 @@ export default function Fichas() {
               <FormField label="Centro de formación" required error={errores.centroId}>
                 <Select name="centroId" value={form.centroId} onChange={onChange}>
                   <option value="">Selecciona un centro…</option>
-                  {centros.map((ct) => (
+                  {centrosApi.map((ct) => (
                     <option key={ct.id} value={String(ct.id)}>
-                      {ct.nombre}{ct.ciudad ? ` · ${ct.ciudad}` : ''}
+                      {ct.name}{ct.city ? ` · ${ct.city}` : ''}
                     </option>
                   ))}
                 </Select>
@@ -231,7 +317,7 @@ export default function Fichas() {
                   value={form.nombre}
                   onChange={onChange}
                   placeholder="Ej. Análisis y Desarrollo 2718"
-                  maxLength={80}
+                  maxLength={MAX_NOMBRE}
                 />
               </FormField>
 
@@ -242,13 +328,13 @@ export default function Fichas() {
                   value={form.numero}
                   onChange={onChange}
                   placeholder="Ej. 3142101"
-                  maxLength={8}
+                  maxLength={MAX_NUMERO_FICHA}
                 />
               </FormField>
 
               <FormField
                 label="Código de la ficha"
-                help="El sistema genera un código único automáticamente. Los aprendices lo usarán para unirse."
+                help="Código único que compartes con tus aprendices para que se unan a la ficha."
               >
                 <div className={c.codigoRow}>
                   <code className={c.codigo}>{codigo}</code>
@@ -258,19 +344,9 @@ export default function Fichas() {
                 </div>
               </FormField>
 
-              <FormField label="Descripción" help="Opcional. Describe el enfoque o jornada de la ficha.">
-                <Textarea
-                  name="descripcion"
-                  rows={4}
-                  value={form.descripcion}
-                  onChange={onChange}
-                  placeholder="Ej. Ficha enfocada en desarrollo de software con énfasis en proyectos productivos…"
-                />
-              </FormField>
-
               <Actions form>
-                <Button type="submit">
-                  <CheckCircle size={14} /> Crear ficha
+                <Button type="submit" disabled={guardando}>
+                  <CheckCircle size={14} /> {guardando ? 'Creando…' : 'Crear ficha'}
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => setCreando(false)}>
                   Cancelar
@@ -311,6 +387,7 @@ export default function Fichas() {
                   <option value="activo">Activo</option>
                   <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
+                  <option value="archivado">Archivado</option>
                 </Select>
               </label>
               <p className={s.info}>
@@ -318,80 +395,94 @@ export default function Fichas() {
               </p>
             </FilterBar>
 
-            {paginadas.length === 0 ? (
-              <EmptyState
-                icon={<Books />}
-                title="No hay fichas"
-                message={
-                  fichas.length === 0
-                    ? 'Aún no se han creado fichas de formación. Crea la primera.'
-                    : 'Ninguna ficha coincide con los filtros aplicados.'
-                }
-                actionLabel={fichas.length === 0 ? 'Crear primera ficha' : undefined}
-                onAction={fichas.length === 0 ? abrirCreacion : undefined}
-              />
-            ) : (
-              <>
-                <div className={s.cardGrid}>
-                  {paginadas.map((f) => {
-                    const estudiantes = getEstudiantesDeFicha(f.id).length || f.aprendices
-                    const props = getProjectsByFicha(f.id)
-                    const pend = props.filter((p) => p.estado === 'pendiente').length
-                    const bloqueada = getEstudiantesDeFicha(f.id).length > 0 || props.length > 0
-                    return (
-                      <article key={f.id} className={s.card}>
-                        <header className={s.cardHeader}>
-                          <code className={s.codigo}>{f.codigo}</code>
-                          <Badge variant={f.estado === 'activo' ? 'success' : 'neutral'}>
-                            {displayNames.classGroupStatus[f.estado] || f.estado}
-                          </Badge>
-                        </header>
-                        <Link to={`/instructor/detalle-ficha/${f.id}`} viewTransition className={s.cardTitle}>
-                          {f.nombre}
-                        </Link>
-                        <p className={s.cardMeta}>N° {f.numero} · {f.programa}</p>
-                        <div className={s.cohorteBar} role="img" aria-label={`${pend} de ${props.length} propuestas por revisar`}>
-                          <span className={s.cohorteFill} style={{ width: props.length === 0 ? '0%' : `${Math.round(((props.length - pend) / props.length) * 100)}%` }} />
-                        </div>
-                        <p className={s.cardMeta}>
-                          {estudiantes} aprendices · {props.length} propuestas · {pend} por revisar
-                        </p>
-                        <footer className={s.cardFooter}>
-                          <Button
-                            as="link"
-                            to={`/instructor/detalle-ficha/${f.id}`}
-                            viewTransition
-                            size="sm"
-                            variant="secondary"
-                          >
-                            <Eye size={14} /> Ver
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="danger"
-                            disabled={bloqueada}
-                            title={bloqueada ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
-                            onClick={() => setAEliminar(f)}
-                          >
-                            <Trash size={14} /> Eliminar
-                          </Button>
-                        </footer>
-                      </article>
-                    )
-                  })}
-                </div>
-
-                <Pagination
-                  totalItems={filtradas.length}
-                  itemsPerPage={ITEMS_POR_PAGINA}
-                  paginaActual={pagina}
-                  setPaginaActual={setPagina}
-                  itemName="fichas"
-                  filteredCount={filtradas.length}
+            <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+              {paginadas.length === 0 ? (
+                <EmptyState
+                  icon={<Books />}
+                  title="No hay fichas"
+                  message={
+                    fichasPropias.length === 0
+                      ? 'Aún no se han creado fichas de formación. Crea la primera.'
+                      : 'Ninguna ficha coincide con los filtros aplicados.'
+                  }
+                  actionLabel={fichasPropias.length === 0 ? 'Crear primera ficha' : undefined}
+                  onAction={fichasPropias.length === 0 ? abrirCreacion : undefined}
                 />
-              </>
-            )}
+              ) : (
+                <>
+                  <div className={s.cardGrid}>
+                    {paginadas.map((f) => {
+                      const estudiantes = aprendicesApi.filter((a) => Number(a.id_class_group) === Number(f.id)).length
+                      const props = todosProyectos.filter((p) => Number(p.id_class_group) === Number(f.id))
+                      const pend = props.filter((p) => p.estado === 'pendiente').length
+                      const bloqueada = estudiantes > 0 || props.length > 0
+                      return (
+                        <article key={f.id} className={s.card}>
+                          <header className={s.cardHeader}>
+                            <span className={s.codigoWrap}>
+                              <code className={s.codigo}>{f.codigo}</code>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copiarCodigo(f.codigo)}
+                                aria-label={`Copiar código ${f.codigo}`}
+                              >
+                                <Copy size={14} />
+                                {copiado === f.codigo ? 'Copiado' : 'Copiar'}
+                              </Button>
+                            </span>
+                            <Badge variant={FICHA_ESTADO_VARIANT[f.estado] || 'neutral'}>
+                              {ESTADO_LABEL[f.estado] || f.estado}
+                            </Badge>
+                          </header>
+                          <Link to={`/instructor/detalle-ficha/${f.id}`} viewTransition className={s.cardTitle}>
+                            {f.nombre}
+                          </Link>
+                          <p className={s.cardMeta}>N° {f.numero} · {f.program?.nombre || 'Sin programa'}</p>
+                          <div className={s.cohorteBar} role="img" aria-label={`${pend} de ${props.length} propuestas por revisar`}>
+                            <span className={s.cohorteFill} style={{ width: props.length === 0 ? '0%' : `${Math.round(((props.length - pend) / props.length) * 100)}%` }} />
+                          </div>
+                          <p className={s.cardMeta}>
+                            {estudiantes} aprendices · {props.length} propuestas · {pend} por revisar
+                          </p>
+                          <footer className={s.cardFooter}>
+                            <Button
+                              as="link"
+                              to={`/instructor/detalle-ficha/${f.id}`}
+                              viewTransition
+                              size="sm"
+                              variant="secondary"
+                            >
+                              <Eye size={14} /> Ver
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="danger"
+                              disabled={bloqueada}
+                              title={bloqueada ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
+                              onClick={() => setAEliminar(f)}
+                            >
+                              <Trash size={14} /> Eliminar
+                            </Button>
+                          </footer>
+                        </article>
+                      )
+                    })}
+                  </div>
+
+                  <Pagination
+                    totalItems={filtradas.length}
+                    itemsPerPage={ITEMS_POR_PAGINA}
+                    paginaActual={pagina}
+                    setPaginaActual={setPagina}
+                    itemName="fichas"
+                    filteredCount={filtradas.length}
+                  />
+                </>
+              )}
+            </ApiState>
           </>
         )}
       </div>
@@ -401,7 +492,7 @@ export default function Fichas() {
         titulo="Eliminar ficha"
         mensaje={
           aEliminar
-            ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Los aprendices asignados quedarán sin ficha. Esta acción no se puede deshacer.`
+                ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`
             : ''
         }
         textoConfirmar="Sí, eliminar"

@@ -11,26 +11,18 @@ import Avatar from '../../../components/Avatar/Avatar'
 import Alert from '../../../components/Alert/Alert'
 import Button from '../../../components/Button/Button'
 import Actions from '../../../components/Actions/Actions'
-import { Input, Select } from '../../../components/Input/Input'
+import { Input, PasswordInput, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import ApiState from '../../../components/ApiState/ApiState'
 import { norm } from '../../../utils/helpers'
-import { Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise } from 'phosphor-react'
+import { Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise, Warning } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
-import {
-  getAllUsers,
-  findFichaById,
-  findCentroById,
-  getAllFichas,
-  getCentros,
-  createUser,
-  setUserEstado,
-  emailExists,
-  REDES,
-  displayNames,
-} from '../../../data/mockData'
-import { esEmailValido, esPasswordValida } from '../../../utils/validation'
+import { useApi } from '../../../lib/useApi'
+import { usuarios, aprendices, fichas, centros, programas } from '../../../lib/recursos'
+import { esEmailValido, esPasswordValida, MAX_NOMBRE } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
+
 // Estilos reutilizados de las páginas originales (lista + formulario)
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import nu from '../../../components/FormularioBase/FormularioBase.module.css'
@@ -38,7 +30,28 @@ import nu from '../../../components/FormularioBase/FormularioBase.module.css'
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 const ROL_VARIANT = { aprendiz: 'info', instructor: 'primary', admin: 'warning' }
+const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }
 const ESTADO_VARIANT = { activo: 'success', suspendido: 'danger' }
+const ESTADO_LABEL = { activo: 'Activo', suspendido: 'Suspendido' }
+
+// Nombre completo -> { nombre, apellido } (la API exige ambos campos).
+function splitNombre(texto) {
+  const partes = String(texto || '').trim().split(/\s+/).filter(Boolean)
+  const nombre = partes.shift() || ''
+  return { nombre, apellido: partes.join(' ') || nombre }
+}
+
+// Campos que acepta PUT /general-users (requiere los escalares obligatorios).
+function payloadCuenta(cuenta, extra = {}) {
+  return {
+    nombre: cuenta.nombre,
+    apellido: cuenta.apellido,
+    correo: cuenta.correo,
+    rol: cuenta.rol,
+    estado: cuenta.estado,
+    ...extra,
+  }
+}
 
 export default function Usuarios() {
   const { user } = useAuth()
@@ -53,6 +66,7 @@ export default function Usuarios() {
     }
   }, [searchParams])
   const [creadoMsg, setCreadoMsg] = useState(false)
+  const [accionMsg, setAccionMsg] = useState(null)
   const msgTimer = useRef(null)
 
   /* ---------- Lista ---------- */
@@ -63,27 +77,58 @@ export default function Usuarios() {
   const [filtroFicha, setFiltroFicha] = useState('todos')
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
-  const [, setTick] = useState(0)
-  const refrescar = () => setTick((t) => t + 1)
 
-  const usuarios = getAllUsers()
+  // Fuente única: la API. Se traen usuarios y los catálogos que resuelven ficha/centro/programa.
+  const { data, cargando, error, recargar } = useApi(
+    async () => {
+      const [listaUsuarios, listaAprendices, listaFichas, listaCentros, listaProgramas] = await Promise.all([
+        usuarios.listar(),
+        aprendices.listar('generalUser,classGroup.program,classGroup.trainingCenter'),
+        fichas.listar('program,trainingCenter', {}),
+        centros.listar(),
+        programas.listar(),
+      ])
+      return { listaUsuarios, listaAprendices, listaFichas, listaCentros, listaProgramas }
+    },
+    [],
+    { inicial: null }
+  )
 
-  const centros = getCentros()
+  const usuariosLista = data?.listaUsuarios || []
+  const aprendicesLista = data?.listaAprendices || []
+  const fichasLista = data?.listaFichas || []
+  const centrosLista = data?.listaCentros || []
+  const programasLista = data?.listaProgramas || []
+
+  // Índices para resolver relaciones sin recorrer arrays en cada celda.
+  const aprendicesPorUsuario = new Map(aprendicesLista.map((a) => [Number(a.id_usuario), a]))
+  const fichasPorId = new Map(fichasLista.map((f) => [Number(f.id), f]))
+  const centrosPorId = new Map(centrosLista.map((c) => [Number(c.id), c]))
+
+  const fichaDeUsuario = (usr) => {
+    const perfil = aprendicesPorUsuario.get(Number(usr.id))
+    if (!perfil) return null
+    return perfil.classGroup || fichasPorId.get(Number(perfil.id_class_group)) || null
+  }
+
   const fichasFiltro = filtroCentro === 'todos'
-    ? getAllFichas()
-    : getAllFichas().filter((f) => String(f.centroId) === String(filtroCentro))
-  const programasFiltro = [...new Set(REDES.flatMap((r) => r.programas))].sort()
+    ? fichasLista
+    : fichasLista.filter((f) => String(f.training_center_id) === String(filtroCentro))
+  const programasFiltro = [...new Set(programasLista.map((p) => p.nombre))].sort()
 
-  const filtrados = usuarios.filter((u) => {
+  const filtrados = usuariosLista.filter((usr) => {
     const q = norm(busqueda.trim())
-    const coincideQ =
-      !q || norm(u.name).includes(q) || norm(u.email).includes(q)
-    const coincideRol = filtroRol === 'todos' || u.role === filtroRol
-    const coincideEstado = filtroEstado === 'todos' || (u.estado || 'activo') === filtroEstado
-    const fichaU = u.fichaId ? findFichaById(u.fichaId) : null
-    const coincideCentro = filtroCentro === 'todos' || (fichaU && String(fichaU.centroId) === String(filtroCentro))
-    const coincideFicha = filtroFicha === 'todos' || String(u.fichaId || '') === String(filtroFicha)
-    const coincidePrograma = filtroPrograma === 'todos' || (u.programa || '') === filtroPrograma
+    const nombreCompleto = `${usr.nombre || ''} ${usr.apellido || ''}`
+    const coincideQ = !q || norm(nombreCompleto).includes(q) || norm(usr.correo).includes(q)
+    const coincideRol = filtroRol === 'todos' || usr.rol === filtroRol
+    const estado = usr.estado === false ? 'suspendido' : 'activo'
+    const coincideEstado = filtroEstado === 'todos' || estado === filtroEstado
+    const perfil = aprendicesPorUsuario.get(Number(usr.id))
+    const ficha = fichaDeUsuario(usr)
+    const coincideCentro = filtroCentro === 'todos' || (ficha && String(ficha.training_center_id) === String(filtroCentro))
+    const coincideFicha = filtroFicha === 'todos' || String(perfil?.id_class_group || '') === String(filtroFicha)
+    const programa = perfil?.program?.nombre || ficha?.program?.nombre || ''
+    const coincidePrograma = filtroPrograma === 'todos' || programa === filtroPrograma
     return coincideQ && coincideRol && coincideEstado && coincideCentro && coincideFicha && coincidePrograma
   })
 
@@ -111,13 +156,9 @@ export default function Usuarios() {
   }
 
   /* ---------- Creación ---------- */
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'aprendiz',
-  })
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'aprendiz' })
   const [errores, setErrores] = useState({})
+  const [guardando, setGuardando] = useState(false)
 
   const onChange = (e) => {
     const { name, value } = e.target
@@ -131,37 +172,59 @@ export default function Usuarios() {
     else if (form.name.trim().length < 3) err.name = 'El nombre debe tener al menos 3 caracteres.'
 
     if (!form.email.trim()) err.email = 'El correo es obligatorio.'
-    else if (!esEmailValido(form.email.trim()))
-      err.email = 'Ingresa un correo válido.'
-    else if (emailExists(form.email.trim().toLowerCase()))
-      err.email = 'Ya existe un usuario con este correo.'
+    else if (!esEmailValido(form.email.trim())) err.email = 'Ingresa un correo válido.'
 
     if (!form.password) err.password = 'La contraseña es obligatoria.'
-    else if (!esPasswordValida(form.password))
-      err.password = 'La contraseña debe tener al menos 6 caracteres.'
+    else if (!esPasswordValida(form.password)) err.password = 'La contraseña debe tener al menos 6 caracteres.'
 
     if (!form.role) err.role = 'Selecciona un rol.'
     return err
   }
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
     const err = validar()
     if (Object.keys(err).length) {
       setErrores(err)
       return
     }
-    createUser({
-      name: form.name.trim(),
-      email: form.email.trim().toLowerCase(),
-      role: form.role,
-      password: form.password,
-    })
-    setForm({ name: '', email: '', password: '', role: 'aprendiz' })
-    setErrores({})
-    setCreando(false)
-    refrescar()
-    mostrarCreado()
+    const partes = splitNombre(form.name)
+    setGuardando(true)
+    try {
+      await usuarios.crear({
+        nombre: partes.nombre,
+        apellido: partes.apellido,
+        correo: form.email.trim().toLowerCase(),
+        password: form.password,
+        rol: form.role,
+        estado: true,
+      })
+      await recargar()
+      setForm({ name: '', email: '', password: '', role: 'aprendiz' })
+      setErrores({})
+      setCreando(false)
+      mostrarCreado()
+    } catch (error) {
+      if (error?.status === 422) {
+        setErrores({ email: 'Ya existe un usuario con este correo o los datos no son válidos.' })
+        return
+      }
+      setErrores({ email: error?.data?.message || 'No se pudo crear el usuario.' })
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  /* ---------- Estado (activar / suspender) ---------- */
+  const cambiarEstado = async (usr, nuevoEstado) => {
+    setAccionMsg(null)
+    try {
+      const cuenta = await usuarios.obtener(usr.id)
+      await usuarios.actualizar(usr.id, payloadCuenta(cuenta, { estado: nuevoEstado }))
+      await recargar()
+    } catch (err2) {
+      setAccionMsg(err2?.data?.message || 'No se pudo actualizar el estado del usuario.')
+    }
   }
 
   return (
@@ -207,7 +270,7 @@ export default function Usuarios() {
                     value={form.name}
                     onChange={onChange}
                     placeholder="Ej. María González"
-                    maxLength={80}
+                    maxLength={MAX_NOMBRE}
                   />
                 </FormField>
 
@@ -229,9 +292,8 @@ export default function Usuarios() {
                   error={errores.password}
                   help="Mínimo 6 caracteres. El usuario podrá cambiarla después."
                 >
-                  <Input
+                  <PasswordInput
                     name="password"
-                    type="password"
                     value={form.password}
                     onChange={onChange}
                     placeholder="••••••"
@@ -249,8 +311,8 @@ export default function Usuarios() {
               </div>
 
               <Actions form>
-                <Button type="submit">
-                  <CheckCircle size={14} /> Crear usuario
+                <Button type="submit" disabled={guardando}>
+                  <CheckCircle size={14} /> {guardando ? 'Creando…' : 'Crear usuario'}
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => setCreando(false)}>
                   Cancelar
@@ -259,10 +321,16 @@ export default function Usuarios() {
             </form>
           </DataPanel>
         ) : (
-          <>
+          <ApiState cargando={cargando} error={error} onReintentar={recargar}>
             {creadoMsg && (
               <Alert>
                 <CheckCircle size={14} /> Usuario creado correctamente.
+              </Alert>
+            )}
+
+            {accionMsg && (
+              <Alert variant="danger">
+                <Warning size={14} /> {accionMsg}
               </Alert>
             )}
 
@@ -313,9 +381,9 @@ export default function Usuarios() {
                   }}
                 >
                   <option value="todos">Todos</option>
-                  {centros.map((ct) => (
+                  {centrosLista.map((ct) => (
                     <option key={ct.id} value={String(ct.id)}>
-                      {ct.nombre}
+                      {ct.name}
                     </option>
                   ))}
                 </Select>
@@ -378,12 +446,12 @@ export default function Usuarios() {
                 icon={<Users />}
                 title="Sin usuarios"
                 message={
-                  usuarios.length === 0
+                  usuariosLista.length === 0
                     ? 'No hay usuarios registrados en la plataforma. Crea el primero para comenzar.'
                     : 'Ningún usuario coincide con los filtros aplicados.'
                 }
-                actionLabel={usuarios.length === 0 ? 'Crear primer usuario' : 'Limpiar filtros'}
-                onAction={usuarios.length === 0 ? () => setCreando(true) : limpiarFiltros}
+                actionLabel={usuariosLista.length === 0 ? 'Crear primer usuario' : 'Limpiar filtros'}
+                onAction={usuariosLista.length === 0 ? () => setCreando(true) : limpiarFiltros}
               />
             ) : (
               <>
@@ -395,18 +463,18 @@ export default function Usuarios() {
                       header: 'Usuario',
                       render: (usr) => (
                         <Link to={`/admin/detalle-usuario/${usr.id}`} viewTransition className={s.userCell}>
-                          <Avatar name={usr.name} src={usr.fotoPerfil} size="sm" />
-                          <span className={s.userName}>{usr.name}</span>
+                          <Avatar name={`${usr.nombre || ''} ${usr.apellido || ''}`} src={usr.foto_url} size="sm" />
+                          <span className={s.userName}>{`${usr.nombre || ''} ${usr.apellido || ''}`.trim()}</span>
                         </Link>
                       ),
                     },
-                    { key: 'email', header: 'Correo' },
+                    { key: 'correo', header: 'Correo', render: (usr) => usr.correo },
                     {
-                      key: 'role',
+                      key: 'rol',
                       header: 'Rol',
                       render: (usr) => (
-                        <Badge variant={ROL_VARIANT[usr.role] || 'neutral'}>
-                          {displayNames.userRole[usr.role] || usr.role}
+                        <Badge variant={ROL_VARIANT[usr.rol] || 'neutral'}>
+                          {ROL_LABEL[usr.rol] || usr.rol}
                         </Badge>
                       ),
                     },
@@ -414,39 +482,39 @@ export default function Usuarios() {
                       key: 'ficha',
                       header: 'Ficha',
                       render: (usr) => {
-                        const ficha = usr.fichaId ? findFichaById(usr.fichaId) : null
-                        return ficha ? (
-                          <code className={s.codigo}>{ficha.codigo}</code>
-                        ) : (
-                          <span className={s.muted}>—</span>
-                        )
+                        const ficha = fichaDeUsuario(usr)
+                        return ficha ? <code className={s.codigo}>{ficha.codigo}</code> : <span className={s.muted}>—</span>
                       },
                     },
                     {
                       key: 'centro',
                       header: 'Centro',
                       render: (usr) => {
-                        const ficha = usr.fichaId ? findFichaById(usr.fichaId) : null
-                        const centro = ficha?.centroId ? findCentroById(ficha.centroId) : null
-                        return centro?.nombre || <span className={s.muted}>—</span>
+                        const ficha = fichaDeUsuario(usr)
+                        const centro = ficha?.training_center_id ? centrosPorId.get(Number(ficha.training_center_id)) : null
+                        return centro?.name || <span className={s.muted}>—</span>
                       },
                     },
                     {
                       key: 'programa',
                       header: 'Programa',
                       render: (usr) => {
-                        const ficha = usr.fichaId ? findFichaById(usr.fichaId) : null
-                        return usr.programa || ficha?.programa || <span className={s.muted}>—</span>
+                        const perfil = aprendicesPorUsuario.get(Number(usr.id))
+                        const ficha = fichaDeUsuario(usr)
+                        return perfil?.program?.nombre || ficha?.program?.nombre || <span className={s.muted}>—</span>
                       },
                     },
                     {
                       key: 'estado',
                       header: 'Estado',
-                      render: (usr) => (
-                        <Badge variant={ESTADO_VARIANT[usr.estado] || 'neutral'}>
-                          {displayNames.userStatus[usr.estado] || usr.estado || 'Activo'}
-                        </Badge>
-                      ),
+                      render: (usr) => {
+                        const estado = usr.estado === false ? 'suspendido' : 'activo'
+                        return (
+                          <Badge variant={ESTADO_VARIANT[estado] || 'neutral'}>
+                            {ESTADO_LABEL[estado]}
+                          </Badge>
+                        )
+                      },
                     },
                     {
                       key: 'acciones',
@@ -463,13 +531,13 @@ export default function Usuarios() {
                           >
                             <Eye size={14} /> Ver
                           </Button>
-                          {usr.estado === 'suspendido' ? (
+                          {usr.estado === false ? (
                             <Button
                               type="button"
                               size="sm"
                               variant="ghost"
                               title="Reactivar cuenta"
-                              onClick={() => { setUserEstado(usr.id, 'activo'); refrescar() }}
+                              onClick={() => cambiarEstado(usr, true)}
                             >
                               <ArrowCounterClockwise size={14} /> Activar
                             </Button>
@@ -480,7 +548,7 @@ export default function Usuarios() {
                               variant="dangerGhost"
                               title={Number(user?.id) === Number(usr.id) ? 'No puedes suspender tu propia cuenta' : 'Suspender cuenta'}
                               disabled={Number(user?.id) === Number(usr.id)}
-                              onClick={() => { setUserEstado(usr.id, 'suspendido'); refrescar() }}
+                              onClick={() => cambiarEstado(usr, false)}
                             >
                               <Prohibit size={14} /> Suspender
                             </Button>
@@ -503,7 +571,7 @@ export default function Usuarios() {
                 />
               </>
             )}
-          </>
+          </ApiState>
         )}
       </div>
     </DashboardLayout>

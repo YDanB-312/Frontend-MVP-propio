@@ -9,29 +9,27 @@ import Badge from '../../../components/Badge/Badge'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import Button from '../../../components/Button/Button'
 import Actions from '../../../components/Actions/Actions'
+import Alert from '../../../components/Alert/Alert'
+import ApiState from '../../../components/ApiState/ApiState'
 import { Input, Select, Textarea } from '../../../components/Input/Input'
 import FormField from '../../../components/FormField/FormField'
 import { CalendarBlank, ChartBar, FolderOpen, GraduationCap, Plus, Tray } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
-import {
-  getProjectsByStudent,
-  getSimilitudesValidas,
-  getEstudiantesDeFicha,
-  findFichaById,
-  findUserById,
-  createProject,
-  detectarSimilitudes,
-  createNotification,
-  displayNames,
-} from '../../../data/mockData'
+import { useApi } from '../../../lib/useApi'
+import { toFieldErrors } from '../../../lib/api'
+import { proyectos, aprendices, fichas, similitudes as similitudesApi } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { getSimilitudInfo as similitudInfo } from '../../../utils/similitudInfo'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import { PAGINA_TARJETAS } from '../../../constants/pagination'
+import { MAX_TITULO, MAX_DESCRIPCION, MAX_DESCRIPCION_CORTA } from '../../../utils/validation'
 // Estilos reutilizados de las páginas originales (lista + formulario)
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import n from '../../../components/FormularioBase/FormularioBase.module.css'
 
 const ITEMS_POR_PAGINA = PAGINA_TARJETAS
+
+// Relaciones necesarias para detectar al equipo (pivote) en la lista.
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
 
 const AREAS = [
   'Desarrollo Web',
@@ -40,6 +38,43 @@ const AREAS = [
   'Ciberseguridad',
   'Otro',
 ]
+
+const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
+
+// Errores 422 de la API (columnas del backend) → campos del formulario.
+const CAMPOS_API = {
+  titulo: 'title',
+  resumen: 'description',
+  objetivo_general: 'objetivoGeneral',
+  objetivos_especificos: 'objetivosEspecificos',
+  area_aplicacion: 'areaAplicacion',
+  palabras_clave: 'keywords',
+}
+
+// Una propuesta es del aprendiz si la creó o si figura en su equipo.
+function esMio(proyecto, userId) {
+  if (!proyecto) return false
+  if (Number(proyecto.id_creador) === Number(userId)) return true
+  return (proyecto.apprentices || []).some(
+    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
+  )
+}
+
+function infoSimilitud(lista, projectId) {
+  const pares = (lista || []).filter(
+    (x) => Number(x.id_proyecto_1) === Number(projectId) || Number(x.id_proyecto_2) === Number(projectId)
+  )
+  if (pares.length === 0) return null
+  return {
+    pct: Math.max(...pares.map((x) => Math.round(Number(x.porcentaje) || 0))),
+    count: pares.length,
+  }
+}
+
+function nombreAprendiz(a) {
+  const g = a?.generalUser || {}
+  return [g.nombre, g.apellido].filter(Boolean).join(' ').trim() || g.correo || `Aprendiz #${a?.id}`
+}
 
 export default function Propuestas() {
   const { user } = useAuth()
@@ -59,12 +94,20 @@ export default function Propuestas() {
   const [filtro, setFiltro] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
-  const proyectos = useMemo(() => getProjectsByStudent(user.id), [user.id])
-  const similitudes = useMemo(() => getSimilitudesValidas(), [])
+  const { data: todosProyectos, cargando, error, recargar } = useApi(
+    () => proyectos.listar({ included: INCLUDE_PROYECTOS }),
+    [],
+    { inicial: [] }
+  )
+  const { data: todasSimilitudes } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
+  const proyectosMios = useMemo(
+    () => todosProyectos.filter((p) => esMio(p, user.id)),
+    [todosProyectos, user.id]
+  )
 
   const filtrados = useMemo(
-    () => (filtro === 'todos' ? proyectos : proyectos.filter((p) => p.estado === filtro)),
-    [proyectos, filtro]
+    () => (filtro === 'todos' ? proyectosMios : proyectosMios.filter((p) => p.estado === filtro)),
+    [proyectosMios, filtro]
   )
 
   const inicio = (pagina - 1) * ITEMS_POR_PAGINA
@@ -75,13 +118,32 @@ export default function Propuestas() {
     setPagina(1)
   }
 
-  /* ---------- Creación ---------- */
-  const perfil = findUserById(user.id)
+  /* ---------- Ficha y compañeros del aprendiz ---------- */
+  const { data: aprendicesApi, cargando: cargandoPerfil, error: errorPerfil, recargar: recargarPerfil } =
+    useApi(() => aprendices.listar(), [], { inicial: [] })
+  const { data: fichasApi, cargando: cargandoFichas, error: errorFichas, recargar: recargarFichas } =
+    useApi(() => fichas.listar(), [], { inicial: [] })
+
+  const miAprendiz = useMemo(
+    () => aprendicesApi.find((a) => Number(a.id_usuario) === Number(user.id)) || null,
+    [aprendicesApi, user.id]
+  )
   const miFicha = useMemo(
-    () => (perfil?.fichaId ? findFichaById(perfil.fichaId) : null),
-    [perfil]
+    () => (miAprendiz ? fichasApi.find((f) => Number(f.id) === Number(miAprendiz.id_class_group)) || null : null),
+    [miAprendiz, fichasApi]
+  )
+  const instructorId = miFicha?.instructor?.id ?? null
+
+  const companeros = useMemo(
+    () => (miFicha
+      ? aprendicesApi.filter(
+          (a) => Number(a.id_class_group) === Number(miFicha.id) && Number(a.id_usuario) !== Number(user.id)
+        )
+      : []),
+    [aprendicesApi, miFicha, user.id]
   )
 
+  /* ---------- Creación ---------- */
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -91,16 +153,9 @@ export default function Propuestas() {
     keywords: '',
   })
   const [errors, setErrors] = useState({})
+  const [errorGeneral, setErrorGeneral] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [seleccionados, setSeleccionados] = useState([])
-
-  const companeros = useMemo(
-    () =>
-      perfil?.fichaId
-        ? getEstudiantesDeFicha(Number(perfil.fichaId)).filter((c) => c.id !== user.id)
-        : [],
-    [perfil, user.id]
-  )
 
   function alternarCompanero(id) {
     setSeleccionados((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]))
@@ -146,60 +201,88 @@ export default function Propuestas() {
     setCreando(false)
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const errs = validar()
     setErrors(errs)
-    if (Object.keys(errs).length > 0 || !miFicha) return
+    setErrorGeneral('')
+    if (Object.keys(errs).length > 0 || !miFicha || !miAprendiz) return
 
     setGuardando(true)
-    const project = createProject({
-      title: form.title.trim(),
-      description: form.description.trim(),
-      studentId: user.id,
-      studentName: user.nombre,
-      instructorId: miFicha.instructorId,
-      instructorName: miFicha.instructorName,
-      fichaId: miFicha.id,
-      keywords: form.keywords.trim(),
-      objetivoGeneral: form.objetivoGeneral.trim(),
-      objetivosEspecificos: objetivosValidos.join('\n'),
-      areaAplicacion: form.areaAplicacion,
-      integrantes: [user.nombre, ...seleccionados.map((idSel) => {
-        const comp = companeros.find((c) => c.id === idSel)
-        return comp ? comp.name : null
-      }).filter(Boolean)],
-      estado: 'pendiente',
-    })
-
-    // Detección inmediata contra el corpus vigente del mismo programa
-    // (pendientes + aprobadas): así ResultadoAnalisis ya muestra la lista
-    // completa al subir, sin esperar a la aprobación del instructor.
-    detectarSimilitudes(project.id)
-
-    // Avisar a cada compañero añadido al equipo
-    seleccionados.forEach((idComp) => {
-      const comp = companeros.find((c) => c.id === idComp)
-      if (!comp) return
-      createNotification({
-        mensaje: `${user.nombre} te añadió como integrante de '${project.title}'`,
-        tipo: 'mensaje',
-        userId: comp.id,
-        projectId: project.id,
+    try {
+      // 1) Crear la propuesta en el backend.
+      const nueva = await proyectos.crear({
+        titulo: form.title.trim(),
+        resumen: form.description.trim(),
+        palabras_clave: form.keywords.trim() || null,
+        area_aplicacion: form.areaAplicacion,
+        objetivo_general: form.objetivoGeneral.trim(),
+        objetivos_especificos: objetivosValidos,
+        estado: 'pendiente',
+        id_creador: Number(user.id),
+        id_instructor_asignado: instructorId,
+        id_class_group: Number(miFicha.id),
       })
-    })
 
-    navigate('/aprendiz/analizando-proyecto', { state: { projectId: project.id }, replace: true })
+      // 2) Vincular a los compañeros seleccionados al equipo (pivote).
+      for (const idAprendiz of seleccionados) {
+        try {
+          await proyectos.agregarAlEquipo(Number(idAprendiz), Number(nueva.id))
+        } catch {
+          // El pivote pudo existir ya; se ignora para no bloquear la creación.
+        }
+      }
+
+      // 3) Disparar el motor de similitud del backend.
+      try {
+        await similitudesApi.detectar(nueva.id)
+      } catch {
+        // El análisis puede recalcularse después; no impide continuar.
+      }
+
+      navigate('/aprendiz/analizando-proyecto', { state: { projectId: nueva.id }, replace: true })
+    } catch (err) {
+      const campos = toFieldErrors(err?.data)
+      const traducidos = {}
+      for (const [clave, mensaje] of Object.entries(campos)) {
+        traducidos[CAMPOS_API[clave] || clave] = mensaje
+      }
+      setErrors(traducidos)
+      if (Object.keys(traducidos).length === 0) {
+        setErrorGeneral(err?.message || 'No se pudo crear la propuesta. Intenta de nuevo.')
+      }
+    } finally {
+      setGuardando(false)
+    }
   }
 
-  if (!miFicha) {
+  // Carga inicial del perfil académico (aprendiz ↔ ficha).
+  if (cargandoPerfil || cargandoFichas) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Mis Propuestas">
+        <div className={s.page}><ApiState cargando /></div>
+      </DashboardLayout>
+    )
+  }
+
+  if (errorPerfil || errorFichas) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Mis Propuestas">
+        <div className={s.page}>
+          <ApiState error={errorPerfil || errorFichas} onReintentar={() => { recargarPerfil(); recargarFichas() }} />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!miFicha || !miAprendiz) {
     return (
       <DashboardLayout role="aprendiz" titulo="Mis Propuestas">
         <div className={s.page}>
           <EmptyState
             icon={<GraduationCap size={40} weight="light" />}
             title="Aún no perteneces a una ficha"
-            message="Únete con el código que te dio tu instructor para poder crear propuestas."
+            message="La asignación de tu ficha la gestiona coordinación. Consulta tu ficha o contacta a tu instructor."
             actionLabel="Ir a Mi Ficha"
             onAction={() => navigate('/aprendiz/ficha')}
           />
@@ -246,7 +329,7 @@ export default function Propuestas() {
                     value={form.title}
                     onChange={(e) => set('title', e.target.value)}
                     placeholder="Ej: Sistema de monitoreo ambiental con IoT"
-                    maxLength={120}
+                    maxLength={MAX_TITULO}
                     autoFocus
                   />
                 </FormField>
@@ -262,7 +345,7 @@ export default function Propuestas() {
                     value={form.description}
                     onChange={(e) => set('description', e.target.value)}
                     placeholder="¿Qué problema quieres resolver? ¿Cómo lo resolvería tu software? ¿Quiénes se beneficiarían?"
-                    maxLength={600}
+                    maxLength={MAX_DESCRIPCION}
                   />
                 </FormField>
 
@@ -277,7 +360,7 @@ export default function Propuestas() {
                     value={form.objetivoGeneral}
                     onChange={(e) => set('objetivoGeneral', e.target.value)}
                     placeholder="Ej: Optimizar el riego de cultivos pequeños mediante monitoreo automatizado de humedad del suelo."
-                    maxLength={300}
+                    maxLength={MAX_DESCRIPCION_CORTA}
                     autoFocus
                   />
                 </FormField>
@@ -314,7 +397,7 @@ export default function Propuestas() {
                             onClick={() => alternarCompanero(c.id)}
                             aria-pressed={activo}
                           >
-                            {c.name}
+                            {nombreAprendiz(c)}
                           </button>
                         )
                       })}
@@ -337,7 +420,7 @@ export default function Propuestas() {
                 </FormField>
 
                 <p className={n.hint}>
-                  Ficha de formación: {miFicha.nombre} · {miFicha.codigo} — definida al unirte con el código
+                  Ficha de formación: {miFicha.nombre} · {miFicha.codigo}
                 </p>
 
                 <FormField
@@ -351,6 +434,8 @@ export default function Propuestas() {
                     placeholder="iot, sensores, agricultura"
                   />
                 </FormField>
+
+            {errorGeneral && <Alert variant="danger">{errorGeneral}</Alert>}
 
             <Actions className={n.actions}>
               <Button type="submit" disabled={guardando}>
@@ -378,59 +463,61 @@ export default function Propuestas() {
               </label>
             </FilterBar>
 
-            {filtrados.length === 0 ? (
-              <EmptyState
-                icon={<Tray />}
-                title={filtro === 'todos' && proyectos.length === 0 ? 'Aún no tienes propuestas' : 'Sin resultados'}
-                message={
-                  filtro === 'todos' && proyectos.length === 0
-                    ? 'Registra tu primera propuesta para comenzar a analizarla en ProyecTwin.'
-                    : 'No hay propuestas con el estado seleccionado. Prueba con otro filtro.'
-                }
-                actionLabel={
-                  filtro === 'todos' && proyectos.length === 0 ? 'Crear propuesta' : undefined
-                }
-                actionIcon={<Plus size={14} />}
-                onAction={
-                  filtro === 'todos' && proyectos.length === 0 ? empezar : undefined
-                }
-              />
-            ) : (
-              <>
-                <div className={s.cardGrid}>
-                  {visibles.map((p) => {
-                    const info = similitudInfo(similitudes, p.id)
-                    return (
-                      <Link key={p.id} to={`/aprendiz/detalle-proyecto/${p.id}`} viewTransition className={s.card}>
-                        <header className={s.cardHeader}>
-                          <h3 className={s.cardTitle}>{p.title}</h3>
-                          <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
-                            {displayNames.projectStatus[p.estado] || p.estado}
-                          </Badge>
-                        </header>
-                        <p className={s.cardDesc}>{p.description}</p>
-                        <footer className={s.cardFooter}>
-                          <span className={s.cardMeta}><CalendarBlank size={14} /> {p.createdAt}</span>
-                          {info && (
-                            <span title={`${info.pct}% · ${info.count} coincidencia${info.count !== 1 ? 's' : ''}`}>
-                              <GradeBadge score={info.pct} size="sm" />
-                            </span>
-                          )}
-                        </footer>
-                      </Link>
-                    )
-                  })}
-                </div>
-                <Pagination
-                  totalItems={filtrados.length}
-                  filteredCount={filtrados.length}
-                  itemsPerPage={ITEMS_POR_PAGINA}
-                  paginaActual={pagina}
-                  setPaginaActual={setPagina}
-                  itemName="propuestas"
+            <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+              {filtrados.length === 0 ? (
+                <EmptyState
+                  icon={<Tray />}
+                  title={filtro === 'todos' && proyectosMios.length === 0 ? 'Aún no tienes propuestas' : 'Sin resultados'}
+                  message={
+                    filtro === 'todos' && proyectosMios.length === 0
+                      ? 'Registra tu primera propuesta para comenzar a analizarla en ProyecTwin.'
+                      : 'No hay propuestas con el estado seleccionado. Prueba con otro filtro.'
+                  }
+                  actionLabel={
+                    filtro === 'todos' && proyectosMios.length === 0 ? 'Crear propuesta' : undefined
+                  }
+                  actionIcon={<Plus size={14} />}
+                  onAction={
+                    filtro === 'todos' && proyectosMios.length === 0 ? empezar : undefined
+                  }
                 />
-              </>
-            )}
+              ) : (
+                <>
+                  <div className={s.cardGrid}>
+                    {visibles.map((p) => {
+                      const info = infoSimilitud(todasSimilitudes, p.id)
+                      return (
+                        <Link key={p.id} to={`/aprendiz/detalle-proyecto/${p.id}`} viewTransition className={s.card}>
+                          <header className={s.cardHeader}>
+                            <h3 className={s.cardTitle}>{p.titulo}</h3>
+                            <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
+                              {ESTADO_LABEL[p.estado] || p.estado}
+                            </Badge>
+                          </header>
+                          <p className={s.cardDesc}>{p.resumen}</p>
+                          <footer className={s.cardFooter}>
+                            <span className={s.cardMeta}><CalendarBlank size={14} /> {fechaDesdeApi(p.created_at)}</span>
+                            {info && (
+                              <span title={`${info.pct}% · ${info.count} coincidencia${info.count !== 1 ? 's' : ''}`}>
+                                <GradeBadge score={info.pct} size="sm" />
+                              </span>
+                            )}
+                          </footer>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                  <Pagination
+                    totalItems={filtrados.length}
+                    filteredCount={filtrados.length}
+                    itemsPerPage={ITEMS_POR_PAGINA}
+                    paginaActual={pagina}
+                    setPaginaActual={setPagina}
+                    itemName="propuestas"
+                  />
+                </>
+              )}
+            </ApiState>
           </>
         )}
       </div>

@@ -19,7 +19,7 @@ test.describe('Admin: precisión y botones', () => {
     await login(page, 'admin')
     await page.goto('/admin/dashboard')
     await expect(page.locator('aside a[href="/admin/redes-conocimiento"]')).toHaveCount(0)
-    await expect(page.locator('aside a[href="/admin/centros"]')).toHaveCount(0)
+    await expect(page.locator('aside a[href="/admin/training-centers"]')).toHaveCount(0)
     await expect(page.locator('aside a[href="/admin/config-similitud"]')).toHaveCount(0)
     await expect(page.locator('aside a[href="/admin/configuracion"]')).toHaveCount(1)
   })

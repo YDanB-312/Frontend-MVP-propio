@@ -8,15 +8,23 @@ import Button from '../../../components/Button/Button'
 import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import ApiState from '../../../components/ApiState/ApiState'
 import DataTable from '../../../components/DataTable/DataTable'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { useAuth } from '../../../contexts/AuthContext'
-import { findProjectById, findFichaById, getFichasDelInstructor, getSimilitudesValidas, getAllProjects, instructorVeProyecto, displayNames } from '../../../data/mockData'
+import { useApi } from '../../../lib/useApi'
+import { proyectos, similitudes as similitudesApi, fichas, instructores } from '../../../lib/recursos'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesInstructor.module.css'
 import { PAGINA_TABLA } from '../../../constants/pagination'
+import { fechaDesdeApi } from '../../../utils/helpers'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
+
+// Relaciones necesarias para mostrar creador y ficha de cada propuesta del par.
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+
+const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
 const PROY_VARIANT = {
   pendiente: 'warning',
@@ -24,27 +32,69 @@ const PROY_VARIANT = {
   rechazado: 'danger',
 }
 
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
+
 export default function SimilitudesInstructor() {
   const { user } = useAuth()
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
-  // Mismo criterio que Revisión y Dashboard: proyecto propio O de ficha propia
-  const idsPropios = new Set(
-    user ? getAllProjects().filter((p) => instructorVeProyecto(p, Number(user.id))).map((p) => p.id) : []
+  // Fuente única: la API. Propuestas, similitudes y catálogos del instructor.
+  const { data: instructoresApi } = useApi(() => instructores.listar(), [], { inicial: [] })
+  const { data: fichasApi } = useApi(() => fichas.listar(), [], { inicial: [] })
+  const { data: todosProyectos, cargando, error, recargar } = useApi(
+    () => proyectos.listar({ included: INCLUDE_PROYECTOS }),
+    [],
+    { inicial: [] }
   )
-  const similitudes = getSimilitudesValidas().filter(
-    (x) => idsPropios.has(x.projectId1) || idsPropios.has(x.projectId2)
+  const { data: todasSimilitudes } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
+
+  const miFila = useMemo(
+    () => instructoresApi.find((i) => Number(i.id_usuario) === Number(user?.id)) || null,
+    [instructoresApi, user?.id]
+  )
+  const misFichas = useMemo(
+    () => fichasApi.filter((f) => Number(f.instructor?.id) === Number(miFila?.id)),
+    [fichasApi, miFila?.id]
+  )
+  const misFichasIds = useMemo(() => new Set(misFichas.map((f) => Number(f.id))), [misFichas])
+
+  const proyectoPorId = useMemo(
+    () => new Map((todosProyectos || []).map((p) => [Number(p.id), p])),
+    [todosProyectos]
   )
 
-  const filtradas =
-    filtroEstado === 'todos'
+  // Regla de negocio: el instructor ve la similitud si toca una propuesta suya.
+  const proyectoEnAlcance = useMemo(
+    () => (p) =>
+      !!p && (
+        Number(p.id_instructor_asignado) === Number(miFila?.id) ||
+        misFichasIds.has(Number(p.id_class_group))
+      ),
+    [miFila?.id, misFichasIds]
+  )
+
+  const similitudes = useMemo(
+    () => (todasSimilitudes || []).filter(
+      (x) => proyectoEnAlcance(proyectoPorId.get(Number(x.id_proyecto_1)))
+        || proyectoEnAlcance(proyectoPorId.get(Number(x.id_proyecto_2)))
+    ),
+    [todasSimilitudes, proyectoPorId, proyectoEnAlcance]
+  )
+
+  const filtradas = useMemo(
+    () => (filtroEstado === 'todos'
       ? similitudes
       : similitudes.filter((x) => {
-          const p1 = findProjectById(x.projectId1)
-          const p2 = findProjectById(x.projectId2)
+          const p1 = proyectoPorId.get(Number(x.id_proyecto_1))
+          const p2 = proyectoPorId.get(Number(x.id_proyecto_2))
           return p1?.estado === filtroEstado || p2?.estado === filtroEstado
-        })
+        })),
+    [similitudes, filtroEstado, proyectoPorId]
+  )
 
   const paginadas = filtradas.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
@@ -52,27 +102,23 @@ export default function SimilitudesInstructor() {
   )
 
   // Agrupa la página por ficha a cargo; el resto va a "Otras fichas".
-  const misFichasIds = useMemo(
-    () => new Set(getFichasDelInstructor(Number(user?.id)).map((f) => f.id)),
-    [user?.id]
-  )
   const grupos = useMemo(() => {
     const mapa = new Map()
     for (const x of paginadas) {
-      const f1 = findProjectById(x.projectId1)?.fichaId
-      const f2 = findProjectById(x.projectId2)?.fichaId
-      const fid = misFichasIds.has(f1) ? f1 : misFichasIds.has(f2) ? f2 : 0
+      const f1 = proyectoPorId.get(Number(x.id_proyecto_1))?.id_class_group
+      const f2 = proyectoPorId.get(Number(x.id_proyecto_2))?.id_class_group
+      const fid = misFichasIds.has(Number(f1)) ? Number(f1) : misFichasIds.has(Number(f2)) ? Number(f2) : 0
       if (!mapa.has(fid)) mapa.set(fid, { fid, pares: [] })
       mapa.get(fid).pares.push(x)
     }
     return [...mapa.values()]
       .map((g) => ({
         ...g,
-        ficha: g.fid ? findFichaById(g.fid) : null,
-        max: Math.max(...g.pares.map((y) => Math.round((y.similitud || 0) * 100))),
+        ficha: g.fid ? fichasApi.find((f) => Number(f.id) === g.fid) || null : null,
+        max: Math.max(...g.pares.map((y) => Math.round(Number(y.porcentaje) || 0))),
       }))
       .sort((a, b) => (a.fid === 0) - (b.fid === 0) || b.max - a.max)
-  }, [paginadas, misFichasIds])
+  }, [paginadas, misFichasIds, proyectoPorId, fichasApi])
 
   const [abiertos, setAbiertos] = useState(null)
   const abiertosEfectivos = abiertos ?? (grupos.length > 0 ? new Set([grupos[0].fid]) : new Set())
@@ -91,49 +137,59 @@ export default function SimilitudesInstructor() {
     {
       key: 'a',
       header: 'Propuesta A',
-      render: (sim) => (
-        <>
-          <span className={s.title}>{sim.project1Title}</span>
-          <br />
-          <span className={s.subText}>{sim.project1Student}</span>
-        </>
-      ),
+      render: (sim) => {
+        const p = proyectoPorId.get(Number(sim.id_proyecto_1))
+        return (
+          <>
+            <span className={s.title}>{p?.titulo || 'Proyecto no disponible'}</span>
+            <br />
+            <span className={s.subText}>{nombreCompleto(p?.creator) || '—'}</span>
+          </>
+        )
+      },
     },
     {
       key: 'b',
       header: 'Propuesta B',
-      render: (sim) => (
-        <>
-          <span className={s.title}>{sim.project2Title}</span>
-          <br />
-          <span className={s.subText}>{sim.project2Student}</span>
-        </>
-      ),
+      render: (sim) => {
+        const p = proyectoPorId.get(Number(sim.id_proyecto_2))
+        return (
+          <>
+            <span className={s.title}>{p?.titulo || 'Proyecto no disponible'}</span>
+            <br />
+            <span className={s.subText}>{nombreCompleto(p?.creator) || '—'}</span>
+          </>
+        )
+      },
     },
     {
       key: 'similitud',
       header: 'Similitud',
-      render: (sim) => <GradeBadge score={Math.round((sim.similitud || 0) * 100)} size="sm" />,
+      render: (sim) => <GradeBadge score={Math.round(Number(sim.porcentaje) || 0)} size="sm" />,
     },
     {
       key: 'estados',
       header: 'Estado',
       render: (sim) => {
-        const estadoA = findProjectById(sim.projectId1)?.estado || '—'
-        const estadoB = findProjectById(sim.projectId2)?.estado || '—'
+        const estadoA = proyectoPorId.get(Number(sim.id_proyecto_1))?.estado || '—'
+        const estadoB = proyectoPorId.get(Number(sim.id_proyecto_2))?.estado || '—'
         return (
           <span className={local.estadoPair}>
             <Badge variant={PROY_VARIANT[estadoA] || 'neutral'}>
-              A: {displayNames.projectStatus[estadoA] || estadoA}
+              A: {ESTADO_LABEL[estadoA] || estadoA}
             </Badge>
             <Badge variant={PROY_VARIANT[estadoB] || 'neutral'}>
-              B: {displayNames.projectStatus[estadoB] || estadoB}
+              B: {ESTADO_LABEL[estadoB] || estadoB}
             </Badge>
           </span>
         )
       },
     },
-    { key: 'createdAt', header: 'Fecha' },
+    {
+      key: 'fecha',
+      header: 'Fecha',
+      render: (sim) => fechaDesdeApi(sim.fecha) || '—',
+    },
     {
       key: 'acciones',
       header: 'Acciones',
@@ -174,9 +230,9 @@ export default function SimilitudesInstructor() {
               }}
             >
               <option value="todos">Todos</option>
-              <option value="pendiente">{displayNames.projectStatus.pendiente}</option>
-              <option value="aprobado">{displayNames.projectStatus.aprobado}</option>
-              <option value="rechazado">{displayNames.projectStatus.rechazado}</option>
+              <option value="pendiente">{ESTADO_LABEL.pendiente}</option>
+              <option value="aprobado">{ESTADO_LABEL.aprobado}</option>
+              <option value="rechazado">{ESTADO_LABEL.rechazado}</option>
             </Select>
           </label>
           <p className={s.info}>
@@ -184,85 +240,79 @@ export default function SimilitudesInstructor() {
           </p>
         </FilterBar>
 
-        {paginadas.length === 0 ? (
-          similitudes.length === 0 ? (
-            getSimilitudesValidas().length === 0 ? (
+        <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+          {paginadas.length === 0 ? (
+            similitudes.length === 0 ? (
               <EmptyState
                 icon={<MagnifyingGlass />}
-                title="Sin coincidencias en el sistema"
-                message="Ninguna propuesta del sistema alcanza el umbral vigente. El motor está listo para cuando lleguen más propuestas."
+                title="Sin similitudes"
+                message="Ninguna de tus propuestas alcanza el umbral vigente. El motor está listo para cuando lleguen más propuestas."
               />
             ) : (
               <EmptyState
                 icon={<MagnifyingGlass />}
                 title="Sin similitudes"
-                message={`Hay ${getSimilitudesValidas().length} coincidencia(s) válidas en el sistema, pero ninguna toca a tus aprendices o tu programa.`}
+                message="No hay similitudes con el estado de propuesta seleccionado."
               />
             )
           ) : (
-            <EmptyState
-              icon={<MagnifyingGlass />}
-              title="Sin similitudes"
-              message="No hay similitudes con el estado de propuesta seleccionado."
-            />
-          )
-        ) : (
-          <>
-            <div className={local.grupos}>
-              {grupos.map((g) => {
-                const abierto = abiertosEfectivos.has(g.fid)
-                const titulo = g.ficha ? `${g.ficha.codigo} · ${g.ficha.nombre}` : 'Otras fichas del programa'
-                return (
-                  <section key={g.fid} className={local.grupo}>
-                    <button
-                      type="button"
-                      className={local.grupoHead}
-                      id={`grupo-ficha-btn-${g.fid}`}
-                      aria-expanded={abierto}
-                      aria-controls={`grupo-ficha-${g.fid}`}
-                      onClick={() => alternarGrupo(g.fid)}
-                    >
-                      <span className={local.grupoMain}>
-                        <span className={local.grupoTitulo}>{titulo}</span>
-                        <span className={local.grupoMeta}>
-                          {g.pares.length} coincidencia{g.pares.length !== 1 ? 's' : ''}
+            <>
+              <div className={local.grupos}>
+                {grupos.map((g) => {
+                  const abierto = abiertosEfectivos.has(g.fid)
+                  const titulo = g.ficha ? `${g.ficha.codigo} · ${g.ficha.nombre}` : 'Otras fichas del programa'
+                  return (
+                    <section key={g.fid} className={local.grupo}>
+                      <button
+                        type="button"
+                        className={local.grupoHead}
+                        id={`grupo-ficha-btn-${g.fid}`}
+                        aria-expanded={abierto}
+                        aria-controls={`grupo-ficha-${g.fid}`}
+                        onClick={() => alternarGrupo(g.fid)}
+                      >
+                        <span className={local.grupoMain}>
+                          <span className={local.grupoTitulo}>{titulo}</span>
+                          <span className={local.grupoMeta}>
+                            {g.pares.length} coincidencia{g.pares.length !== 1 ? 's' : ''}
+                          </span>
                         </span>
-                      </span>
-                      <GradeBadge score={g.max} size="sm" />
-                      {abierto ? (
-                        <CaretDown size={16} className={local.grupoChevron} aria-hidden="true" />
-                      ) : (
-                        <CaretRight size={16} className={local.grupoChevron} aria-hidden="true" />
-                      )}
-                    </button>
-                    <div
-                      id={`grupo-ficha-${g.fid}`}
-                      role="region"
-                      aria-labelledby={`grupo-ficha-btn-${g.fid}`}
-                      hidden={!abierto}
-                    >
-                      <DataTable
-                        ariaLabel={`Similitudes de ${titulo}`}
-                        columns={columnas}
-                        rows={g.pares}
-                        keyOf={(sim) => sim.id}
-                      />
-                    </div>
-                  </section>
-                )
-              })}
-            </div>
+                        <GradeBadge score={g.max} size="sm" />
+                        {abierto ? (
+                          <CaretDown size={16} className={local.grupoChevron} aria-hidden="true" />
+                        ) : (
+                          <CaretRight size={16} className={local.grupoChevron} aria-hidden="true" />
+                        )}
+                      </button>
+                      <div
+                        id={`grupo-ficha-${g.fid}`}
+                        role="region"
+                        aria-labelledby={`grupo-ficha-btn-${g.fid}`}
+                        hidden={!abierto}
+                      >
+                        <DataTable
+                          ariaLabel={`Similitudes de ${titulo}`}
+                          columns={columnas}
+                          rows={g.pares}
+                          keyOf={(sim) => sim.id}
+                        />
+                      </div>
+                    </section>
+                  )
+                })}
+              </div>
 
-            <Pagination
-              totalItems={filtradas.length}
-              itemsPerPage={ITEMS_POR_PAGINA}
-              paginaActual={pagina}
-              setPaginaActual={setPagina}
-              itemName="similitudes"
-              filteredCount={filtradas.length}
-            />
-          </>
-        )}
+              <Pagination
+                totalItems={filtradas.length}
+                itemsPerPage={ITEMS_POR_PAGINA}
+                paginaActual={pagina}
+                setPaginaActual={setPagina}
+                itemName="similitudes"
+                filteredCount={filtradas.length}
+              />
+            </>
+          )}
+        </ApiState>
       </div>
     </DashboardLayout>
   )

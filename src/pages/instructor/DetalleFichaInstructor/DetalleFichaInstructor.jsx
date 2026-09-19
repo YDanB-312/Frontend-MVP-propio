@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -6,45 +6,78 @@ import DataPanel from '../../../components/DataPanel/DataPanel'
 import Avatar from '../../../components/Avatar/Avatar'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import ApiState from '../../../components/ApiState/ApiState'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import FormField from '../../../components/FormField/FormField'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import { Input, Select } from '../../../components/Input/Input'
+import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
 import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
 import { useAuth } from '../../../contexts/AuthContext'
-import {
-  findFichaById,
-  getEstudiantesDeFicha,
-  getProjectsByFicha,
-  updateFicha,
-  deleteFicha,
-  instructorVeFicha,
-  displayNames,
-} from '../../../data/mockData'
+import { useApi } from '../../../lib/useApi'
+import { fichas, instructores, proyectos } from '../../../lib/recursos'
+import { formatearFecha } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 import { ArrowRight, Books, CalendarBlank, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
+
+const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
+
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
 
 export default function DetalleFichaInstructor() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [editando, setEditando] = useState(false)
-  const [form, setForm] = useState(() => {
-    const f = findFichaById(id)
-    return f ? { nombre: f.nombre, numero: f.numero || '', estado: f.estado || 'activo' } : null
-  })
+  const [form, setForm] = useState({ nombre: '', numero: '', estado: 'activo' })
   const [errores, setErrores] = useState({})
   const [modalEliminar, setModalEliminar] = useState(false)
+  const [guardando, setGuardando] = useState(false)
 
-  const ficha = findFichaById(id)
-  const estudiantes = ficha ? getEstudiantesDeFicha(ficha.id) : []
-  const proyectosFicha = ficha ? getProjectsByFicha(ficha.id) : []
+  // Ficha con aprendices incluidos, propuestas y catálogo de instructores.
+  const { data: ficha, cargando, error, recargar } = useApi(
+    () => fichas.obtener(id),
+    [id],
+    { inicial: null }
+  )
+  const { data: todosProyectos } = useApi(() => proyectos.listar(), [], { inicial: [] })
+  const { data: instructoresApi } = useApi(() => instructores.listar(), [], { inicial: [] })
+
+  const miFila = useMemo(
+    () => instructoresApi.find((i) => Number(i.id_usuario) === Number(user?.id)) || null,
+    [instructoresApi, user?.id]
+  )
+
+  const estudiantes = ficha?.apprentices || []
+  const proyectosFicha = useMemo(
+    () => (ficha ? (todosProyectos || []).filter((p) => Number(p.id_class_group) === Number(ficha.id)) : []),
+    [todosProyectos, ficha]
+  )
   const tieneDatos = estudiantes.length > 0 || proyectosFicha.length > 0
 
-  // Autorización: solo el instructor a cargo de la ficha
-  const autorizado = ficha && instructorVeFicha(ficha, user?.id)
+  // Autorización: solo el instructor a cargo de la ficha.
+  const autorizado = !!ficha && Number(ficha.instructor?.id) === Number(miFila?.id)
+
+  if (cargando) {
+    return (
+      <DashboardLayout role="instructor" titulo="Detalle de Ficha">
+        <div className={s.page}><ApiState cargando /></div>
+      </DashboardLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout role="instructor" titulo="Detalle de Ficha">
+        <div className={s.page}><ApiState error={error} onReintentar={recargar} /></div>
+      </DashboardLayout>
+    )
+  }
 
   if (!ficha) {
     return (
@@ -55,7 +88,7 @@ export default function DetalleFichaInstructor() {
             title="Ficha no encontrada"
             message="La ficha que buscas no existe o fue eliminada."
             actionLabel="Volver a fichas"
-            onAction={() => navigate('/instructor/gestionar-fichas')}
+            onAction={() => navigate('/instructor/fichas')}
           />
         </div>
       </DashboardLayout>
@@ -84,7 +117,13 @@ export default function DetalleFichaInstructor() {
     setErrores((err) => ({ ...err, [name]: undefined }))
   }
 
-  const guardarEdicion = (e) => {
+  function iniciarEdicion() {
+    setForm({ nombre: ficha.nombre, numero: ficha.numero || '', estado: ficha.estado || 'activo' })
+    setErrores({})
+    setEditando(true)
+  }
+
+  const guardarEdicion = async (e) => {
     e.preventDefault()
     const numero = form.numero.trim()
     if (!form.nombre.trim()) {
@@ -99,18 +138,34 @@ export default function DetalleFichaInstructor() {
       setErrores({ numero: 'Solo dígitos (4 a 8 caracteres).' })
       return
     }
-    updateFicha({
-      id: ficha.id,
-      nombre: form.nombre.trim(),
-      numero,
-      estado: form.estado,
-    })
-    setEditando(false)
+    setGuardando(true)
+    try {
+      // PUT exige el objeto completo de la ficha.
+      await fichas.actualizar(ficha.id, {
+        ...ficha,
+        nombre: form.nombre.trim(),
+        numero,
+        estado: form.estado,
+        id_programa: ficha.id_programa,
+        id_instructor: ficha.id_instructor,
+        training_center_id: ficha.training_center_id,
+      })
+      await recargar()
+      setEditando(false)
+    } catch (err) {
+      setErrores({ numero: err?.data?.message || 'No se pudo actualizar la ficha. Intenta de nuevo.' })
+    } finally {
+      setGuardando(false)
+    }
   }
 
-  const confirmarEliminar = () => {
-    deleteFicha(ficha.id)
-    navigate('/instructor/gestionar-fichas')
+  const confirmarEliminar = async () => {
+    try {
+      await fichas.eliminar(ficha.id)
+      navigate('/instructor/fichas')
+    } catch {
+      setModalEliminar(false)
+    }
   }
 
   return (
@@ -118,7 +173,7 @@ export default function DetalleFichaInstructor() {
       <div className={s.page}>
         <PageHeader
           title={ficha.nombre}
-          subtitle={`Código ${ficha.codigo} · N° ${ficha.numero} · ${ficha.programa}`}
+          subtitle={`Código ${ficha.codigo} · N° ${ficha.numero} · ${ficha.program?.nombre || 'Sin programa'}`}
           icon={<Books />}
           breadcrumb={[
             { label: 'Dashboard', to: '/instructor/dashboard', icon: <ChartBar size={14} /> },
@@ -135,7 +190,7 @@ export default function DetalleFichaInstructor() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setEditando((v) => !v)}
+                onClick={() => (editando ? setEditando(false) : iniciarEdicion())}
               >
                 <PencilLine size={14} /> {editando ? 'Cancelar edición' : 'Editar'}
               </Button>
@@ -155,7 +210,7 @@ export default function DetalleFichaInstructor() {
             <InformacionFicha
               ficha={ficha}
               estudiantesCount={estudiantes.length}
-              proyectosCount={getProjectsByFicha(ficha.id).length}
+              proyectosCount={proyectosFicha.length}
               showDirectorioLink
               directorioTo={`/instructor/directorio-ficha/${ficha.id}`}
             />
@@ -166,7 +221,7 @@ export default function DetalleFichaInstructor() {
                   name="nombre"
                   value={form.nombre}
                   onChange={onChange}
-                  maxLength={80}
+                  maxLength={MAX_NOMBRE}
                 />
               </FormField>
               <FormField label="Número de ficha" required error={errores.numero} help="Solo dígitos, sin espacios. Ej. 3142101">
@@ -175,7 +230,7 @@ export default function DetalleFichaInstructor() {
                   inputMode="numeric"
                   value={form.numero}
                   onChange={onChange}
-                  maxLength={8}
+                  maxLength={MAX_NUMERO_FICHA}
                 />
               </FormField>
               <FormField label="Estado">
@@ -187,22 +242,19 @@ export default function DetalleFichaInstructor() {
                   <option value="activo">Activo</option>
                   <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
+                  <option value="archivado">Archivado</option>
                 </Select>
               </FormField>
               <Actions form>
-                <Button type="submit">
-                  <CheckCircle size={14} /> Guardar cambios
+                <Button type="submit" disabled={guardando}>
+                  <CheckCircle size={14} /> {guardando ? 'Guardando…' : 'Guardar cambios'}
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
                   onClick={() => {
                     setEditando(false)
-                    setForm({
-                      nombre: ficha.nombre,
-                      numero: ficha.numero || '',
-                      estado: ficha.estado || 'activo',
-                    })
+                    setErrores({})
                   }}
                 >
                   Cancelar
@@ -221,18 +273,21 @@ export default function DetalleFichaInstructor() {
             />
           ) : (
             <ul className={s.studentList}>
-              {estudiantes.map((est) => (
-                <li key={est.id}>
-                  <Link to={`/instructor/perfil-companero/${est.id}`} viewTransition className={s.studentRow}>
-                    <Avatar name={est.name} src={est.fotoPerfil} size="md" />
-                    <span className={s.studentInfo}>
-                      <span className={s.studentName}>{est.name}</span>
-                      <span className={s.studentEmail}>{est.email}</span>
-                    </span>
-                    <span className={s.arrow} aria-hidden="true"><ArrowRight size={22} /></span>
-                  </Link>
-                </li>
-              ))}
+              {estudiantes.map((est) => {
+                const g = est.generalUser || {}
+                return (
+                  <li key={est.id}>
+                    <Link to={`/instructor/perfil-companero/${g.id}`} viewTransition className={s.studentRow}>
+                      <Avatar name={nombreCompleto(g)} src={g.foto_url} size="md" />
+                      <span className={s.studentInfo}>
+                        <span className={s.studentName}>{nombreCompleto(g)}</span>
+                        <span className={s.studentEmail}>{g.correo}</span>
+                      </span>
+                      <span className={s.arrow} aria-hidden="true"><ArrowRight size={22} /></span>
+                    </Link>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </DataPanel>
@@ -250,11 +305,11 @@ export default function DetalleFichaInstructor() {
                 <li key={p.id}>
                   <Link to={`/instructor/detalle-proyecto/${p.id}`} viewTransition className={s.studentRow}>
                     <span className={s.studentInfo}>
-                      <span className={s.studentName}>{p.title}</span>
-                      <span className={s.studentEmail}><CalendarBlank size={12} /> {p.createdAt}</span>
+                      <span className={s.studentName}>{p.titulo}</span>
+                      <span className={s.studentEmail}><CalendarBlank size={12} /> {formatearFecha(p.created_at)}</span>
                     </span>
                     <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
-                      {displayNames.projectStatus[p.estado] || p.estado}
+                      {ESTADO_LABEL[p.estado] || p.estado}
                     </Badge>
                     <span className={s.arrow} aria-hidden="true"><ArrowRight size={22} /></span>
                   </Link>
@@ -268,7 +323,7 @@ export default function DetalleFichaInstructor() {
       <ConfirmModal
         open={modalEliminar}
         titulo="Eliminar ficha"
-        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Los aprendices quedarán sin ficha. Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}

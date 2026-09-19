@@ -2,8 +2,20 @@ import { Link } from 'react-router-dom'
 import Badge from '../Badge/Badge'
 import Tag from '../Tag/Tag'
 import s from './DetalleProyectoBase.module.css'
-import { displayNames } from '../../data/mockData'
 import { PROJECT_ESTADO_VARIANT as ESTADO_VARIANT } from '../../constants/badgeVariants'
+import { fechaDesdeApi } from '../../utils/helpers'
+
+// Etiquetas legibles del estado de la propuesta (columnas reales de la API).
+const ESTADO_LABEL = {
+  pendiente: 'Pendiente',
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+}
+
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
 
 /**
  * Contenido compartido "Información del proyecto" — usado por
@@ -11,66 +23,83 @@ import { PROJECT_ESTADO_VARIANT as ESTADO_VARIANT } from '../../constants/badgeV
  * Mantiene una sola fuente de verdad visual para coherencia entre roles.
  */
 export default function InformacionProyecto({ proyecto, ficha, fichaHref }) {
-  const keywords = (proyecto.keywords || '')
-    .split(',')
-    .map((k) => k.trim())
+  // Palabras clave: la API las guarda como texto separado por comas.
+  const keywords = (Array.isArray(proyecto.palabras_clave)
+    ? proyecto.palabras_clave
+    : String(proyecto.palabras_clave || '').split(','))
+    .map((k) => String(k).trim())
     .filter(Boolean)
 
-  const objetivosEsp = (proyecto.objetivosEspecificos || '')
-    .split('\n')
-    .map((l) => l.trim())
+  // Objetivos específicos: la API los expone como array (cast) o texto.
+  const objetivosEsp = (Array.isArray(proyecto.objetivos_especificos)
+    ? proyecto.objetivos_especificos
+    : String(proyecto.objetivos_especificos || '').split('\n'))
+    .map((o) => String(o).trim())
     .filter(Boolean)
-  const tieneObjetivosNuevos = proyecto.objetivoGeneral || objetivosEsp.length > 0
-  const objetivosLegacy = (proyecto.objectives || '')
-    .split('\n')
-    .map((l) => l.replace(/^[\s•\-–]+/, '').trim())
-    .filter(Boolean)
+
+  // Relaciones incluidas por la API (instructor, aprendiz, classGroup).
+  const instructor = proyecto.instructor?.generalUser
+    ? nombreCompleto(proyecto.instructor.generalUser)
+    : null
+  // Integrantes = creador + equipo (pivote), sin duplicados ni vacíos.
+  // El pivote ya incluye al creador, pero se refuerza por si hay datos previos.
+  const creador = nombreCompleto(proyecto.creator)
+  const nombres = [
+    creador,
+    ...(proyecto.apprentices || []).map((a) => nombreCompleto(a.generalUser)),
+  ].map((n) => String(n || '').trim()).filter(Boolean)
+  const integrantes = [...new Set(nombres)]
+  const integrantesTexto = integrantes.length ? integrantes.join(', ') : '—'
+
+  // Ficha: preferimos la relación completa; si no, el classGroup del proyecto.
+  const fichaInfo = ficha || proyecto.classGroup || null
+  const fichaTexto = fichaInfo
+    ? `${fichaInfo.codigo} · ${fichaInfo.nombre}`
+    : `#${proyecto.id_class_group || '—'}`
 
   return (
     <>
       <div className={s.badgeRow}>
         <Badge variant={ESTADO_VARIANT[proyecto.estado] || 'neutral'}>
-          {displayNames.projectStatus[proyecto.estado] || proyecto.estado}
+          {ESTADO_LABEL[proyecto.estado] || proyecto.estado}
         </Badge>
-        {proyecto.areaAplicacion && <Tag variant="info">{proyecto.areaAplicacion}</Tag>}
+        {proyecto.area_aplicacion && <Tag variant="info">{proyecto.area_aplicacion}</Tag>}
       </div>
 
       <dl className={s.detailList}>
         <div className={s.detailRow}>
           <dt>Fecha de creación</dt>
-          <dd>{proyecto.createdAt}</dd>
+          <dd>{fechaDesdeApi(proyecto.created_at)}</dd>
         </div>
         <div className={s.detailRow}>
           <dt>Instructor</dt>
-          <dd>{proyecto.instructorName || '—'}</dd>
+          <dd>{instructor || '—'}</dd>
         </div>
         <div className={s.detailRow}>
           <dt>Ficha</dt>
           <dd>
-            {fichaHref ? (
+            {fichaHref && fichaInfo ? (
               <Link to={fichaHref} className={s.link}>
-                {ficha ? `${ficha.codigo} · ${ficha.nombre}` : `#${proyecto.fichaId}`}
+                {fichaTexto}
               </Link>
-            ) : ficha ? (
-              `${ficha.codigo} · ${ficha.nombre}`
             ) : (
-              `#${proyecto.fichaId}`
+              fichaTexto
             )}
           </dd>
         </div>
         <div className={s.detailRow}>
           <dt>Integrantes</dt>
-          <dd>{(proyecto.integrantes || []).join(', ') || proyecto.studentName || '—'}</dd>
+          <dd>{integrantesTexto}</dd>
         </div>
       </dl>
 
       <h3 className={s.subTitle}>Descripción</h3>
-      <p className={s.paragraph}>{proyecto.description}</p>
+      <p className={s.paragraph}>{proyecto.resumen}</p>
 
-      {tieneObjetivosNuevos ? (
+      {proyecto.objetivo_general || objetivosEsp.length > 0 ? (
         <>
           <h3 className={s.subTitle}>Objetivo general</h3>
-          <p className={s.paragraph}>{proyecto.objetivoGeneral || 'Sin definir.'}</p>
+          <p className={s.paragraph}>{proyecto.objetivo_general || 'Sin definir.'}</p>
           {objetivosEsp.length > 0 && (
             <>
               <h3 className={s.subTitle}>Objetivos específicos</h3>
@@ -81,15 +110,6 @@ export default function InformacionProyecto({ proyecto, ficha, fichaHref }) {
               </ol>
             </>
           )}
-        </>
-      ) : objetivosLegacy.length > 0 ? (
-        <>
-          <h3 className={s.subTitle}>Objetivos</h3>
-          <ul className={s.objList}>
-            {objetivosLegacy.map((o) => (
-              <li key={o}>{o}</li>
-            ))}
-          </ul>
         </>
       ) : null}
 

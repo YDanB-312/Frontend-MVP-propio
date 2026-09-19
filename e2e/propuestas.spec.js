@@ -15,7 +15,7 @@ test.describe('Propuestas del aprendiz', () => {
     await page.getByRole('main').getByRole('button', { name: /Nueva propuesta/i }).click()
 
     // La ficha se deriva del perfil: nota visible y un solo select (área)
-    await expect(page.getByText(/definida al unirte con el código/i)).toBeVisible()
+    await expect(page.getByText(/Ficha de formación:/i)).toBeVisible()
     await expect(page.locator('select')).toHaveCount(1)
 
     // Enviar vacío → errores obligatorios

@@ -3,5 +3,7 @@
 .iconWrap{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:var(--r-full);background:var(--c-danger-bg);color:var(--c-danger);font-size:var(--text-xl);margin-bottom:var(--sp-4)}
 .title{font-size:var(--text-lg);font-weight:800;color:var(--c-text);letter-spacing:var(--tracking-tight);margin:0 0 var(--sp-2);line-height:var(--leading-tight)}
 .message{font-size:var(--text-sm);color:var(--c-text-2);margin:0 0 var(--sp-6);line-height:var(--leading-relaxed)}
+/* Campos opcionales dentro del modal (p. ej. nueva contraseña) */
+.content{display:flex;flex-direction:column;gap:var(--sp-3);margin:calc(-1 * var(--sp-3)) 0 var(--sp-6)}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideUp{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Camera, CheckCircle, IdentificationCard, LockKey, PencilLine, Trash } from 'phosphor-react'
+import { Camera, CheckCircle, EnvelopeSimple, IdentificationCard, LockKey, PencilLine, Trash } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
 import DataPanel from '../DataPanel/DataPanel'
 import Avatar from '../Avatar/Avatar'
@@ -8,11 +8,14 @@ import FormField from '../FormField/FormField'
 import Alert from '../Alert/Alert'
 import Actions from '../Actions/Actions'
 import Button from '../Button/Button'
+import ConfirmModal from '../ConfirmModal/ConfirmModal'
 import StatCard from '../StatCard/StatCard'
-import { Input } from '../Input/Input'
+import { Input, PasswordInput } from '../Input/Input'
 import Lightbox from '../Lightbox/Lightbox'
-import { findUserById, updateUser, updateUserFoto, displayNames } from '../../data/mockData'
 import { useAuth } from '../../contexts/AuthContext'
+import { useApi } from '../../lib/useApi'
+import { usuarios } from '../../lib/recursos'
+import { toFieldErrors } from '../../lib/api'
 import { procesarFoto } from '../../utils/foto'
 import s from './PerfilBase.module.css'
 import { esEmailValido, esPasswordValida } from '../../utils/validation'
@@ -23,16 +26,21 @@ const SUBTITULOS = {
   admin: 'Consulta y actualiza tu información personal como administrador.',
 }
 
-function sincronizarSesion(nombre, correo) {
-  try {
-    const enLocal = !!localStorage.getItem('auth_user')
-    const destino = enLocal ? localStorage : sessionStorage
-    const raw = destino.getItem('auth_user')
-    if (!raw) return
-    const sesion = JSON.parse(raw)
-    destino.setItem('auth_user', JSON.stringify({ ...sesion, nombre, correo }))
-  } catch {
-    return
+const ROL_LABEL = {
+  aprendiz: 'Aprendiz',
+  instructor: 'Instructor',
+  admin: 'Administrador',
+}
+
+// Campos escalares que exige PUT /general-users.
+function payloadCuenta(cuenta, extra = {}) {
+  return {
+    nombre: cuenta.nombre,
+    apellido: cuenta.apellido,
+    correo: cuenta.correo,
+    rol: cuenta.rol,
+    estado: cuenta.estado,
+    ...extra,
   }
 }
 
@@ -46,23 +54,43 @@ export default function PerfilBase({
   subtitulo = null,
   breadcrumb = null,
 }) {
-  const { cambiarMiContrasena } = useAuth()
-  const perfil = findUserById(user?.id)
+  const { cambiarMiContrasena, sincronizarSesion } = useAuth()
+
+  // Perfil real desde la API (apellido, estado, foto_url…); el `user` de
+  // sesión solo trae { id, correo, nombre, rol } y sirve de respaldo.
+  // En modo solo lectura (perfil ajeno) se usa el perfil público: el detalle
+  // completo es privado (propio o admin).
+  const { data: perfilApi, recargar: recargarPerfil } = useApi(
+    () => (user?.id
+      ? (soloLectura ? usuarios.perfil(user.id) : usuarios.obtener(user.id))
+      : Promise.resolve(null)),
+    [user?.id, soloLectura]
+  )
+  const perfil = perfilApi || user || {}
+  const nombre = [perfil.nombre, perfil.apellido].filter(Boolean).join(' ').trim()
+    || perfil.name || user?.nombre || ''
+  const correo = perfil.correo || perfil.email || user?.correo || ''
+  const rol = String(perfil.rol || perfil.role || role || '').toLowerCase()
+  const rolLabel = ROL_LABEL[rol] || rol || role
+  const foto = perfil.foto_url || perfil.fotoPerfil || null
+
   const [editando, setEditando] = useState(false)
   const [guardado, setGuardado] = useState(false)
-  const [form, setForm] = useState(() => ({
-    name: perfil?.name || '',
-    email: perfil?.email || '',
-  }))
+  const [guardando, setGuardando] = useState(false)
+  const [form, setForm] = useState(() => ({ nombre: '', apellido: '' }))
   const [errors, setErrors] = useState({})
   const fileRef = useRef(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const [fotoError, setFotoError] = useState('')
-  const [, setTick] = useState(0)
   const [viendoFoto, setViendoFoto] = useState(false)
   const [fotoMsg, setFotoMsg] = useState(null)
   const msgTimer = useRef(null)
   const [cambiandoPass, setCambiandoPass] = useState(false)
+  // Cambio de correo: flujo aparte que exige la contraseña actual.
+  const [cambiandoCorreo, setCambiandoCorreo] = useState(false)
+  const [correoForm, setCorreoForm] = useState({ correo: '', password: '' })
+  const [correoErrors, setCorreoErrors] = useState({})
+  const [guardandoCorreo, setGuardandoCorreo] = useState(false)
   const [passForm, setPassForm] = useState({ actual: '', nueva: '', confirmar: '' })
   const [passErrors, setPassErrors] = useState({})
   const [passMsg, setPassMsg] = useState(null)
@@ -74,6 +102,13 @@ export default function PerfilBase({
     msgTimer.current = setTimeout(() => setFotoMsg(null), 2600)
   }
 
+  // Guarda la foto (data URL base64) manteniendo los campos requeridos.
+  async function actualizarFoto(fotoUrl) {
+    const cuenta = await usuarios.obtener(user.id)
+    await usuarios.actualizar(user.id, payloadCuenta(cuenta, { foto_url: fotoUrl }))
+    await recargarPerfil()
+  }
+
   async function alElegirFoto(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -82,8 +117,7 @@ export default function PerfilBase({
     setFotoError('')
     try {
       const dataUrl = await procesarFoto(file)
-      updateUserFoto(user.id, dataUrl)
-      setTick((t) => t + 1)
+      await actualizarFoto(dataUrl)
       mostrarFotoMsg('Foto actualizada')
     } catch (err) {
       setFotoError(err.message || 'No fue posible actualizar la foto.')
@@ -92,10 +126,14 @@ export default function PerfilBase({
     }
   }
 
-  function quitarFoto() {
-    updateUserFoto(user.id, null)
-    setTick((t) => t + 1)
-    mostrarFotoMsg('Foto eliminada')
+  async function quitarFoto() {
+    setFotoError('')
+    try {
+      await actualizarFoto(null)
+      mostrarFotoMsg('Foto eliminada')
+    } catch (err) {
+      setFotoError(err.message || 'No fue posible quitar la foto.')
+    }
   }
 
   function set(campo, valor) {
@@ -105,10 +143,7 @@ export default function PerfilBase({
   }
 
   function iniciarEdicion() {
-    setForm({
-      name: perfil?.name || '',
-      email: perfil?.email || '',
-    })
+    setForm({ nombre: perfil.nombre || '', apellido: perfil.apellido || '' })
     setErrors({})
     setEditando(true)
   }
@@ -118,24 +153,80 @@ export default function PerfilBase({
     setEditando(false)
   }
 
-  function guardar(e) {
+  async function guardar(e) {
     e.preventDefault()
-    // El nombre es inmutable: identifica propuestas, equipos y fichas por valor
     const errs = {}
-    if (!esEmailValido(form.email.trim())) {
-      errs.email = 'Ingresa un correo electrónico válido.'
-    }
+    if (!form.nombre.trim()) errs.nombre = 'Ingresa tus nombres.'
+    if (!form.apellido.trim()) errs.apellido = 'Ingresa tus apellidos.'
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
 
-    updateUser({
-      id: perfil.id,
-      name: perfil.name,
-      email: form.email.trim().toLowerCase(),
-    })
-    sincronizarSesion(perfil.name, form.email.trim().toLowerCase())
-    setEditando(false)
-    setGuardado(true)
+    // El correo NO se toca aquí: tiene su propio flujo con contraseña.
+    await guardarCuenta()
+  }
+
+  async function guardarCuenta() {
+    setGuardando(true)
+    try {
+      const nombreCompleto = `${form.nombre.trim()} ${form.apellido.trim()}`.trim()
+      const cuenta = await usuarios.obtener(user.id)
+      await usuarios.actualizar(user.id, payloadCuenta(cuenta, {
+        nombre: form.nombre.trim(),
+        apellido: form.apellido.trim(),
+      }))
+      sincronizarSesion(nombreCompleto, cuenta.correo)
+      await recargarPerfil()
+      setEditando(false)
+      setGuardado(true)
+    } catch (err) {
+      const campos = toFieldErrors(err?.data)
+      setErrors({
+        nombre: campos.nombre,
+        apellido: campos.apellido,
+      })
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  // ---------------------------------------------------------------- Correo
+  function abrirCambioCorreo() {
+    setCorreoForm({ correo: '', password: '' })
+    setCorreoErrors({})
+    setCambiandoCorreo(true)
+  }
+
+  function setCorreo(campo, valor) {
+    setCorreoForm((f) => ({ ...f, [campo]: valor }))
+    setCorreoErrors((e) => ({ ...e, [campo]: undefined }))
+  }
+
+  async function guardarCorreo() {
+    const errs = {}
+    if (!esEmailValido(correoForm.correo.trim())) {
+      errs.correo = 'Ingresa un correo electrónico válido.'
+    }
+    if (!correoForm.password) errs.password = 'Ingresa tu contraseña actual.'
+    setCorreoErrors(errs)
+    if (Object.keys(errs).length > 0) return
+
+    setGuardandoCorreo(true)
+    try {
+      const nuevoCorreo = correoForm.correo.trim().toLowerCase()
+      await usuarios.cambiarCorreo(nuevoCorreo, correoForm.password)
+      sincronizarSesion(null, nuevoCorreo)
+      await recargarPerfil()
+      setCambiandoCorreo(false)
+      setGuardado(true)
+    } catch (err) {
+      const campos = toFieldErrors(err?.data)
+      const mensaje = err?.data?.message || 'No fue posible cambiar el correo.'
+      if (/contraseña/i.test(mensaje)) setCorreoErrors({ password: mensaje })
+      else if (campos.correo) setCorreoErrors({ correo: 'Ese correo ya está registrado.' })
+      else setCorreoErrors({ correo: mensaje })
+    } finally {
+      setGuardandoCorreo(false)
+    }
   }
 
   function mostrarPassMsg(texto, tipo = 'ok') {
@@ -160,7 +251,7 @@ export default function PerfilBase({
     setCambiandoPass(false)
   }
 
-  function guardarPass(e) {
+  async function guardarPass(e) {
     e.preventDefault()
     const errs = {}
     if (!passForm.actual) errs.actual = 'Ingresa tu contraseña actual.'
@@ -173,7 +264,7 @@ export default function PerfilBase({
     setPassErrors(errs)
     if (Object.keys(errs).length > 0) return
 
-    const res = cambiarMiContrasena(passForm.actual, passForm.nueva)
+    const res = await cambiarMiContrasena(passForm.actual, passForm.nueva)
     if (!res.exito) {
       setPassErrors({ actual: res.mensaje })
       return
@@ -181,9 +272,6 @@ export default function PerfilBase({
     setCambiandoPass(false)
     mostrarPassMsg('Contraseña actualizada correctamente.')
   }
-
-  const nombre = perfil?.name || user?.nombre || ''
-  const rolLabel = displayNames.userRole[perfil?.role] || role
 
   return (
     <div className={s.wrapper}>
@@ -225,18 +313,18 @@ export default function PerfilBase({
                 {!soloLectura && editando ? (
                   <button
                     type="button"
-                    className={`${s.fotoBtn} ${perfil?.fotoPerfil ? s.fotoBtnVer : ''}`}
-                    title={perfil?.fotoPerfil ? 'Ver foto' : 'Subir foto de perfil'}
-                    aria-label={perfil?.fotoPerfil ? `Ver foto de ${nombre}` : 'Subir foto de perfil'}
-                    onClick={() => (perfil?.fotoPerfil ? setViendoFoto(true) : fileRef.current?.click())}
+                    className={`${s.fotoBtn} ${foto ? s.fotoBtnVer : ''}`}
+                    title={foto ? 'Ver foto' : 'Subir foto de perfil'}
+                    aria-label={foto ? `Ver foto de ${nombre}` : 'Subir foto de perfil'}
+                    onClick={() => (foto ? setViendoFoto(true) : fileRef.current?.click())}
                     disabled={subiendoFoto}
                   >
                     {subiendoFoto ? (
                       <span className={s.fotoOverlay}>
                         <span className={s.spinner} aria-hidden="true" />
                       </span>
-                    ) : perfil?.fotoPerfil ? (
-                      <Avatar key={perfil.fotoPerfil} name={nombre} src={perfil.fotoPerfil} size="xl" />
+                    ) : foto ? (
+                      <Avatar key={foto} name={nombre} src={foto} size="xl" />
                     ) : (
                       <span className={s.fotoPlaceholder}>
                         <Camera size={28} />
@@ -245,16 +333,16 @@ export default function PerfilBase({
                   </button>
                 ) : (
                   <div
-                    className={`${s.fotoBtn} ${perfil?.fotoPerfil ? s.fotoBtnVer : ''}`}
-                    title={perfil?.fotoPerfil ? 'Ver foto' : undefined}
-                    onClick={perfil?.fotoPerfil ? () => setViendoFoto(true) : undefined}
-                    role={perfil?.fotoPerfil ? 'button' : undefined}
-                    tabIndex={perfil?.fotoPerfil ? 0 : undefined}
-                    aria-label={perfil?.fotoPerfil ? `Ver foto de ${nombre}` : undefined}
-                    onKeyDown={perfil?.fotoPerfil ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViendoFoto(true) } } : undefined}
+                    className={`${s.fotoBtn} ${foto ? s.fotoBtnVer : ''}`}
+                    title={foto ? 'Ver foto' : undefined}
+                    onClick={foto ? () => setViendoFoto(true) : undefined}
+                    role={foto ? 'button' : undefined}
+                    tabIndex={foto ? 0 : undefined}
+                    aria-label={foto ? `Ver foto de ${nombre}` : undefined}
+                    onKeyDown={foto ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViendoFoto(true) } } : undefined}
                   >
-                    {perfil?.fotoPerfil ? (
-                      <Avatar key={perfil.fotoPerfil} name={nombre} src={perfil.fotoPerfil} size="xl" />
+                    {foto ? (
+                      <Avatar key={foto} name={nombre} src={foto} size="xl" />
                     ) : (
                       <span className={s.fotoPlaceholder}>
                         <Camera size={28} />
@@ -262,7 +350,7 @@ export default function PerfilBase({
                     )}
                   </div>
                 )}
-                {!soloLectura && editando && perfil?.fotoPerfil && !subiendoFoto && (
+                {!soloLectura && editando && foto && !subiendoFoto && (
                   <button
                     type="button"
                     className={s.fotoCam}
@@ -286,7 +374,7 @@ export default function PerfilBase({
                   />
                 )}
               </div>
-              {!soloLectura && editando && perfil?.fotoPerfil && !subiendoFoto && (
+              {!soloLectura && editando && foto && !subiendoFoto && (
                 <button type="button" className={s.fotoQuitar} onClick={quitarFoto}>
                   <Trash size={12} /> Quitar foto
                 </button>
@@ -297,7 +385,7 @@ export default function PerfilBase({
             {!editando && (
               <>
                 <h2 className={s.profileName}>{nombre}</h2>
-                <p className={s.profileEmail}>{perfil?.email || user?.correo}</p>
+                <p className={s.profileEmail}>{correo}</p>
               </>
             )}
             {!editando && detalles.length > 0 && (
@@ -315,25 +403,30 @@ export default function PerfilBase({
                 <FormField label="Rol">
                   <Input type="text" value={rolLabel} readOnly />
                 </FormField>
-                <FormField label="Nombre completo" help="El nombre identifica tus propuestas y equipos; no se puede cambiar.">
+                <FormField label="Nombres" required error={errors.nombre}>
                   <Input
                     type="text"
-                    value={perfil?.name || ''}
-                    readOnly
+                    value={form.nombre}
+                    onChange={(e) => set('nombre', e.target.value)}
+                    placeholder="Ej. María José"
                   />
                 </FormField>
-                <FormField label="Correo electrónico" required error={errors.email}>
+                <FormField label="Apellidos" required error={errors.apellido}>
                   <Input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => set('email', e.target.value)}
+                    type="text"
+                    value={form.apellido}
+                    onChange={(e) => set('apellido', e.target.value)}
+                    placeholder="Ej. González Ruiz"
                   />
+                </FormField>
+                <FormField label="Correo electrónico" help="Para cambiarlo usa «Cambiar correo», en Seguridad.">
+                  <Input type="email" value={correo} readOnly />
                 </FormField>
                 <Actions form>
-                  <Button type="submit">
-                    Guardar cambios
+                  <Button type="submit" disabled={guardando}>
+                    {guardando ? 'Guardando...' : 'Guardar cambios'}
                   </Button>
-                  <Button variant="secondary" onClick={cancelar}>
+                  <Button type="button" variant="secondary" onClick={cancelar}>
                     Cancelar
                   </Button>
                 </Actions>
@@ -350,33 +443,35 @@ export default function PerfilBase({
             <p className={s.seguridadTexto}>
               Usa una contraseña única de al menos 6 caracteres para proteger tu cuenta.
               <br />
-              <Link to="/recuperar-contrasena" className={s.link}>¿Olvidaste tu contraseña actual? Recupérala por correo</Link>
+              <Link to="/recuperar-contrasena" className={s.link}>¿Olvidaste tu contraseña? Recupérala por correo</Link>
             </p>
-            <Button type="button" variant="secondary" onClick={iniciarCambioPass}>
-              <LockKey size={14} /> Cambiar contraseña
-            </Button>
+            <span className={s.seguridadAcciones}>
+              <Button type="button" variant="secondary" onClick={abrirCambioCorreo}>
+                <EnvelopeSimple size={14} /> Cambiar correo
+              </Button>
+              <Button type="button" variant="secondary" onClick={iniciarCambioPass}>
+                <LockKey size={14} /> Cambiar contraseña
+              </Button>
+            </span>
           </div>
         ) : (
           <form className={s.form} onSubmit={guardarPass} noValidate>
             <FormField label="Contraseña actual" required error={passErrors.actual}>
-              <Input
-                type="password"
+              <PasswordInput
                 value={passForm.actual}
                 onChange={(e) => alCambiarPass('actual', e.target.value)}
                 autoComplete="current-password"
               />
             </FormField>
             <FormField label="Nueva contraseña" required error={passErrors.nueva} help="Mínimo 6 caracteres">
-              <Input
-                type="password"
+              <PasswordInput
                 value={passForm.nueva}
                 onChange={(e) => alCambiarPass('nueva', e.target.value)}
                 autoComplete="new-password"
               />
             </FormField>
             <FormField label="Confirmar nueva contraseña" required error={passErrors.confirmar}>
-              <Input
-                type="password"
+              <PasswordInput
                 value={passForm.confirmar}
                 onChange={(e) => alCambiarPass('confirmar', e.target.value)}
                 autoComplete="new-password"
@@ -403,14 +498,40 @@ export default function PerfilBase({
         </div>
       )}
 
-      {viendoFoto && perfil?.fotoPerfil && (
+      {viendoFoto && foto && (
         <Lightbox
-          src={perfil.fotoPerfil}
+          src={foto}
           alt={`Foto de ${nombre}`}
           caption={nombre}
           onClose={() => setViendoFoto(false)}
         />
       )}
+
+      <ConfirmModal
+        open={cambiandoCorreo}
+        titulo="Cambiar correo electrónico"
+        mensaje={`Tu correo actual es "${correo}". Para autorizar el cambio confirma tu identidad con la contraseña actual.`}
+        textoConfirmar={guardandoCorreo ? 'Guardando…' : 'Cambiar correo'}
+        onConfirmar={guardarCorreo}
+        onCancelar={() => setCambiandoCorreo(false)}
+      >
+        <FormField label="Nuevo correo electrónico" required error={correoErrors.correo}>
+          <Input
+            type="email"
+            value={correoForm.correo}
+            onChange={(e) => setCorreo('correo', e.target.value)}
+            placeholder="nuevo.correo@ejemplo.com"
+            autoComplete="email"
+          />
+        </FormField>
+        <FormField label="Contraseña actual" required error={correoErrors.password}>
+          <PasswordInput
+            value={correoForm.password}
+            onChange={(e) => setCorreo('password', e.target.value)}
+            autoComplete="current-password"
+          />
+        </FormField>
+      </ConfirmModal>
     </div>
   )
 }

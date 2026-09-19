@@ -1,7 +1,6 @@
 import { test, expect, login } from './helpers'
 
-test.describe('Perfiles de otros usuarios (solo lectura)', () => {
-  test('el detalle de compañero se ve como el perfil propio, sin edición', async ({ page }) => {
+test.describe('Perfiles de otros usuarios (solo lectura)', () => {  test('el detalle de compañero se ve como el perfil propio, sin edición', async ({ page }) => {
     await login(page, 'aprendiz')
     await page.goto('/aprendiz/perfil-companero/5') // Juan Pérez
 
@@ -32,5 +31,17 @@ test.describe('Perfiles de otros usuarios (solo lectura)', () => {
 
     // Panel de fichas del instructor
     await expect(page.getByText(/Fichas de Carlos/i)).toBeVisible()
+  })
+})
+
+test.describe('Mi perfil: el rol no se edita', () => {
+  test('durante la edición el rol es de solo lectura', async ({ page }) => {
+    await login(page, 'aprendiz')
+    await page.goto('/aprendiz/perfil')
+    await page.getByRole('button', { name: /Editar perfil/i }).click()
+
+    const rol = page.getByRole('textbox', { name: 'Rol' })
+    await expect(rol).toHaveValue('Aprendiz')
+    await expect(rol).not.toBeEditable()
   })
 })

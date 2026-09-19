@@ -40,6 +40,7 @@ export const RUTAS_POR_ROL = {
     '/admin/reportes-fallas',
     '/admin/detalle-reporte/1',
     '/admin/notificaciones',
+    '/admin/bitacora',
     '/admin/perfil',
   ],
 }

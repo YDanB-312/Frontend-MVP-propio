@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { findUserById, displayNames } from '../../data/mockData'
+import { useApi } from '../../lib/useApi'
+import { usuarios } from '../../lib/recursos'
 import s from './TopNav.module.css'
 
 const RUTA_NOTIFICACIONES = {
@@ -19,6 +20,12 @@ const TITULO_CREAR = {
   aprendiz: 'Nueva propuesta',
   instructor: 'Crear ficha',
   admin: 'Crear usuario',
+}
+
+const ROL_LABEL = {
+  aprendiz: 'Aprendiz',
+  instructor: 'Instructor',
+  admin: 'Administrador',
 }
 
 function iniciales(nombre = '') {
@@ -68,13 +75,20 @@ export default function TopNav({ titulo = '', usuario = null, notificaciones = 0
   const { logout } = useAuth()
   const navigate = useNavigate()
 
+  // Foto de perfil real (data URL base64) desde la API.
+  const { data: perfil } = useApi(
+    () => (usuario?.id ? usuarios.obtener(usuario.id) : Promise.resolve(null)),
+    [usuario?.id]
+  )
+  const fotoPerfilSesion = perfil?.foto_url || usuario?.foto_url || null
+  const nombrePerfil = [perfil?.nombre, perfil?.apellido].filter(Boolean).join(' ').trim()
+    || usuario?.nombre || ''
+  const correoPerfil = perfil?.correo || usuario?.correo
+
   const cerrarSesion = () => {
     logout()
     navigate('/login', { replace: true })
   }
-
-  const perfilSesion = usuario ? findUserById(usuario.id) : null
-  const fotoPerfilSesion = perfilSesion?.fotoPerfil || null
 
   const irANotificaciones = () => {
     const ruta = RUTA_NOTIFICACIONES[role]
@@ -121,19 +135,19 @@ export default function TopNav({ titulo = '', usuario = null, notificaciones = 0
             {notificaciones > 0 && <span className={s.dot} aria-hidden="true" />}
           </button>
 
-          <div className={s.user} title={usuario?.correo}>
+          <div className={s.user} title={correoPerfil}>
             <Link to={`/${role}/perfil`} viewTransition className={s.avatarLink} aria-label="Ir a mi perfil">
               <span className={s.avatar} aria-hidden="true">
               {fotoPerfilSesion ? (
                 <img src={fotoPerfilSesion} alt="" />
               ) : (
-                iniciales(usuario?.nombre)
+                iniciales(nombrePerfil)
               )}
               </span>
             </Link>
             <span className={s.userInfo}>
-              <span className={s.userName}>{usuario?.nombre}</span>
-              <span className={s.userRole}>{displayNames.userRole[role] || role}</span>
+              <span className={s.userName}>{nombrePerfil}</span>
+              <span className={s.userRole}>{ROL_LABEL[role] || role}</span>
             </span>
           </div>
 

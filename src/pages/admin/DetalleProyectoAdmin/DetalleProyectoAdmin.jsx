@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, PencilSimple, Plus, Trash, X } from 'phosphor-react'
+import { ArrowRight, ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, PencilSimple, Plus, Trash, X, Warning } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
@@ -8,33 +8,48 @@ import Button from '../../../components/Button/Button'
 import Alert from '../../../components/Alert/Alert'
 import { Input, Select, Textarea } from '../../../components/Input/Input'
 import FormField from '../../../components/FormField/FormField'
+import { MAX_TITULO } from '../../../utils/validation'
 import Avatar from '../../../components/Avatar/Avatar'
 import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import ObservacionHilo from
-'../../../components/ObservacionHilo/ObservacionHilo'
+import ApiState from '../../../components/ApiState/ApiState'
+import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { useAuth } from '../../../contexts/AuthContext'
-import {
-  findProjectById,
-  findUserById,
-  findFichaById,
-  getSimilaritiesByProject,
-  getObservaciones,
-  addObservacion,
-  deleteObservacion,
-  updateProject,
-  updateProjectEstado,
-  createNotification,
-  deleteProject,
-  displayNames,
-} from '../../../data/mockData'
-import { agruparObservaciones } from '../../../utils/helpers'
+import { useApi } from '../../../lib/useApi'
+import { proyectos, similitudes, observaciones, notificaciones } from '../../../lib/recursos'
+import { agruparObservaciones, fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 
 const ESTADOS = ['pendiente', 'aprobado', 'rechazado']
+const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
+
+// Rol legible para el chip del hilo de observaciones.
+const ROL_CHIP = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admin' }
+
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
+
+// Campos que acepta PUT /projects (varios son obligatorios).
+function payloadProyecto(proyecto, extra = {}) {
+  return {
+    titulo: proyecto.titulo,
+    resumen: proyecto.resumen,
+    palabras_clave: proyecto.palabras_clave,
+    area_aplicacion: proyecto.area_aplicacion,
+    objetivo_general: proyecto.objetivo_general,
+    objetivos_especificos: proyecto.objetivos_especificos,
+    estado: proyecto.estado,
+    id_creador: proyecto.id_creador,
+    id_instructor_asignado: proyecto.id_instructor_asignado,
+    id_class_group: proyecto.id_class_group,
+    ...extra,
+  }
+}
 
 export default function DetalleProyectoAdmin() {
   const { id } = useParams()
@@ -45,22 +60,32 @@ export default function DetalleProyectoAdmin() {
   const [modalEliminar, setModalEliminar] = useState(false)
   const [fotoViendo, setFotoViendo] = useState(null)
   const [obsAEliminar, setObsAEliminar] = useState(null)
-  const [, setTick] = useState(0)
-  const refrescarObs = () => setTick((t) => t + 1)
+  const [accionMsg, setAccionMsg] = useState(null)
 
-  const proyecto = findProjectById(id)
-  const estudiante = proyecto ? findUserById(proyecto.studentId) : null
-  const similitudes = proyecto ? getSimilaritiesByProject(proyecto.id) : []
-  const observaciones = proyecto ? getObservaciones(proyecto.id) : []
+  // Fuente única: la API. Propuesta + similitudes + observaciones del hilo.
+  const { data, cargando, error, recargar } = useApi(
+    async () => {
+      const [proyecto, listaSimilitudes, listaObservaciones] = await Promise.all([
+        proyectos.obtener(id),
+        similitudes.listar(),
+        observaciones.listar('user', { id_proyecto: id }),
+      ])
+      return { proyecto, listaSimilitudes, listaObservaciones }
+    },
+    [id],
+    { inicial: null }
+  )
 
-  const [nuevoEstado, setNuevoEstado] = useState(() => (proyecto ? proyecto.estado : 'pendiente'))
+  const proyecto = data?.proyecto || null
+
+  const [nuevoEstado, setNuevoEstado] = useState('pendiente')
   const [guardado, setGuardado] = useState(false)
   const [editando, setEditando] = useState(false)
-  const [form, setForm] = useState({ title: '', description: '', keywords: '' })
+  const [form, setForm] = useState({ titulo: '', resumen: '', palabras_clave: '' })
   const [errores, setErrores] = useState({})
   const [editMsg, setEditMsg] = useState(false)
 
-  // Sincroniza los selectores al navegar entre proyectos sin remontar
+  // Sincroniza los selectores al navegar entre proyectos sin remontar.
   useEffect(() => {
     if (proyecto) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -71,98 +96,167 @@ export default function DetalleProyectoAdmin() {
     }
   }, [proyecto?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!proyecto) {
+  if (cargando || error || !proyecto) {
     return (
       <DashboardLayout role="admin" titulo="Detalle de Propuesta">
         <div className={s.page}>
-          <EmptyState
-            icon={<MagnifyingGlass />}
-            title="Propuesta no encontrada"
-            message="La propuesta que buscas no existe o fue eliminada."
-            actionLabel="Volver a propuestas"
-            onAction={() => navigate('/admin/proyectos')}
-          />
+          {error ? (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="No se pudo cargar la propuesta"
+              message={error.message || 'Ocurrió un error al consultar la API.'}
+              actionLabel="Reintentar"
+              onAction={recargar}
+            />
+          ) : cargando ? (
+            <ApiState cargando error={null} />
+          ) : (
+            <EmptyState
+              icon={<MagnifyingGlass />}
+              title="Propuesta no encontrada"
+              message="La propuesta que buscas no existe o fue eliminada."
+              actionLabel="Volver a propuestas"
+              onAction={() => navigate('/admin/proyectos')}
+            />
+          )}
         </div>
       </DashboardLayout>
     )
   }
 
-  const guardarEstado = (e) => {
+  const estudiante = proyecto.creator || null
+  const similitudesProyecto = (data.listaSimilitudes || []).filter(
+    (sim) => Number(sim.id_proyecto_1) === Number(proyecto.id) || Number(sim.id_proyecto_2) === Number(proyecto.id)
+  )
+
+  // Observaciones de la API -> shape que espera ObservacionHilo.
+  const observacionesMapeadas = (data.listaObservaciones || []).map((o) => ({
+    id: o.id,
+    autor: `${nombreCompleto(o.user) || 'Usuario'} | ${ROL_CHIP[o.user?.rol] || 'Usuario'}`,
+    fecha: fechaDesdeApi(o.created_at),
+    texto: o.texto,
+    respuestaA: o.respuesta_a,
+  }))
+
+  const guardarEstado = async (e) => {
     e.preventDefault()
     if (nuevoEstado === proyecto.estado) return
-    updateProjectEstado(proyecto.id, nuevoEstado)
-    createNotification({
-      mensaje: `Tu proyecto '${proyecto.title}' ha pasado a ${
-        displayNames.projectStatus[nuevoEstado] || nuevoEstado
-      }`,
-      tipo: 'revision',
-      userId: proyecto.studentId,
-      projectId: proyecto.id,
-    })
-    setGuardado(true)
-    setTimeout(() => setGuardado(false), 3000)
+    setAccionMsg(null)
+    try {
+      await proyectos.actualizar(proyecto.id, payloadProyecto(proyecto, { estado: nuevoEstado }))
+      // Aviso al creador (best-effort): no bloquea la actualización.
+      await notificaciones.crear({
+        titulo: `Tu proyecto '${proyecto.titulo}' ha pasado a ${ESTADO_LABEL[nuevoEstado] || nuevoEstado}`,
+        tipo: 'revision',
+        enlace: `proyecto:${proyecto.id}`,
+        leida: false,
+        fecha: new Date().toISOString().slice(0, 10),
+        id_usuario: proyecto.id_creador,
+      }).catch(() => null)
+      await recargar()
+      setGuardado(true)
+      setTimeout(() => setGuardado(false), 3000)
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado de la propuesta.')
+    }
   }
 
-  const confirmarEliminar = () => {
-    deleteProject(proyecto.id)
-    navigate('/admin/proyectos')
+  const confirmarEliminar = async () => {
+    try {
+      await proyectos.eliminar(proyecto.id)
+      navigate('/admin/proyectos')
+    } catch (err) {
+      setModalEliminar(false)
+      setAccionMsg(err?.data?.message || 'No se pudo eliminar la propuesta.')
+    }
   }
 
-  const agregarObservacion = (e) => {
+  const agregarObservacion = async (e) => {
     e.preventDefault()
     const texto = textoObs.trim()
     if (!texto) return
-    addObservacion(proyecto.id, `${user?.nombre || 'Administrador'} | Admin`, texto, respondiendoA?.id || null)
-    setTextoObs('')
-    setRespondiendoA(null)
+    try {
+      await observaciones.crear({
+        texto,
+        id_proyecto: proyecto.id,
+        id_usuario: Number(user?.id),
+        respuesta_a: respondiendoA?.id || null,
+      })
+      await recargar()
+      setTextoObs('')
+      setRespondiendoA(null)
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudo publicar la observación.')
+    }
   }
 
-  const ficha = findFichaById(proyecto.fichaId)
+  const confirmarEliminarObservacion = async () => {
+    if (!obsAEliminar) return
+    if (respondiendoA?.id === obsAEliminar.id) setRespondiendoA(null)
+    try {
+      await observaciones.eliminar(obsAEliminar.id)
+      await recargar()
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudo eliminar la observación.')
+    } finally {
+      setObsAEliminar(null)
+    }
+  }
+
+  const ficha = proyecto.classGroup || null
 
   const iniciarEdicion = () => {
     setForm({
-      title: proyecto.title || '',
-      description: proyecto.description || '',
-      keywords: proyecto.keywords || '',
+      titulo: proyecto.titulo || '',
+      resumen: proyecto.resumen || '',
+      palabras_clave: proyecto.palabras_clave || '',
     })
     setErrores({})
     setEditMsg(false)
     setEditando(true)
   }
 
-  const guardarEdicion = (e) => {
+  const guardarEdicion = async (e) => {
     e.preventDefault()
     const errs = {}
-    if (form.title.trim().length < 5) errs.title = 'El título debe tener al menos 5 caracteres.'
-    if (form.description.trim().length < 20) errs.description = 'La descripción debe tener al menos 20 caracteres.'
+    if (form.titulo.trim().length < 5) errs.titulo = 'El título debe tener al menos 5 caracteres.'
+    if (form.resumen.trim().length < 20) errs.resumen = 'La descripción debe tener al menos 20 caracteres.'
     setErrores(errs)
     if (Object.keys(errs).length > 0) return
-    updateProject({
-      id: proyecto.id,
-      title: form.title.trim(),
-      description: form.description.trim(),
-      keywords: form.keywords.trim(),
-    })
-    setEditando(false)
-    setEditMsg(true)
+    try {
+      await proyectos.actualizar(proyecto.id, payloadProyecto(proyecto, {
+        titulo: form.titulo.trim(),
+        resumen: form.resumen.trim(),
+        palabras_clave: form.palabras_clave.trim(),
+      }))
+      await recargar()
+      setEditando(false)
+      setEditMsg(true)
+    } catch (err) {
+      setErrores({ titulo: err?.data?.message || 'No se pudo actualizar el contenido.' })
+    }
   }
 
   return (
     <DashboardLayout role="admin" titulo="Detalle de Propuesta">
       <div className={s.page}>
         <PageHeader
-          title={proyecto.title}
-          subtitle={`Enviado el ${proyecto.createdAt} por ${proyecto.studentName}`}
+          title={proyecto.titulo}
+          subtitle={`Enviado el ${fechaDesdeApi(proyecto.created_at)} por ${nombreCompleto(estudiante) || '—'}`}
           icon={<FolderOpen />}
           breadcrumb={[
             { label: 'Dashboard', to: '/admin/dashboard' },
             { label: 'Proyectos', to: '/admin/proyectos' },
-            { label: proyecto.title },
+            { label: proyecto.titulo },
           ]}
         />
 
         {guardado && (
           <Alert><CheckCircle size={14} /> Estado actualizado correctamente.</Alert>
+        )}
+
+        {accionMsg && (
+          <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
         )}
 
         <div className={s.dossier}>
@@ -179,7 +273,7 @@ export default function DetalleProyectoAdmin() {
                   >
                     {ESTADOS.map((est) => (
                       <option key={est} value={est}>
-                        {displayNames.projectStatus[est] || est}
+                        {ESTADO_LABEL[est] || est}
                       </option>
                     ))}
                   </Select>
@@ -208,24 +302,24 @@ export default function DetalleProyectoAdmin() {
               )}
               {editando ? (
                 <form className={s.obsForm} onSubmit={guardarEdicion} noValidate>
-                  <FormField label="Título" required error={errores.title}>
+                  <FormField label="Título" required error={errores.titulo}>
                     <Input
-                      value={form.title}
-                      onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                      maxLength={120}
+                      value={form.titulo}
+                      onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
+                      maxLength={MAX_TITULO}
                     />
                   </FormField>
-                  <FormField label="Descripción" required error={errores.description}>
+                  <FormField label="Descripción" required error={errores.resumen}>
                     <Textarea
                       rows={4}
-                      value={form.description}
-                      onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                      value={form.resumen}
+                      onChange={(e) => setForm((f) => ({ ...f, resumen: e.target.value }))}
                     />
                   </FormField>
                   <FormField label="Palabras clave" help="Separadas por comas.">
                     <Input
-                      value={form.keywords}
-                      onChange={(e) => setForm((f) => ({ ...f, keywords: e.target.value }))}
+                      value={form.palabras_clave}
+                      onChange={(e) => setForm((f) => ({ ...f, palabras_clave: e.target.value }))}
                     />
                   </FormField>
                   <Button type="submit">
@@ -242,16 +336,16 @@ export default function DetalleProyectoAdmin() {
             <DataPanel title="Información del aprendiz" icon={<GraduationCap />}>
               {estudiante ? (
                 <div className={s.personCard}>
-                  {estudiante.fotoPerfil ? (
-                    <button type="button" className={s.avatarBtn} title="Ver foto" aria-label="Ver foto del aprendiz" onClick={() => setFotoViendo({ src: estudiante.fotoPerfil, alt: estudiante.name })}>
-                      <Avatar name={estudiante.name} src={estudiante.fotoPerfil} size="md" />
+                  {estudiante.foto_url ? (
+                    <button type="button" className={s.avatarBtn} title="Ver foto" aria-label="Ver foto del aprendiz" onClick={() => setFotoViendo({ src: estudiante.foto_url, alt: nombreCompleto(estudiante) })}>
+                      <Avatar name={nombreCompleto(estudiante)} src={estudiante.foto_url} size="md" />
                     </button>
                   ) : (
-                    <Avatar name={estudiante.name} size="md" />
+                    <Avatar name={nombreCompleto(estudiante)} size="md" />
                   )}
                   <div className={s.personInfo}>
-                    <span className={s.personName}>{estudiante.name}</span>
-                    <span className={s.personEmail}>{estudiante.email}</span>
+                    <span className={s.personName}>{nombreCompleto(estudiante)}</span>
+                    <span className={s.personEmail}>{estudiante.correo}</span>
                   </div>
                   <Button as="link" to={`/admin/detalle-usuario/${estudiante.id}`} variant="secondary">
                     Ver usuario <ArrowRight size={14} />
@@ -263,18 +357,18 @@ export default function DetalleProyectoAdmin() {
             </DataPanel>
 
             <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
-              {similitudes.length === 0 ? (
+              {similitudesProyecto.length === 0 ? (
                 <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
               ) : (
                 <ul className={s.simList}>
-                  {similitudes.map((sim) => {
-                    const pct = Math.round((sim.similitud || 0) * 100)
+                  {similitudesProyecto.map((sim) => {
+                    const pct = Math.round(Number(sim.porcentaje) || 0)
+                    const otro = Number(sim.id_proyecto_1) === Number(proyecto.id) ? sim.project2 : sim.project1
                     return (
                       <li key={sim.id}>
                         <Link to={`/admin/detalle-similitud/${sim.id}`} viewTransition className={s.simRow}>
                           <span className={s.simPair}>
-                            vs.{' '}
-                            {sim.projectId1 === proyecto.id ? sim.project2Title : sim.project1Title}
+                            vs. {otro?.titulo || 'Propuesta no disponible'}
                           </span>
                           <span className={s.simRight}>
                             <GradeBadge score={pct} size="sm" />
@@ -287,7 +381,7 @@ export default function DetalleProyectoAdmin() {
               )}
             </DataPanel>
 
-            <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
+            <DataPanel title={`Observaciones (${observacionesMapeadas.length})`} icon={<ChatCircle />}>
               {respondiendoA && (
                 <div className={s.respondiendoChip}>
                   Respondiendo a {String(respondiendoA.autor).split(' | ')[0]}
@@ -295,7 +389,7 @@ export default function DetalleProyectoAdmin() {
                 </div>
               )}
               <ObservacionHilo
-                grupos={agruparObservaciones(observaciones)}
+                grupos={agruparObservaciones(observacionesMapeadas)}
                 permitirResponder
                 onRespuesta={(o) => setRespondiendoA(o)}
                 permitirEliminar
@@ -323,7 +417,7 @@ export default function DetalleProyectoAdmin() {
       <ConfirmModal
         open={modalEliminar}
         titulo="Eliminar propuesta"
-        mensaje={`¿Seguro que deseas eliminar "${proyecto.title}"? Se eliminarán también sus similitudes y observaciones. Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar "${proyecto.titulo}"? Se eliminarán también sus similitudes y observaciones. Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}
@@ -337,12 +431,7 @@ export default function DetalleProyectoAdmin() {
             : ''
         }
         textoConfirmar="Sí, eliminar"
-        onConfirmar={() => {
-          if (respondiendoA?.id === obsAEliminar?.id) setRespondiendoA(null)
-          deleteObservacion(obsAEliminar.id)
-          setObsAEliminar(null)
-          refrescarObs()
-        }}
+        onConfirmar={confirmarEliminarObservacion}
         onCancelar={() => setObsAEliminar(null)}
       />
       {fotoViendo && <Lightbox src={fotoViendo.src} alt={fotoViendo.alt} caption={fotoViendo.alt} onClose={() => setFotoViendo(null)} />}

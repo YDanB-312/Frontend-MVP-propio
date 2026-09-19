@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Brain, FolderOpen, ChartBar, CheckCircle, MagnifyingGlass, Database, Gauge } from 'phosphor-react'
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
 import Button from '../../../components/Button/Button'
@@ -6,8 +6,8 @@ import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
 import StatChip from '../../../components/StatChip/StatChip'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
-import { getAllProjects, getConfigMotor } from '../../../data/mockData'
-import { vectorDeProyecto, construirIdf, similitudEntre } from '../../../data/similitud'
+import { useApi } from '../../../lib/useApi'
+import { demo } from '../../../lib/recursos'
 import s from './Home.module.css'
 
 const FEATURES = [
@@ -52,36 +52,42 @@ const PASOS = [
 const UMBRAL_DEMO = 3
 
 export default function Home() {
-  const motor = getConfigMotor()
-  const proyectos = useMemo(() => getAllProjects(), [])
-  const totalProyectos = proyectos.length
-  const umbralPct = Math.round(motor.umbral * 100)
+  // Resumen público (config del motor + conteos agregados) para los chips.
+  const { data: resumen } = useApi(() => demo.resumen(), [])
+  const umbralPct = resumen ? Math.round(Number(resumen.umbral) * 100) : null
+  const meses = resumen?.meses ?? null
 
+  /* ---------- Demo en vivo: escribe una idea y el motor la compara ---------- */
   const [ideaViva, setIdeaViva] = useState('')
   const [ideaEstable, setIdeaEstable] = useState('')
+  const [resultado, setResultado] = useState(null)
+  const [comparando, setComparando] = useState(false)
+  const [errorDemo, setErrorDemo] = useState(false)
 
-  // El lector anuncia solo cuando la idea se estabiliza (sin spam por tecla)
+  // Debounce: la idea se estabiliza a los 350 ms (evita consultar por tecla).
   useEffect(() => {
     const t = setTimeout(() => setIdeaEstable(ideaViva), 350)
     return () => clearTimeout(t)
   }, [ideaViva])
 
-  const vectoresCorpus = useMemo(() => proyectos.map(vectorDeProyecto), [proyectos])
-  const idfCorpus = useMemo(() => construirIdf(vectoresCorpus), [vectoresCorpus])
-
-  const demo = useMemo(() => {
+  // Consulta al motor del backend cuando la idea tiene largo suficiente.
+  // Si es más corta, el render muestra "esperando" y no se toca el estado.
+  useEffect(() => {
     const q = ideaEstable.trim()
-    if (q.length < UMBRAL_DEMO) return null
-    const vecSonda = vectorDeProyecto({ title: q })
-    const ranked = proyectos
-      .map((p, i) => ({ proyecto: p, pct: Math.round(similitudEntre(vecSonda, vectoresCorpus[i], idfCorpus) * 100) }))
-      .sort((a, b) => b.pct - a.pct)
-      .slice(0, 3)
-    return {
-      top: ranked,
-      sobre: ranked.filter((r) => r.pct >= umbralPct).length,
-    }
-  }, [ideaEstable, proyectos, vectoresCorpus, idfCorpus, umbralPct])
+    if (q.length < UMBRAL_DEMO) return () => {}
+    let vivo = true
+    // Los cambios de estado se difieren a microtarea para no mutar en el
+    // cuerpo del efecto (misma pauta que useApi).
+    Promise.resolve()
+      .then(() => { if (vivo) { setComparando(true); setErrorDemo(false) } })
+      .then(() => demo.comparar(q))
+      .then((r) => { if (vivo) setResultado(r) })
+      .catch(() => { if (vivo) { setResultado(null); setErrorDemo(true) } })
+      .finally(() => { if (vivo) setComparando(false) })
+    return () => { vivo = false }
+  }, [ideaEstable])
+
+  const listo = ideaEstable.trim().length >= UMBRAL_DEMO
 
   return (
     <LandingLayout>
@@ -90,7 +96,7 @@ export default function Home() {
           <div className={s.heroInner}>
             <span className={`mono ${s.heroBadge} fx-rise`} style={{ '--fx-i': 0 }}>
               <span className={s.liveDot} aria-hidden="true" />
-              MOTOR v2 · TF-IDF + COSENO
+              MOTOR · TF-IDF + N-GRAMAS
             </span>
             <h1 className={`${s.title} fx-rise`} style={{ '--fx-i': 1 }}>
               ¿Tu propuesta <span className={s.titleAccent}>es original?</span>
@@ -100,9 +106,9 @@ export default function Home() {
               originalidad del trabajo de los aprendices en toda la institución.
             </p>
             <div className={`${s.stats} fx-rise`} style={{ '--fx-i': 3 }}>
-              <StatChip icon={<Database size={14} />} label="Propuestas" value={totalProyectos} />
-              <StatChip icon={<Gauge size={14} />} label="Umbral" value={`${Math.round(motor.umbral * 100)}%`} />
-              <StatChip icon={<MagnifyingGlass size={14} />} label="Corpus" value={`${motor.meses}M`} />
+              <StatChip icon={<Database size={14} />} label="Propuestas" value={resumen ? resumen.total_propuestas : '—'} />
+              <StatChip icon={<Gauge size={14} />} label="Programas" value={resumen ? resumen.total_programas : '—'} />
+              <StatChip icon={<MagnifyingGlass size={14} />} label="Umbral" value={umbralPct != null ? `${umbralPct}%` : '—'} />
             </div>
             <div className={`${s.ctaRow} fx-rise`} style={{ '--fx-i': 4 }}>
               <Button as="link" to="/login" variant="secondary" viewTransition>
@@ -118,18 +124,22 @@ export default function Home() {
               <li><CheckCircle size={16} weight="fill" /> Reportes claros para instructores</li>
             </ul>
           </div>
+
           <div className={s.terminal}>
             <div className={s.termBar}>
-              <span className={s.termDot} />
-              <span className={s.termDot} />
-              <span className={s.termDot} />
+              <span className={`${s.termDot} ${s.termDot1}`} aria-hidden="true" />
+              <span className={`${s.termDot} ${s.termDot2}`} aria-hidden="true" />
+              <span className={`${s.termDot} ${s.termDot3}`} aria-hidden="true" />
               <span className={`mono ${s.termTitle}`}>proyectwin · demo en vivo</span>
             </div>
             <div className={s.termBody}>
               <p className={`mono ${s.termLine}`}>
                 <span aria-hidden="true">$&nbsp;</span>
-                <span className={s.termType}>comparar --corpus {motor.meses}m --umbral {umbralPct}%</span>
+                <span className={s.termType}>
+                  comparar --corpus {meses ?? '—'}m --umbral {umbralPct ?? '—'}%
+                </span>
               </p>
+
               <label className={`mono ${s.termLabel}`} htmlFor="demo-idea">
                 Escribe tu idea y mira al motor trabajar:
               </label>
@@ -143,26 +153,42 @@ export default function Home() {
                 autoComplete="off"
                 spellCheck="false"
               />
+
               <div aria-live="polite" aria-atomic="true">
                 <span className="sr-only">
-                  {demo
-                    ? `${demo.top.length} coincidencias, ${demo.sobre} sobre el umbral de ${umbralPct}%`
-                    : 'Esperando una idea de al menos 3 letras'}
+                  {!listo
+                    ? `Esperando una idea de al menos ${UMBRAL_DEMO} letras`
+                    : comparando
+                      ? 'Analizando la idea con el motor'
+                      : errorDemo
+                        ? 'No se pudo consultar el motor'
+                        : resultado
+                          ? `${resultado.coincidencias.length} coincidencias, ${resultado.sobre} sobre el umbral de ${umbralPct}%`
+                          : 'Sin resultados'}
                 </span>
-                {!demo ? (
+
+                {!listo ? (
                   <p className={`mono ${s.termHint}`} aria-hidden="true">
                     <span className={s.caret} aria-hidden="true">▊</span> esperando idea (mín. {UMBRAL_DEMO} letras)…
                   </p>
+                ) : errorDemo ? (
+                  <p className={`mono ${s.termHint}`} aria-hidden="true">
+                    <span className={s.caret} aria-hidden="true">▊</span> no se pudo consultar el motor. Intenta de nuevo.
+                  </p>
+                ) : comparando || !resultado ? (
+                  <p className={`mono ${s.termHint}`} aria-hidden="true">
+                    <span className={s.caret} aria-hidden="true">▊</span> analizando…
+                  </p>
                 ) : (
-                  <div aria-hidden="true">
-                    {demo.top.map((r, i) => (
-                      <div key={r.proyecto.id} className={`${s.termMatch} fx-rise`} style={{ '--fx-i': i }}>
-                        <span className={`mono ${s.termPair}`}>{r.proyecto.title}</span>
-                        <GradeBadge score={r.pct} size="sm" />
+                  <div className={s.termResults} aria-hidden="true">
+                    {resultado.coincidencias.map((r, i) => (
+                      <div key={r.id} className={`${s.termMatch} fx-rise`} style={{ '--fx-i': i }}>
+                        <span className={`mono ${s.termPair}`}>{r.titulo}</span>
+                        <GradeBadge score={r.porcentaje} size="sm" />
                       </div>
                     ))}
                     <p className={`mono ${s.termLine}`}>
-                      <span className={s.caret} aria-hidden="true">▊</span> {demo.sobre} sobre el umbral de {umbralPct}%
+                      <span className={s.caret} aria-hidden="true">▊</span> {resultado.sobre} sobre el umbral de {umbralPct}%
                     </p>
                   </div>
                 )}

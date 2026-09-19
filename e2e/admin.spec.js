@@ -33,11 +33,11 @@ test.describe('Administración de usuarios (admin)', () => {
     await page.goto('/instructor/fichas?crear=1')
 
     const red = page.locator('form select[name="red"]')
-    const programa = page.locator('form select[name="programa"]')
+    const programa = page.locator('form select[name="programaId"]')
 
     // Cascada completa desde el catálogo oficial
     await red.selectOption(RED_INFO)
-    await programa.selectOption('Infraestructura Redes')
+    await programa.selectOption({ label: 'Infraestructura Redes' })
 
     await page.getByPlaceholder('Ej. Análisis y Desarrollo 2718').fill('Ficha Redes E2E')
     await page.getByPlaceholder('Ej. 3142101').fill('8888')

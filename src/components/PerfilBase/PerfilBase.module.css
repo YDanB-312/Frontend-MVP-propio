@@ -48,5 +48,6 @@
 
 .seguridadRow{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
 .seguridadTexto{margin:0;font-size:var(--text-sm);color:var(--c-text-3)}
+.seguridadAcciones{display:flex;gap:var(--sp-2);flex-wrap:wrap}
 .link{font-weight:600;color:var(--c-primary);text-decoration:none}
 .link:hover{text-decoration:underline}

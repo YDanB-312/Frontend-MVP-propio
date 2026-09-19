@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useApi } from '../../lib/useApi'
+import { notificaciones as apiNotificaciones } from '../../lib/recursos'
 import {
   House, FolderOpen, Bell, Bug, UserCircle,
-  ClipboardText, BookOpen, BookBookmark, UsersThree, MagnifyingGlass, GraduationCap, GearSix
+  ClipboardText, BookOpen, BookBookmark, UsersThree, MagnifyingGlass, GraduationCap, GearSix,
+  ClockCounterClockwise
 } from 'phosphor-react'
-import { getUnreadCount } from '../../data/mockData'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import TopNav from '../../components/TopNav/TopNav'
 import Sidebar from '../../components/Sidebar/Sidebar'
@@ -38,7 +40,8 @@ const LINKS = {
     { to: '/admin/notificaciones', icon: <Bell size={20} weight="regular" />, label: 'Alertas' },
     { to: '/admin/usuarios', icon: <UsersThree size={20} weight="regular" />, label: 'Usuarios', activeFor: ['/admin/detalle-usuario'] },
     { to: '/admin/fichas', icon: <BookBookmark size={20} weight="regular" />, label: 'Fichas', activeFor: ['/admin/detalle-ficha'] },
-    { to: '/admin/configuracion', icon: <GearSix size={20} weight="regular" />, label: 'Configuración', activeFor: ['/admin/redes-conocimiento', '/admin/centros', '/admin/config-similitud'] },
+  { to: '/admin/bitacora', icon: <ClockCounterClockwise size={20} weight="regular" />, label: 'Bitácora' },
+    { to: '/admin/configuracion', icon: <GearSix size={20} weight="regular" />, label: 'Configuración', activeFor: ['/admin/redes-conocimiento', '/admin/training-centers', '/admin/config-similitud'] },
     { to: '/admin/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
   ],
 }
@@ -46,7 +49,16 @@ const LINKS = {
 export default function DashboardLayout({ role = 'aprendiz', titulo = '', children }) {
   const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const sinLeer = user ? getUnreadCount(Number(user.id)) : 0
+
+  // Campana: notificaciones reales del usuario (fuente única: la API).
+  const { data } = useApi(
+    () => (user?.id ? apiNotificaciones.listar() : Promise.resolve([])),
+    [user?.id],
+    { inicial: [] }
+  )
+  const sinLeer = user
+    ? (data || []).filter((n) => Number(n.id_usuario) === Number(user.id) && !n.leida).length
+    : 0
   const links = LINKS[role] || LINKS.aprendiz
 
   return (

@@ -69,7 +69,7 @@ test.describe('Crear ficha (instructor)', () => {
     const nombre = page.getByPlaceholder('Ej. Análisis y Desarrollo 2718')
     const numero = page.getByPlaceholder('Ej. 3142101')
     const red = page.locator('form select[name="red"]')
-    const programa = page.locator('form select[name="programa"]')
+    const programa = page.locator('form select[name="programaId"]')
     await expect(nombre).toBeVisible()
     await expect(numero).toBeVisible()
     await expect(page.getByText(/[a-z]{3}-[a-z]{4}/).first()).toBeVisible()
@@ -91,7 +91,7 @@ test.describe('Crear ficha (instructor)', () => {
     // Llenar y enviar
     await nombre.fill('Ficha de Prueba E2E')
     await numero.fill('9999')
-    await programa.selectOption('ADSO')
+    await programa.selectOption({ label: 'ADSO' })
     await page.locator('form select[name="centroId"]').selectOption({ index: 1 })
     await submit.click()
 

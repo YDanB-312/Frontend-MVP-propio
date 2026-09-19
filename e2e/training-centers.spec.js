@@ -3,7 +3,7 @@ import { test, expect, login } from './helpers'
 test.describe('Admin: centros de formación', () => {
   test('lista seed de Popayán y crea uno nuevo', async ({ page }) => {
     await login(page, 'admin')
-    await page.goto('/admin/centros')
+    await page.goto('/admin/training-centers')
     await expect(page.getByText('Centro de Teleinformática y Producción Industrial')).toBeVisible()
     await expect(page.getByText('Centro de Comercio y Servicios')).toBeVisible()
 
@@ -18,7 +18,7 @@ test.describe('Admin: centros de formación', () => {
 
   test('valida nombre corto y duplicado al crear', async ({ page }) => {
     await login(page, 'admin')
-    await page.goto('/admin/centros')
+    await page.goto('/admin/training-centers')
     await page.getByRole('button', { name: /Crear Centro/i }).click()
     await page.getByPlaceholder('Ej. Centro de Teleinformática y Producción Industrial').fill('Abc')
     await page.locator('form').getByRole('button', { name: /Crear centro/i }).click()
@@ -31,7 +31,7 @@ test.describe('Admin: centros de formación', () => {
 
   test('edita un centro y confirma el cambio', async ({ page }) => {
     await login(page, 'admin')
-    await page.goto('/admin/centros')
+    await page.goto('/admin/training-centers')
     const fila = page.locator('tr', { hasText: 'Centro de Comercio y Servicios' })
     await fila.getByRole('button', { name: /Editar/i }).click()
     await expect(page.getByRole('heading', { level: 1, name: 'Editar centro' })).toBeVisible()
@@ -43,7 +43,7 @@ test.describe('Admin: centros de formación', () => {
 
   test('eliminar libre pide confirmación; en uso está bloqueado', async ({ page }) => {
     await login(page, 'admin')
-    await page.goto('/admin/centros')
+    await page.goto('/admin/training-centers')
 
     await page.getByRole('button', { name: /Crear Centro/i }).click()
     await page.getByPlaceholder('Ej. Centro de Teleinformática y Producción Industrial').fill('Centro Temporal E2E')

@@ -64,6 +64,17 @@
   color: var(--c-text);
 }
 
+/* Unirse a ficha (aprendiz sin ficha) y acciones sobre la propia ficha */
+.joinForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.fichaActions {
+  margin-top: var(--sp-2);
+}
+
 /* Portada de cohorte (aprendiz header card) */
 .infoCard {
   position: relative;

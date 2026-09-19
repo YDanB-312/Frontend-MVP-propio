@@ -10,14 +10,15 @@ import { Input, Textarea, Select } from '../Input/Input'
 import s from './ReportarFallaBase.module.css'
 
 export default function ReportarFallaBase({ role, onSubmit }) {
-  const [form, setForm] = useState({ titulo: '', descripcion: '', tipo: 'bug_ui', prioridad: 'media' })
+  // La prioridad no la elige el usuario: el panel la deriva del tipo de falla.
+  const [form, setForm] = useState({ titulo: '', descripcion: '', tipo: 'bug_ui' })
   const [enviado, setEnviado] = useState(false)
 
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    onSubmit?.(form)
+    await onSubmit?.(form)
     setEnviado(true)
   }
 
@@ -48,25 +49,15 @@ export default function ReportarFallaBase({ role, onSubmit }) {
             <Textarea value={form.descripcion} onChange={handleChange('descripcion')} placeholder="Describe el problema con el mayor detalle posible..." rows={5} required />
           </FormField>
 
-          <div className={s.row}>
-            <FormField label="Tipo de falla">
-              <Select value={form.tipo} onChange={handleChange('tipo')}>
-                <option value="bug_ui">Bug de UI</option>
-                <option value="error_datos">Error de datos</option>
-                <option value="rendimiento">Rendimiento</option>
-                <option value="seguridad">Seguridad</option>
-                <option value="otro">Otro</option>
-              </Select>
-            </FormField>
-            <FormField label="Prioridad">
-              <Select value={form.prioridad} onChange={handleChange('prioridad')}>
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-                <option value="critica">Crítica</option>
-              </Select>
-            </FormField>
-          </div>
+          <FormField label="Tipo de falla">
+            <Select value={form.tipo} onChange={handleChange('tipo')}>
+              <option value="bug_ui">Bug de UI</option>
+              <option value="error_datos">Error de datos</option>
+              <option value="rendimiento">Rendimiento</option>
+              <option value="seguridad">Seguridad</option>
+              <option value="otro">Otro</option>
+            </Select>
+          </FormField>
 
           <Actions className={s.actions}>
             <Button size="lg" type="submit"><PaperPlaneRight size={16} /> Enviar reporte</Button>

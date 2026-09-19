@@ -5,7 +5,7 @@ import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
-import { Input } from '../../../components/Input/Input'
+import { Input, PasswordInput } from '../../../components/Input/Input'
 import s from './Register.module.css'
 import { esEmailValido, esPasswordValida } from '../../../utils/validation'
 
@@ -34,26 +34,28 @@ export default function Register() {
     return errs
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const errs = validar()
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
 
     setCargando(true)
-    const resultado = register({
-      nombre: form.nombre,
-      apellido: form.apellido,
-      correo: form.correo,
-      password: form.password,
-      rol,
-    })
-    setCargando(false)
-
-    if (resultado.exito) {
-      navigate('/confirmacion', { state: { correo: form.correo.trim().toLowerCase() } })
-    } else {
-      setErrors({ correo: resultado.mensaje })
+    try {
+      const res = await register({
+        nombre: form.nombre,
+        apellido: form.apellido,
+        correo: form.correo,
+        password: form.password,
+        rol,
+      })
+      if (res.exito) {
+        navigate('/confirmacion', { state: { correo: form.correo.trim().toLowerCase() } })
+      } else {
+        setErrors({ correo: res.mensaje })
+      }
+    } finally {
+      setCargando(false)
     }
   }
 
@@ -100,8 +102,7 @@ export default function Register() {
 
           <div className={s.grid2}>
             <FormField label="Contraseña" error={errors.password} help="Mínimo 6 caracteres" required>
-              <Input
-                type="password"
+              <PasswordInput
                 value={form.password}
                 onChange={(e) => set('password', e.target.value)}
                 placeholder="••••••••"
@@ -109,8 +110,7 @@ export default function Register() {
               />
             </FormField>
             <FormField label="Confirmar contraseña" error={errors.confirmar} required>
-              <Input
-                type="password"
+              <PasswordInput
                 value={form.confirmar}
                 onChange={(e) => set('confirmar', e.target.value)}
                 placeholder="••••••••"

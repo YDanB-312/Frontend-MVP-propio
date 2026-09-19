@@ -9,16 +9,37 @@ import ScoreDial from '../ScoreDial/ScoreDial'
 import Tag from '../Tag/Tag'
 import EmptyState from '../EmptyState/EmptyState'
 import { useAuth } from '../../contexts/AuthContext'
-import { findProjectById, findFichaById, getSimilitudesValidas, getFichasDelInstructor, displayNames } from '../../data/mockData'
+import { useApi } from '../../lib/useApi'
+import { similitudes, fichas } from '../../lib/recursos'
+import { fechaDesdeApi } from '../../utils/helpers'
 import s from './DetalleSimilitudBase.module.css'
 
 const ESTADO_PROYECTO_VARIANT = (estado) =>
   estado === 'aprobado' ? 'success' : estado === 'rechazado' ? 'danger' : estado === 'pendiente' ? 'warning' : 'neutral'
 
+const ESTADO_PROYECTO_LABEL = {
+  pendiente: 'Pendiente',
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+}
+
 const RUTA_POR_ROL = {
   aprendiz: { volver: '/aprendiz/propuestas', label: 'Mis Propuestas' },
   instructor: { volver: '/instructor/dashboard', label: 'Dashboard' },
   admin: { volver: '/admin/similitudes', label: 'Similitudes' },
+}
+
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
+
+// ¿La propuesta pertenece a las fichas o programas del instructor?
+function estaEnAlcance(proyecto, misFichasIds, misProgramas) {
+  if (!proyecto) return false
+  if (misFichasIds.has(Number(proyecto.id_class_group))) return true
+  const programa = Number(proyecto.classGroup?.id_programa)
+  return Number.isFinite(programa) && misProgramas.has(programa)
 }
 
 export default function DetalleSimilitudBase({
@@ -34,57 +55,82 @@ export default function DetalleSimilitudBase({
   const ruta = RUTA_POR_ROL[role] || RUTA_POR_ROL.aprendiz
   const { user } = useAuth()
   const esInstructor = role === 'instructor'
-  const { misFichasIds, misProgramas } = useMemo(() => {
-    if (!esInstructor || !user?.id) return { misFichasIds: null, misProgramas: null }
-    const fichas = getFichasDelInstructor(Number(user?.id))
-    return {
-      misFichasIds: new Set(fichas.map((f) => f.id)),
-      misProgramas: new Set(fichas.map((f) => f.programa).filter(Boolean)),
-    }
-  }, [esInstructor, user?.id])
 
-  const proyecto1 = useMemo(() => (similitud ? findProjectById(similitud.projectId1) : null), [similitud])
-  const proyecto2 = useMemo(() => (similitud ? findProjectById(similitud.projectId2) : null), [similitud])
+  // Proyectos del par: vienen incluidos en la similitud (project1/project2).
+  const proyecto1 = similitud?.project1 || null
+  const proyecto2 = similitud?.project2 || null
+
+  // Fichas del instructor: se identifican por el generalUser anidado.
+  const { data: listaFichas, cargando: cargandoFichas } = useApi(() => fichas.listar(), [], { inicial: [] })
+  const misFichasIds = useMemo(
+    () => new Set((listaFichas || [])
+      .filter((f) => Number(f.instructor?.generalUser?.id) === Number(user?.id))
+      .map((f) => Number(f.id))),
+    [listaFichas, user?.id]
+  )
+  const misProgramas = useMemo(
+    () => new Set((listaFichas || [])
+      .filter((f) => Number(f.instructor?.generalUser?.id) === Number(user?.id))
+      .map((f) => Number(f.id_programa))
+      .filter(Number.isFinite)),
+    [listaFichas, user?.id]
+  )
+
+  // "Otras coincidencias relacionadas": solo los pares que tocan el par actual
+  // (`related_to`). El backend además acota por rol: el aprendiz solo recibe
+  // pares de sus proyectos, así que no puede ver similitudes ajenas.
+  const relatedTo = [proyecto1?.id, proyecto2?.id].filter(Boolean).join(',')
+  const { data: todas } = useApi(
+    () => similitudes.listar(relatedTo ? { related_to: relatedTo } : {}),
+    [relatedTo],
+    { inicial: [] }
+  )
+  const proyectosPorId = useMemo(() => {
+    const map = new Map()
+    for (const x of todas || []) {
+      if (x.project1) map.set(Number(x.project1.id), x.project1)
+      if (x.project2) map.set(Number(x.project2.id), x.project2)
+    }
+    if (proyecto1) map.set(Number(proyecto1.id), proyecto1)
+    if (proyecto2) map.set(Number(proyecto2.id), proyecto2)
+    return map
+  }, [todas, proyecto1, proyecto2])
 
   const otras = useMemo(() => {
     if (!similitud) return []
-    const idA = proyecto1?.id
-    const idB = proyecto2?.id
+    const idA = Number(proyecto1?.id)
+    const idB = Number(proyecto2?.id)
     const vistas = new Map()
-    for (const x of getSimilitudesValidas()) {
-      if (x.id === similitud.id) continue
+    for (const x of todas || []) {
+      if (Number(x.id) === Number(similitud.id)) continue
+      const x1 = Number(x.id_proyecto_1)
+      const x2 = Number(x.id_proyecto_2)
       let origen = null
       let otroPid = null
-      if (x.projectId1 === idA || x.projectId2 === idA) {
+      if (x1 === idA || x2 === idA) {
         origen = 'A'
-        otroPid = x.projectId1 === idA ? x.projectId2 : x.projectId1
-      } else if (x.projectId1 === idB || x.projectId2 === idB) {
+        otroPid = x1 === idA ? x2 : x1
+      } else if (x1 === idB || x2 === idB) {
         origen = 'B'
-        otroPid = x.projectId1 === idB ? x.projectId2 : x.projectId1
+        otroPid = x1 === idB ? x2 : x1
       }
       if (!origen || vistas.has(x.id)) continue
-      // Intructor: solo otras coincidencias de su programa (consistencia intra-programa)
-      if (esInstructor && misProgramas) {
-        const otroProy = findProjectById(otroPid)
-        const progOtro = otroProy ? findFichaById(Number(otroProy.fichaId))?.programa : null
-        const enFicha = otroProy ? misFichasIds.has(Number(otroProy.fichaId)) : false
-        const enPrograma = progOtro ? misProgramas.has(progOtro) : false
-        if (!enFicha && !enPrograma) continue
+      // Instructor: solo otras coincidencias de su ficha o programa.
+      if (esInstructor && !cargandoFichas) {
+        if (!estaEnAlcance(proyectosPorId.get(Number(otroPid)), misFichasIds, misProgramas)) continue
       }
       vistas.set(x.id, { ...x, origen, otroPid })
     }
-    return [...vistas.values()].sort((a, b) => b.similitud - a.similitud)
-  }, [similitud, proyecto1, proyecto2, esInstructor, misFichasIds, misProgramas])
+    return [...vistas.values()].sort((a, b) => Number(b.porcentaje) - Number(a.porcentaje))
+  }, [similitud, proyecto1, proyecto2, todas, esInstructor, cargandoFichas, proyectosPorId, misFichasIds, misProgramas])
 
-  // Guard instructor (opción 1): bloquear si el par no es de su programa/fichas (hooks antes de returns)
+  // Guard instructor: bloquear si el par no es de su programa/fichas (hooks antes de returns).
   const noAutorizado = useMemo(() => {
-    if (!esInstructor || !similitud || !misProgramas || !proyecto1 || !proyecto2) return false
-    const prog1 = findFichaById(Number(proyecto1.fichaId))?.programa
-    const prog2 = findFichaById(Number(proyecto2.fichaId))?.programa
-    const enFicha = misFichasIds.has(Number(proyecto1.fichaId)) || misFichasIds.has(Number(proyecto2.fichaId))
-    const enPrograma = (prog1 && misProgramas.has(prog1)) || (prog2 && misProgramas.has(prog2))
-    return !enFicha && !enPrograma
-  }, [esInstructor, similitud, misProgramas, misFichasIds, proyecto1, proyecto2])
+    if (!esInstructor || !similitud || cargandoFichas) return false
+    if (!proyecto1 || !proyecto2) return false
+    return !(estaEnAlcance(proyecto1, misFichasIds, misProgramas)
+      || estaEnAlcance(proyecto2, misFichasIds, misProgramas))
+  }, [esInstructor, similitud, cargandoFichas, proyecto1, proyecto2, misFichasIds, misProgramas])
 
   if (!similitud) {
     return (
@@ -110,23 +156,21 @@ export default function DetalleSimilitudBase({
     )
   }
 
-  const pct = Math.round((similitud.similitud || 0) * 100)
+  const pct = Math.round(Number(similitud.porcentaje) || 0)
   const proyectos = [
     { p: proyecto1, tag: 'A' },
     { p: proyecto2, tag: 'B' },
   ]
 
   // Ver proyecto: propio de la ficha o mismo programa exacto (ADSO solo con ADSO, etc.)
-  // Las similitudes solo se forman intra-programa, por lo que un par de otra ficha
-  // con el mismo programa debe ser visible aunque no esté a cargo del instructor.
   function puedeVerProyecto(pid) {
-    if (!esInstructor || !misFichasIds) return true
-    const proyecto = findProjectById(pid)
-    if (!proyecto) return false
-    const fichaId = Number(proyecto.fichaId)
-    if (misFichasIds.has(fichaId)) return true
-    const programa = findFichaById(fichaId)?.programa
-    return programa != null && misProgramas.has(programa)
+    if (!esInstructor) return true
+    return estaEnAlcance(proyectosPorId.get(Number(pid)), misFichasIds, misProgramas)
+  }
+
+  function autorDe(p) {
+    const nombre = nombreCompleto(p?.creator)
+    return nombre || p?.classGroup?.program?.nombre || p?.classGroup?.codigo || '—'
   }
 
   const crumbPrevio =
@@ -137,11 +181,15 @@ export default function DetalleSimilitudBase({
         ]
       : [{ label: ruta.label, to: ruta.volver }]
 
+  const subtitulo = proyecto1 && proyecto2
+    ? `Detectada el ${fechaDesdeApi(similitud.fecha)} · ${proyecto1.titulo} vs. ${proyecto2.titulo}`
+    : `Detectada el ${fechaDesdeApi(similitud.fecha)}`
+
   return (
     <div className={s.wrapper}>
       <PageHeader
         title={`Similitud #${similitud.id}`}
-        subtitle={`Detectada el ${similitud.createdAt} · ${similitud.project1Student} vs. ${similitud.project2Student}`}
+        subtitle={subtitulo}
         icon={<MagnifyingGlass />}
         breadcrumb={[...crumbPrevio, { label: `#${similitud.id}` }]}
       />
@@ -159,16 +207,16 @@ export default function DetalleSimilitudBase({
           <DataPanel key={tag} title={`Propuesta ${tag}`} icon={<FileText />}>
             {p ? (
               <div className={s.projectCard}>
-                <h3 className={s.projectTitle}>{p.title}</h3>
+                <h3 className={s.projectTitle}>{p.titulo}</h3>
                 <p className={s.projectMeta}>
-                  <User size={14} /> {p.studentName}
+                  <User size={14} /> {autorDe(p)}
                 </p>
                 <p className={s.projectMeta}>
-                  <CalendarBlank size={14} /> {p.createdAt}
+                  <CalendarBlank size={14} /> {fechaDesdeApi(p.created_at)}
                 </p>
-                <p className={s.projectDesc}>{p.description}</p>
+                <p className={s.projectDesc}>{p.resumen}</p>
                 <Badge variant={ESTADO_PROYECTO_VARIANT(p.estado)}>
-                  {displayNames.projectStatus[p.estado] || p.estado}
+                  {ESTADO_PROYECTO_LABEL[p.estado] || p.estado}
                 </Badge>
                 {puedeVerProyecto(p.id) ? (
                   <Link to={`/${role}${projectPath}/${p.id}`} className={s.link}>
@@ -189,8 +237,8 @@ export default function DetalleSimilitudBase({
         <DataPanel title={`Otras coincidencias relacionadas (${otras.length})`} icon={<MagnifyingGlass />}>
           <ul className={s.otrasList}>
             {otras.map((x) => {
-              const pctX = Math.round((x.similitud || 0) * 100)
-              const otro = findProjectById(x.otroPid)
+              const pctX = Math.round(Number(x.porcentaje) || 0)
+              const otro = proyectosPorId.get(Number(x.otroPid))
               return (
                 <li key={x.id}>
                   <Link to={`/${role}/detalle-similitud/${x.id}`} className={s.otrasRow}>
@@ -198,9 +246,9 @@ export default function DetalleSimilitudBase({
                       Proyecto {x.origen}
                     </Tag>
                     <span className={s.otrasInfo}>
-                      <span className={s.otrasTitle}>{otro?.title || 'Proyecto no disponible'}</span>
+                      <span className={s.otrasTitle}>{otro?.titulo || 'Proyecto no disponible'}</span>
                       <span className={s.otrasMeta}>
-                        <User size={12} /> {otro?.studentName}
+                        <User size={12} /> {autorDe(otro)}
                       </span>
                     </span>
                     <GradeBadge score={pctX} size="sm" />

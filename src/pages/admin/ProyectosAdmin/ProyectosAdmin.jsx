@@ -10,22 +10,22 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
-import { norm } from '../../../utils/helpers'
-import {
-  getAllProjects,
-  getAllFichas,
-  getSimilitudesValidas,
-  findFichaById,
-  findCentroById,
-  getCentros,
-  REDES,
-  displayNames,
-} from '../../../data/mockData'
+import ApiState from '../../../components/ApiState/ApiState'
+import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { useApi } from '../../../lib/useApi'
+import { proyectos, similitudes, centros, programas, fichas } from '../../../lib/recursos'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
+
+const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
+
+// Concatena nombre + apellido de un general_user.
+function nombreCompleto(usuario) {
+  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+}
 
 export default function ProyectosAdmin() {
   const [busqueda, setBusqueda] = useState('')
@@ -35,42 +35,52 @@ export default function ProyectosAdmin() {
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
-  const centros = getCentros()
-  const programasFiltro = (
-    filtroCentro === 'todos'
-      ? [...new Set(REDES.flatMap((r) => r.programas))]
-      : [...new Set(getAllFichas().filter((f) => String(f.centroId) === String(filtroCentro)).map((f) => f.programa))]
-  ).sort()
-  const fichasFiltro = (
-    filtroCentro === 'todos'
-      ? getAllFichas()
-      : getAllFichas().filter((f) => String(f.centroId) === String(filtroCentro))
+  // Fuente única: la API. Propuestas + similitudes + catálogos de filtro.
+  const { data, cargando, error, recargar } = useApi(
+    async () => {
+      const [listaProyectos, listaSimilitudes, listaCentros, listaProgramas, listaFichas] = await Promise.all([
+        proyectos.listar(),
+        similitudes.listar(),
+        centros.listar(),
+        programas.listar(),
+        fichas.listar('program,trainingCenter'),
+      ])
+      return { listaProyectos, listaSimilitudes, listaCentros, listaProgramas, listaFichas }
+    },
+    [],
+    { inicial: null }
   )
 
-  const proyectos = getAllProjects()
+  const listaProyectos = data?.listaProyectos || []
+  const listaSimilitudes = data?.listaSimilitudes || []
+  const listaCentros = data?.listaCentros || []
+  const listaProgramas = data?.listaProgramas || []
+  const listaFichas = data?.listaFichas || []
 
-  // Solo similitudes válidas (intra-programa + al menos un aprobado), como el resto del admin
+  const fichasFiltro = filtroCentro === 'todos'
+    ? listaFichas
+    : listaFichas.filter((f) => String(f.training_center_id) === String(filtroCentro))
+  const programasFiltro = [...new Set(listaProgramas.map((p) => p.nombre))].sort()
+
+  // Máximo porcentaje y conteo de coincidencias por propuesta.
   const simInfo = {}
-  for (const sim of getSimilitudesValidas()) {
-    const pct = Math.round((sim.similitud || 0) * 100)
-    for (const pid of [sim.projectId1, sim.projectId2]) {
+  for (const sim of listaSimilitudes) {
+    const pct = Math.round(Number(sim.porcentaje) || 0)
+    for (const pid of [sim.id_proyecto_1, sim.id_proyecto_2]) {
       if (!simInfo[pid]) simInfo[pid] = { pct, count: 0 }
       if (pct > simInfo[pid].pct) simInfo[pid].pct = pct
       simInfo[pid].count += 1
     }
   }
 
-  const filtrados = proyectos.filter((p) => {
+  const filtrados = listaProyectos.filter((p) => {
     const q = norm(busqueda.trim())
-    const coincideQ =
-      !q ||
-      norm(p.title).includes(q) ||
-      norm(p.studentName).includes(q)
+    const coincideQ = !q || norm(p.titulo).includes(q) || norm(nombreCompleto(p.creator)).includes(q)
     const coincideEstado = filtroEstado === 'todos' || p.estado === filtroEstado
-    const fichaP = p.fichaId ? findFichaById(p.fichaId) : null
-    const coincideCentro = filtroCentro === 'todos' || (fichaP && String(fichaP.centroId) === String(filtroCentro))
-    const coincideFicha = filtroFicha === 'todos' || String(p.fichaId || '') === String(filtroFicha)
-    const coincidePrograma = filtroPrograma === 'todos' || (fichaP && fichaP.programa === filtroPrograma)
+    const fichaP = p.classGroup || null
+    const coincideCentro = filtroCentro === 'todos' || (fichaP && String(fichaP.training_center_id) === String(filtroCentro))
+    const coincideFicha = filtroFicha === 'todos' || String(p.id_class_group || '') === String(filtroFicha)
+    const coincidePrograma = filtroPrograma === 'todos' || (fichaP && fichaP.program?.nombre === filtroPrograma)
     return coincideQ && coincideEstado && coincideCentro && coincideFicha && coincidePrograma
   })
 
@@ -101,191 +111,186 @@ export default function ProyectosAdmin() {
           ]}
         />
 
-        <FilterBar title="Buscar y filtrar">
-          <label className={s.field}>
-            <span className={s.label}>Buscar</span>
-            <Input
-              value={busqueda}
-              onChange={(e) => {
-                setBusqueda(e.target.value)
-                setPagina(1)
-              }}
-              placeholder="Título o aprendiz…"
-            />
-          </label>
-          <label className={s.field}>
-            <span className={s.label}>Estado</span>
-            <Select
-              value={filtroEstado}
-              onChange={(e) => {
-                setFiltroEstado(e.target.value)
-                setPagina(1)
-              }}
-            >
-              <option value="todos">Todos</option>
-              <option value="pendiente">{displayNames.projectStatus.pendiente}</option>
-              <option value="aprobado">{displayNames.projectStatus.aprobado}</option>
-              <option value="rechazado">{displayNames.projectStatus.rechazado}</option>
-            </Select>
-          </label>
-          <label className={s.field}>
-            <span className={s.label}>Centro</span>
-              <Select
-                value={filtroCentro}
+        <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+          <FilterBar title="Buscar y filtrar">
+            <label className={s.field}>
+              <span className={s.label}>Buscar</span>
+              <Input
+                value={busqueda}
                 onChange={(e) => {
-                  setFiltroCentro(e.target.value)
-                  setFiltroFicha('todos')
-                  setFiltroPrograma('todos')
+                  setBusqueda(e.target.value)
+                  setPagina(1)
+                }}
+                placeholder="Título o aprendiz…"
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Estado</span>
+              <Select
+                value={filtroEstado}
+                onChange={(e) => {
+                  setFiltroEstado(e.target.value)
                   setPagina(1)
                 }}
               >
-              <option value="todos">Todos</option>
-              {centros.map((ct) => (
-                <option key={ct.id} value={String(ct.id)}>
-                  {ct.nombre}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label className={s.field}>
-            <span className={s.label}>Programa</span>
-            <Select
-              value={filtroPrograma}
-              onChange={(e) => {
-                setFiltroPrograma(e.target.value)
-                setPagina(1)
-              }}
-            >
-              <option value="todos">Todos</option>
-              {programasFiltro.map((prog) => (
-                <option key={prog} value={prog}>
-                  {prog}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label className={s.field}>
-            <span className={s.label}>Ficha</span>
-            <Select
-              value={filtroFicha}
-              onChange={(e) => {
-                setFiltroFicha(e.target.value)
-                setPagina(1)
-              }}
-            >
-              <option value="todos">Todas</option>
-              {fichasFiltro.map((f) => (
-                <option key={f.id} value={String(f.id)}>
-                  {f.codigo} · {f.nombre}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <p className={s.info}>
-            {filtrados.length} proyecto{filtrados.length !== 1 ? 's' : ''}
-          </p>
-        </FilterBar>
+                <option value="todos">Todos</option>
+                <option value="pendiente">{ESTADO_LABEL.pendiente}</option>
+                <option value="aprobado">{ESTADO_LABEL.aprobado}</option>
+                <option value="rechazado">{ESTADO_LABEL.rechazado}</option>
+              </Select>
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Centro</span>
+                <Select
+                  value={filtroCentro}
+                  onChange={(e) => {
+                    setFiltroCentro(e.target.value)
+                    setFiltroFicha('todos')
+                    setFiltroPrograma('todos')
+                    setPagina(1)
+                  }}
+                >
+                <option value="todos">Todos</option>
+                {listaCentros.map((ct) => (
+                  <option key={ct.id} value={String(ct.id)}>
+                    {ct.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Programa</span>
+              <Select
+                value={filtroPrograma}
+                onChange={(e) => {
+                  setFiltroPrograma(e.target.value)
+                  setPagina(1)
+                }}
+              >
+                <option value="todos">Todos</option>
+                {programasFiltro.map((prog) => (
+                  <option key={prog} value={prog}>
+                    {prog}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Ficha</span>
+              <Select
+                value={filtroFicha}
+                onChange={(e) => {
+                  setFiltroFicha(e.target.value)
+                  setPagina(1)
+                }}
+              >
+                <option value="todos">Todas</option>
+                {fichasFiltro.map((f) => (
+                  <option key={f.id} value={String(f.id)}>
+                    {f.codigo} · {f.nombre}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <p className={s.info}>
+              {filtrados.length} proyecto{filtrados.length !== 1 ? 's' : ''}
+            </p>
+          </FilterBar>
 
-        {paginados.length === 0 ? (
-          <EmptyState
-            icon={<FolderOpen />}
-            title="Sin propuestas"
-            message={
-              proyectos.length === 0
-                ? 'Todavía no hay propuestas registradas.'
-                : 'Ninguna propuesta coincide con los filtros aplicados.'
-            }
-            actionLabel={proyectos.length === 0 ? undefined : 'Limpiar filtros'}
-            onAction={proyectos.length === 0 ? undefined : limpiarFiltros}
-          />
-        ) : (
-          <>
-            <DataTable
-              ariaLabel="Propuestas registradas"
-              columns={[
-                {
-                  key: 'propuesta',
-                  header: 'Propuesta',
-                  render: (p) => (
-                    <>
-                      <span className={s.title}>{p.title}</span>
-                      <br />
-                      <span className={s.subText}>{p.areaAplicacion}</span>
-                    </>
-                  ),
-                },
-                { key: 'studentName', header: 'Aprendiz' },
-                { key: 'createdAt', header: 'Fecha' },
-                {
-                  key: 'similitud',
-                  header: 'Similitud',
-                  render: (p) => {
-                    const info = simInfo[p.id]
-                    if (!info) return <span className={s.muted}>—</span>
-                    return (
-                      <span title={`${info.pct}% · ${info.count}`}>
-                        <GradeBadge score={info.pct} size="sm" />
-                      </span>
-                    )
-                  },
-                },
-                {
-                  key: 'centro',
-                  header: 'Centro',
-                  render: (p) => {
-                    const fichaRow = p.fichaId ? findFichaById(p.fichaId) : null
-                    const centroRow = fichaRow?.centroId ? findCentroById(fichaRow.centroId) : null
-                    return centroRow?.nombre || <span className={s.muted}>—</span>
-                  },
-                },
-                {
-                  key: 'programa',
-                  header: 'Programa',
-                  render: (p) => {
-                    const fichaRow = p.fichaId ? findFichaById(p.fichaId) : null
-                    return fichaRow?.programa || <span className={s.muted}>—</span>
-                  },
-                },
-                {
-                  key: 'estado',
-                  header: 'Estado',
-                  render: (p) => (
-                    <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
-                      {displayNames.projectStatus[p.estado] || p.estado}
-                    </Badge>
-                  ),
-                },
-                {
-                  key: 'acciones',
-                  header: 'Acciones',
-                  align: 'end',
-                  render: (p) => (
-                    <Button
-                      as="link"
-                      to={`/admin/detalle-proyecto/${p.id}`}
-                      viewTransition
-                      size="sm"
-                      variant="secondary"
-                    >
-                      <Eye size={14} /> Ver
-                    </Button>
-                  ),
-                },
-              ]}
-              rows={paginados}
-              keyOf={(p) => p.id}
+          {paginados.length === 0 ? (
+            <EmptyState
+              icon={<FolderOpen />}
+              title="Sin propuestas"
+              message={
+                listaProyectos.length === 0
+                  ? 'Todavía no hay propuestas registradas.'
+                  : 'Ninguna propuesta coincide con los filtros aplicados.'
+              }
+              actionLabel={listaProyectos.length === 0 ? undefined : 'Limpiar filtros'}
+              onAction={listaProyectos.length === 0 ? undefined : limpiarFiltros}
             />
+          ) : (
+            <>
+              <DataTable
+                ariaLabel="Propuestas registradas"
+                columns={[
+                  {
+                    key: 'propuesta',
+                    header: 'Propuesta',
+                    render: (p) => (
+                      <>
+                        <span className={s.title}>{p.titulo}</span>
+                        <br />
+                        <span className={s.subText}>{p.area_aplicacion}</span>
+                      </>
+                    ),
+                  },
+                  { key: 'aprendiz', header: 'Aprendiz', render: (p) => nombreCompleto(p.creator) || '—' },
+                  { key: 'created_at', header: 'Fecha', render: (p) => fechaDesdeApi(p.created_at) },
+                  {
+                    key: 'similitud',
+                    header: 'Similitud',
+                    render: (p) => {
+                      const info = simInfo[p.id]
+                      if (!info) return <span className={s.muted}>—</span>
+                      return (
+                        <span title={`${info.pct}% · ${info.count}`}>
+                          <GradeBadge score={info.pct} size="sm" />
+                        </span>
+                      )
+                    },
+                  },
+                  {
+                    key: 'centro',
+                    header: 'Centro',
+                    render: (p) => p.classGroup?.trainingCenter?.name || <span className={s.muted}>—</span>,
+                  },
+                  {
+                    key: 'programa',
+                    header: 'Programa',
+                    render: (p) => p.classGroup?.program?.nombre || <span className={s.muted}>—</span>,
+                  },
+                  {
+                    key: 'estado',
+                    header: 'Estado',
+                    render: (p) => (
+                      <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
+                        {ESTADO_LABEL[p.estado] || p.estado}
+                      </Badge>
+                    ),
+                  },
+                  {
+                    key: 'acciones',
+                    header: 'Acciones',
+                    align: 'end',
+                    render: (p) => (
+                      <Button
+                        as="link"
+                        to={`/admin/detalle-proyecto/${p.id}`}
+                        viewTransition
+                        size="sm"
+                        variant="secondary"
+                      >
+                        <Eye size={14} /> Ver
+                      </Button>
+                    ),
+                  },
+                ]}
+                rows={paginados}
+                keyOf={(p) => p.id}
+              />
 
-            <Pagination
-              totalItems={filtrados.length}
-              itemsPerPage={ITEMS_POR_PAGINA}
-              paginaActual={pagina}
-              setPaginaActual={setPagina}
-              itemName="propuestas"
-              filteredCount={filtrados.length}
-            />
-          </>
-        )}
+              <Pagination
+                totalItems={filtrados.length}
+                itemsPerPage={ITEMS_POR_PAGINA}
+                paginaActual={pagina}
+                setPaginaActual={setPagina}
+                itemName="propuestas"
+                filteredCount={filtrados.length}
+              />
+            </>
+          )}
+        </ApiState>
       </div>
     </DashboardLayout>
   )
