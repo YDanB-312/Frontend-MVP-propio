@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
 import { UsersThree, FolderOpen, MagnifyingGlass, Bug, Bell, Sparkle, SlidersHorizontal, GearSix, Gauge, Database } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
+import DashboardHero from '../../../components/DashboardHero/DashboardHero'
+import DashboardGrid from '../../../components/DashboardGrid/DashboardGrid'
 import StatChip from '../../../components/StatChip/StatChip'
-import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
-import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
+import SectionHeader from '../../../components/SectionHeader/SectionHeader'
+import QueueTile, { QueueGrid } from '../../../components/QueueTile/QueueTile'
+import ActivityList from '../../../components/ActivityList/ActivityList'
 import QuickActions from '../../../components/QuickActions/QuickActions'
 import Badge from '../../../components/Badge/Badge'
 import Button from '../../../components/Button/Button'
@@ -14,8 +17,8 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { usuarios, proyectos, similitudes, reportes, notificaciones, motor } from '../../../lib/recursos'
 import { fechaDesdeApi } from '../../../utils/helpers'
-import s from './DashboardAdmin.module.css'
 import { RECIENTES } from '../../../constants/pagination'
+import s from './DashboardAdmin.module.css'
 
 // Etiquetas legibles del tipo de notificación (columnas reales de la API).
 const TIPO_NOTIF = {
@@ -99,21 +102,29 @@ export default function DashboardAdmin() {
     { to: '/admin/usuarios', icon: <UsersThree size={18} />, nombre: 'Cuentas suspendidas', valor: datos.suspendidos, total: datos.totalUsuarios },
   ]
 
+  const itemsAlertas = alertas.map((n) => ({
+    key: n.id,
+    to: '/admin/notificaciones',
+    title: n.titulo,
+    meta: `${TIPO_NOTIF[n.tipo] || 'Notificación'} · ${fechaDesdeApi(n.fecha)}`,
+    side: !n.leida ? <Badge variant="primary">Nueva</Badge> : null,
+  }))
+
   return (
     <DashboardLayout role="admin" titulo="Dashboard">
       <div className={s.page}>
-        <header className={s.hero}>
-          <p className={`mono ${s.kicker}`}>STATUS · ADMIN</p>
-          <h1 className={s.title}>¡Hola, {saludo}!</h1>
-          <p className={s.texto}>Monitorea usuarios, propuestas, similitudes detectadas y reportes de fallas de toda la plataforma ProyecTwin.</p>
-        </header>
+        <DashboardHero
+          kicker="STATUS · ADMIN"
+          title={<>¡Hola, {saludo}!</>}
+          text="Monitorea usuarios, propuestas, similitudes detectadas y reportes de fallas de toda la plataforma ProyecTwin."
+        />
 
         <ApiState cargando={cargando} error={error} onReintentar={recargar}>
-          <ConsoleCard
+          <DataPanel
             title="Salud del motor"
             subtitle={`Umbral ${Math.round(motorConfig.umbral * 100)}% · corpus de ${motorConfig.meses} meses`}
             glow
-            actions={
+            action={
               <Button as="link" to="/admin/config-similitud" viewTransition size="sm" variant="secondary">
                 <SlidersHorizontal size={14} /> Ajustar motor
               </Button>
@@ -125,49 +136,38 @@ export default function DashboardAdmin() {
               <StatChip icon={<MagnifyingGlass size={14} />} label="Pares" value={datos.totalSimilitudes} />
               <StatChip icon={<UsersThree size={14} />} label="Usuarios" value={datos.totalUsuarios} />
             </div>
-          </ConsoleCard>
+          </DataPanel>
 
           <section aria-label="Colas por atender">
             <SectionHeader title="Colas por atender" hint="lo que espera acción" />
-            <div className={s.colas}>
+            <QueueGrid>
               {colas.map((c) => (
-                <Link key={c.to} to={c.to} viewTransition className={s.cola}>
-                  <span className={s.colaIcon} aria-hidden="true">{c.icon}</span>
-                  <span className={s.colaMain}>
-                    <span className={`mono ${s.colaValor}`}>{c.valor}<span className={s.colaTotal}>/{c.total}</span></span>
-                    <span className={s.colaNombre}>{c.nombre}</span>
-                  </span>
-                </Link>
+                <QueueTile key={c.to} to={c.to} icon={c.icon} value={c.valor} total={c.total} title={c.nombre} />
               ))}
-            </div>
+            </QueueGrid>
           </section>
 
-          <div className={s.grid}>
-            <div className={s.accionesPanel}>
-              <DataPanel title="Acciones rápidas" icon={<Sparkle size={18} />}>
-                <QuickActions items={quick} />
+          <DashboardGrid
+            left={
+              <div className={s.accionesPanel}>
+                <DataPanel title="Acciones rápidas" icon={<Sparkle size={18} />}>
+                  <QuickActions items={quick} />
+                </DataPanel>
+              </div>
+            }
+            right={
+              <DataPanel
+                title="Alertas recientes"
+                icon={<Bell size={18} />}
+                action={<Link to="/admin/notificaciones" viewTransition className={s.panelLink}>Ver todas</Link>}
+              >
+                <ActivityList
+                  items={itemsAlertas}
+                  empty={<EmptyState title="Sin alertas" message="No tienes notificaciones recientes." />}
+                />
               </DataPanel>
-            </div>
-            <DataPanel title="Alertas recientes" icon={<Bell size={18} />} action={<Link to="/admin/notificaciones" viewTransition className={s.panelLink}>Ver todas</Link>}>
-              {alertas.length === 0 ? (
-                <EmptyState title="Sin alertas" message="No tienes notificaciones recientes." />
-              ) : (
-                <ul className={s.lista}>
-                  {alertas.map((n) => (
-                    <li key={n.id}>
-                      <Link to="/admin/notificaciones" viewTransition className={s.fila}>
-                        <span className={s.filaMain}>
-                          <span className={s.filaTitulo}>{n.titulo}</span>
-                          <span className={s.filaMeta}>{TIPO_NOTIF[n.tipo] || 'Notificación'} · {fechaDesdeApi(n.fecha)}</span>
-                        </span>
-                        {!n.leida && <Badge variant="primary">Nueva</Badge>}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </DataPanel>
-          </div>
+            }
+          />
         </ApiState>
       </div>
     </DashboardLayout>

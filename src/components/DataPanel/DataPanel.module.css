@@ -1,7 +1,10 @@
 .panel{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-xl);box-shadow:var(--sh-card);overflow:hidden}
+.glow{box-shadow:var(--glow-soft);border-color:var(--grade-s-border)}
 .header{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--c-border-2);flex-wrap:wrap}
 .titleWrap{display:flex;align-items:center;gap:var(--sp-2_5);min-width:0}
 .icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:var(--r-md);background:var(--c-primary-light);color:var(--c-primary);font-size:var(--text-md);flex-shrink:0}
+.titles{min-width:0}
 .title{font-family:var(--font-display);font-size:var(--text-base);font-weight:700;color:var(--c-text);letter-spacing:var(--tracking-tight);margin:0}
+.subtitle{font-size:var(--text-sm);color:var(--c-text-3);margin:var(--sp-0_5) 0 0}
 .action{display:flex;align-items:center;gap:var(--sp-2)}
 .body{padding:var(--sp-5)}

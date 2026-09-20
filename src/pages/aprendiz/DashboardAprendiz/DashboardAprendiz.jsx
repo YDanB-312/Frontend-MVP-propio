@@ -1,12 +1,13 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bell, CaretRight, Clock, FolderOpen, MagnifyingGlass, PlusCircle, Tray } from 'phosphor-react'
+import { Bell, CaretRight, Clock, FolderOpen, MagnifyingGlass, PlusCircle, Sparkle, Tray } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
-import Dashboard from '../../../components/Dashboard/Dashboard'
+import DashboardHero from '../../../components/DashboardHero/DashboardHero'
+import DashboardGrid from '../../../components/DashboardGrid/DashboardGrid'
 import MetricCard from '../../../components/MetricCard/MetricCard'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import QuickActions from '../../../components/QuickActions/QuickActions'
-import { Sparkle } from 'phosphor-react'
+import ActivityList from '../../../components/ActivityList/ActivityList'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
@@ -15,14 +16,21 @@ import { proyectos, similitudes as similitudesApi, notificaciones } from '../../
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import { useAuth } from '../../../contexts/AuthContext'
 import { formatearFecha } from '../../../utils/helpers'
-import s from '../../../components/Dashboard/Dashboard.module.css'
 import { RECIENTES } from '../../../constants/pagination'
+import s from './DashboardAprendiz.module.css'
 
 // Relaciones que la lista debe incluir para poder detectar al equipo (pivote).
 const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
 
 // Etiquetas de estado de propuesta (el backend solo devuelve el código).
 const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
+
+const fechaHoy = new Intl.DateTimeFormat('es-CO', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+}).format(new Date())
 
 // Una propuesta es del aprendiz si la creó o si figura en su equipo.
 function esMio(proyecto, userId) {
@@ -92,59 +100,73 @@ export default function DashboardAprendiz() {
     descripcion: 'Crea tu propuesta y analízala al instante',
   }]
 
+  const items = recientes.map((p) => {
+    const info = infoSimilitud(todasSimilitudes, p.id)
+    return {
+      key: p.id,
+      to: `/aprendiz/detalle-proyecto/${p.id}`,
+      title: p.titulo,
+      meta: `${formatearFecha(p.created_at)} · ${ESTADO_LABEL[p.estado] || p.estado}`,
+      side: (
+        <>
+          {info && (
+            <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
+              {info.pct}% · {info.count} coincidencia{info.count !== 1 ? 's' : ''}
+            </Badge>
+          )}
+          <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>{ESTADO_LABEL[p.estado] || p.estado}</Badge>
+          <CaretRight size={16} />
+        </>
+      ),
+    }
+  })
+
   return (
     <DashboardLayout role="aprendiz" titulo="Dashboard">
-      <Dashboard
-        kicker="Panel de aprendiz"
-        titulo={<>¡Hola, {saludo}!</>}
-        texto="Este es tu espacio para gestionar tus propuestas y mantener la originalidad de tu trabajo."
-        stats={
-          <>
-            <Link to="/aprendiz/propuestas" className={s.statLink}><MetricCard icon={<FolderOpen size={22} />} label="Propuestas registradas" value={misProyectos.length} variant="primary" /></Link>
-            <Link to="/aprendiz/similitudes" className={s.statLink}><MetricCard icon={<MagnifyingGlass size={22} />} label="Similitudes detectadas" value={similitudesPropias} variant="warning" /></Link>
-            <Link to="/aprendiz/alertas" className={s.statLink}><MetricCard icon={<Bell size={22} />} label="Alertas sin leer" value={sinLeer} variant="info" /></Link>
-          </>
-        }
-        acciones={
-          <DataPanel title="Acciones rápidas" icon={<Sparkle size={18} />}>
-            <QuickActions items={acciones} />
-          </DataPanel>
-        }
-        actividad={
-          <DataPanel title="Propuestas recientes" icon={<Clock size={18} />} action={<Link to="/aprendiz/propuestas" className={s.panelLink}>Ver todas</Link>}>
-            <ApiState cargando={cargando} error={error} onReintentar={recargar}>
-              {recientes.length === 0 ? (
-                <EmptyState icon={<Tray />} title="Aún no tienes propuestas" message="Registra tu primera propuesta para comenzar a analizarla." actionLabel="Crear propuesta" onAction={() => navigate('/aprendiz/propuestas?crear=1')} />
-              ) : (
-                <ul className={s.lista}>
-                  {recientes.map((p) => {
-                    const info = infoSimilitud(todasSimilitudes, p.id)
-                    return (
-                      <li key={p.id}>
-                        <Link to={`/aprendiz/detalle-proyecto/${p.id}`} className={s.fila}>
-                          <div className={s.filaMain}>
-                            <span className={s.filaTitulo}>{p.titulo}</span>
-                            <span className={s.filaMeta}>{formatearFecha(p.created_at)} · {ESTADO_LABEL[p.estado] || p.estado}</span>
-                          </div>
-                          <div className={s.filaLado}>
-                            {info && (
-                              <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
-                                {info.pct}% · {info.count} coincidencia{info.count !== 1 ? 's' : ''}
-                              </Badge>
-                            )}
-                            <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>{ESTADO_LABEL[p.estado] || p.estado}</Badge>
-                            <CaretRight size={16} />
-                          </div>
-                        </Link>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </ApiState>
-          </DataPanel>
-        }
-      />
+      <div className={s.page}>
+        <DashboardHero
+          kicker="Panel de aprendiz"
+          title={<>¡Hola, {saludo}!</>}
+          text="Este es tu espacio para gestionar tus propuestas y mantener la originalidad de tu trabajo."
+          date={fechaHoy}
+        />
+
+        <section className={s.stats} aria-label="Resumen de actividad">
+          <MetricCard to="/aprendiz/propuestas" icon={<FolderOpen size={22} />} label="Propuestas registradas" value={misProyectos.length} variant="primary" />
+          <MetricCard to="/aprendiz/similitudes" icon={<MagnifyingGlass size={22} />} label="Similitudes detectadas" value={similitudesPropias} variant="warning" />
+          <MetricCard to="/aprendiz/alertas" icon={<Bell size={22} />} label="Alertas sin leer" value={sinLeer} variant="info" />
+        </section>
+
+        <DashboardGrid
+          left={
+            <DataPanel title="Acciones rápidas" icon={<Sparkle size={18} />}>
+              <QuickActions items={acciones} />
+            </DataPanel>
+          }
+          right={
+            <DataPanel
+              title="Propuestas recientes"
+              icon={<Clock size={18} />}
+              action={<Link to="/aprendiz/propuestas" className={s.panelLink}>Ver todas</Link>}
+            >
+              <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+                <ActivityList
+                  items={items}
+                  empty={
+                    <EmptyState
+                      icon={<Tray />}
+                      title="Aún no tienes propuestas"
+                      message="Registra tu primera propuesta para comenzar a analizarla."
+                      actionLabel="Crear propuesta"
+                      onAction={() => navigate('/aprendiz/propuestas?crear=1')}
+                    />
+                  }
+                />
+              </ApiState>
+            </DataPanel>
+          }
+        />
+      </div>
     </DashboardLayout>
   )
 }

@@ -1,0 +1,5 @@
+.page{display:flex;flex-direction:column;gap:var(--sp-6)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-4)}
+.stats>*{min-width:0}
+.panelLink{font-size:var(--text-sm);font-weight:600;color:var(--c-primary);text-decoration:none}
+.panelLink:hover{text-decoration:underline}

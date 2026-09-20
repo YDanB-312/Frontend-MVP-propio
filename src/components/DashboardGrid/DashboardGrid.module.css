@@ -1,0 +1,4 @@
+.grid{display:grid;grid-template-columns:5fr 7fr;gap:var(--sp-5);align-items:start}
+.grid>*{min-width:0}
+.col{display:flex;flex-direction:column;min-width:0}
+@media(max-width:1024px){.grid{grid-template-columns:1fr}}

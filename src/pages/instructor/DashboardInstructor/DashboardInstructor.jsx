@@ -1,9 +1,12 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardText, PlusCircle, BookOpen, MagnifyingGlass, Bell, CaretRight } from 'phosphor-react'
+import { Bell, CaretRight, ClipboardText, PlusCircle, BookOpen, MagnifyingGlass } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
+import DashboardHero from '../../../components/DashboardHero/DashboardHero'
 import StatChip from '../../../components/StatChip/StatChip'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
+import ActivityList from '../../../components/ActivityList/ActivityList'
+import QueueTile, { QueueGrid } from '../../../components/QueueTile/QueueTile'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import Badge from '../../../components/Badge/Badge'
 import Button from '../../../components/Button/Button'
@@ -14,8 +17,8 @@ import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instructores } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import { fechaDesdeApi } from '../../../utils/helpers'
-import s from './DashboardInstructor.module.css'
 import { RECIENTES } from '../../../constants/pagination'
+import s from './DashboardInstructor.module.css'
 
 // Relaciones que la lista de propuestas debe traer para mostrar creador y ficha.
 const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
@@ -106,19 +109,37 @@ export default function DashboardInstructor() {
   const recientes = useMemo(() => pendientes.slice(0, RECIENTES), [pendientes])
   const saludo = (user?.nombre || '').split(' ')[0] || 'Instructor'
 
+  const itemsTurno = recientes.map((p, i) => {
+    const info = infoSimilitud(todasSimilitudes, p.id)
+    return {
+      key: p.id,
+      to: `/instructor/detalle-proyecto/${p.id}`,
+      ordinal: i + 1,
+      title: p.titulo,
+      meta: `${nombreCompleto(p.creator)} · ${fechaDesdeApi(p.created_at)}`,
+      side: (
+        <>
+          {info ? <GradeBadge score={info.pct} size="sm" /> : null}
+          <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>{ESTADO_LABEL[p.estado] || p.estado}</Badge>
+          <CaretRight size={16} />
+        </>
+      ),
+    }
+  })
+
   return (
     <DashboardLayout role="instructor" titulo="Dashboard">
       <div className={s.page}>
-        <ApiState cargando={cargando} error={error} onReintentar={recargar}>
-          <header className={s.hero}>
-            <p className={`mono ${s.kicker}`}>TURNO · INSTRUCTOR</p>
-            <h1 className={s.title}>¡Hola, {saludo}!</h1>
-            <p className={s.texto}>
-              {pendientes.length === 0
-                ? 'Sin pendientes en tu turno. Bienvenido de nuevo a ProyecTwin.'
-                : `Tienes ${pendientes.length} propuesta${pendientes.length !== 1 ? 's' : ''} esperando tu revisión.`}
-            </p>
-            <div className={s.chips}>
+        <DashboardHero
+          kicker="TURNO · INSTRUCTOR"
+          title={<>¡Hola, {saludo}!</>}
+          text={
+            pendientes.length === 0
+              ? 'Sin pendientes en tu turno. Bienvenido de nuevo a ProyecTwin.'
+              : `Tienes ${pendientes.length} propuesta${pendientes.length !== 1 ? 's' : ''} esperando tu revisión.`
+          }
+          chips={
+            <>
               <Link to="/instructor/revision-propuestas" viewTransition className={s.chipLink}>
                 <StatChip icon={<ClipboardText size={14} />} label="Por revisar" value={pendientes.length} />
               </Link>
@@ -131,8 +152,10 @@ export default function DashboardInstructor() {
               <Link to="/instructor/alertas" viewTransition className={s.chipLink}>
                 <StatChip icon={<Bell size={14} />} label="Alertas" value={sinLeer} />
               </Link>
-            </div>
-            <div className={s.ctaRow}>
+            </>
+          }
+          actions={
+            <>
               {pendientes.length > 0 && (
                 <Button as="link" to="/instructor/revision-propuestas" viewTransition>
                   <ClipboardText size={14} /> Revisar propuestas
@@ -141,57 +164,38 @@ export default function DashboardInstructor() {
               <Button as="link" to="/instructor/fichas?crear=1" viewTransition variant="secondary">
                 <PlusCircle size={14} /> Crear ficha
               </Button>
-            </div>
-          </header>
+            </>
+          }
+        />
 
+        <ApiState cargando={cargando} error={error} onReintentar={recargar}>
           <section aria-label="Pendientes del turno">
             <SectionHeader title="Hoy en tu turno" count={recientes.length} hint="pendientes recientes" />
-            {recientes.length === 0 ? (
-              <EmptyState title="No hay propuestas pendientes" message="Cuando tus aprendices envíen nuevas propuestas aparecerán aquí para su revisión." />
-            ) : (
-              <ol className={s.turno}>
-                {recientes.map((p, i) => {
-                  const info = infoSimilitud(todasSimilitudes, p.id)
-                  return (
-                    <li key={p.id} className="fx-rise" style={{ '--fx-i': i }}>
-                      <Link to={`/instructor/detalle-proyecto/${p.id}`} viewTransition className={s.caso}>
-                        <span className={`mono ${s.orden}`}>{String(i + 1).padStart(2, '0')}</span>
-                        <span className={s.casoMain}>
-                          <span className={s.casoTitulo}>{p.titulo}</span>
-                          <span className={s.casoMeta}>{nombreCompleto(p.creator)} · {fechaDesdeApi(p.created_at)}</span>
-                        </span>
-                        <span className={s.casoLado}>
-                          {info ? <GradeBadge score={info.pct} size="sm" /> : null}
-                          <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>{ESTADO_LABEL[p.estado] || p.estado}</Badge>
-                          <CaretRight size={16} className={s.chevron} />
-                        </span>
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ol>
-            )}
+            <ActivityList
+              variant="card"
+              accent="warning"
+              items={itemsTurno}
+              empty={<EmptyState title="No hay propuestas pendientes" message="Cuando tus aprendices envíen nuevas propuestas aparecerán aquí para su revisión." />}
+            />
           </section>
 
           <section aria-label="Tus cohortes">
             <SectionHeader title="Tus cohortes" count={misFichas.length} />
-            {misFichas.length === 0 ? null : (
-              <div className={s.cohortes}>
-                {misFichas.map((f) => {
-                  const deFicha = misProyectos.filter((p) => Number(p.id_class_group) === Number(f.id))
-                  const pend = deFicha.filter((p) => p.estado === 'pendiente').length
-                  return (
-                    <Link key={f.id} to={`/instructor/detalle-ficha/${f.id}`} viewTransition className={s.cohorte}>
-                      <span className={`mono ${s.cohorteCodigo}`}>{f.codigo}</span>
-                      <span className={s.cohorteNombre}>{f.nombre}</span>
-                      <span className={s.cohorteMeta}>
-                        {deFicha.length} propuesta{deFicha.length !== 1 ? 's' : ''} · {pend} por revisar
-                      </span>
-                    </Link>
-                  )
-                })}
-              </div>
-            )}
+            <QueueGrid>
+              {misFichas.map((f) => {
+                const deFicha = misProyectos.filter((p) => Number(p.id_class_group) === Number(f.id))
+                const pend = deFicha.filter((p) => p.estado === 'pendiente').length
+                return (
+                  <QueueTile
+                    key={f.id}
+                    to={`/instructor/detalle-ficha/${f.id}`}
+                    eyebrow={f.codigo}
+                    title={f.nombre}
+                    meta={`${deFicha.length} propuesta${deFicha.length !== 1 ? 's' : ''} · ${pend} por revisar`}
+                  />
+                )
+              })}
+            </QueueGrid>
           </section>
         </ApiState>
       </div>
