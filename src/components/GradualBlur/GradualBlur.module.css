@@ -1,0 +1,5 @@
+.wrap{position:absolute;pointer-events:none;z-index:2}
+.capa{position:absolute;inset:0}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .capa{background:var(--c-bg);opacity:.35}
+}

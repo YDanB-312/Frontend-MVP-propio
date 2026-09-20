@@ -26,8 +26,7 @@
 .termTitle{margin-left:auto;font-size:var(--text-xs);color:var(--c-text-3)}
 .termBody{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-4)}
 .termLine{font-size:var(--text-xs);color:var(--c-text-2);margin:0}
-.termType{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;max-width:0;animation:fx-type 1.8s steps(44) var(--dur-normal) forwards;color:var(--c-text)}
-@keyframes fx-type{to{max-width:44ch}}
+.termType{display:inline-block;white-space:nowrap;vertical-align:bottom;color:var(--c-text)}
 .termLabel{display:block;font-size:11px;letter-spacing:.06em;color:var(--c-primary);margin:var(--sp-1) 0 0}
 .termInput{width:100%;margin-top:var(--sp-2);padding:var(--sp-2_5) var(--sp-3);font-size:var(--text-sm);color:var(--c-text);background:var(--c-surface-sunken);border:1px solid var(--c-border-h);border-radius:var(--r-md);outline:none;transition:border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
 .termInput::placeholder{color:var(--c-text-3)}

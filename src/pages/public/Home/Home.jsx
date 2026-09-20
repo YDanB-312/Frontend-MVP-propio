@@ -6,6 +6,8 @@ import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
 import StatChip from '../../../components/StatChip/StatChip'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import GradualBlur from '../../../components/GradualBlur/GradualBlur'
+import TextType from '../../../components/TextType/TextType'
 import { useApi } from '../../../lib/useApi'
 import { demo } from '../../../lib/recursos'
 import s from './Home.module.css'
@@ -135,9 +137,15 @@ export default function Home() {
             <div className={s.termBody}>
               <p className={`mono ${s.termLine}`}>
                 <span aria-hidden="true">$&nbsp;</span>
-                <span className={s.termType}>
-                  comparar --corpus {meses ?? '—'}m --umbral {umbralPct ?? '—'}%
-                </span>
+                <TextType
+                  key={`${meses}-${umbralPct}`}
+                  className={`mono ${s.termType}`}
+                  text={`comparar --corpus ${meses ?? '—'}m --umbral ${umbralPct ?? '—'}%`}
+                  speed={45}
+                  startDelay={200}
+                  cursor
+                  respectReducedMotion={false}
+                />
               </p>
 
               <label className={`mono ${s.termLabel}`} htmlFor="demo-idea">
@@ -196,6 +204,7 @@ export default function Home() {
             </div>
             <div className={s.scanbeam} aria-hidden="true" />
           </div>
+          <GradualBlur position="bottom" height="4rem" strength={1.4} divCount={4} opacity={0.7} />
         </section>
 
         <section className={s.section} aria-labelledby="features-title">
