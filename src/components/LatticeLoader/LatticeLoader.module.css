@@ -1,0 +1,106 @@
+/* Fila de estado de carga (ReactBits LatticeLoader, adaptado a CSS Modules + tokens). */
+.loader{
+  --ll-n:3;
+  --ll-cell:6px;
+  --ll-gap:2px;
+  --ll-font:14px;
+  --ll-color:currentColor;
+  --ll-mark:var(--c-primary);
+  --ll-idle:.15;
+  --ll-glow:currentColor;
+  --ll-mark-glow:var(--c-primary);
+  --ll-peak:1;
+  --ll-cycle:864ms;
+  --ll-ease-out:cubic-bezier(.23,1,.32,1);
+  --ll-ease-in-out:cubic-bezier(.77,0,.175,1);
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  gap:calc(var(--ll-font) * .625);
+  font-family:inherit;
+  font-size:var(--ll-font);
+  line-height:1;
+}
+.grid{display:grid;flex:none}
+.layer{grid-area:1 / 1;display:grid;grid-template-columns:repeat(var(--ll-n),var(--ll-cell));gap:var(--ll-gap)}
+.cell{
+  width:var(--ll-cell);
+  height:var(--ll-cell);
+  border-radius:max(1px,calc(var(--ll-cell) * .25));
+  background:var(--ll-color);
+  opacity:var(--ll-idle);
+}
+.loader[data-shape='round'] .cell{border-radius:50%}
+.loader[data-glow] .run .cell:not([data-hole]){box-shadow:0 0 calc(var(--ll-cell) * 1.2) calc(var(--ll-cell) * .12) var(--ll-glow)}
+.loader[data-glow] .mark .cell[data-on]{box-shadow:0 0 calc(var(--ll-cell) * 1.2) calc(var(--ll-cell) * .12) var(--ll-mark-glow)}
+.run{transition:opacity 200ms ease}
+.run .cell{animation:latticeOn var(--ll-cycle) var(--ll-ease-in-out) infinite}
+.run .cell[data-lit='45']{animation-name:latticeOn45}
+.run .cell[data-lit='35']{animation-name:latticeOn35}
+.run .cell[data-lit='25']{animation-name:latticeOn25}
+.run .cell[data-hole]{animation:none;opacity:calc(var(--ll-idle) * .47)}
+.mark{
+  opacity:0;
+  transform:scale(.9);
+  transform-origin:center;
+  transition:opacity 160ms var(--ll-ease-out),transform 160ms var(--ll-ease-out);
+}
+.mark .cell{transition:opacity 200ms ease,background-color 200ms ease}
+.mark .cell[data-on]{background:var(--ll-mark);opacity:var(--ll-peak)}
+.loader:not([data-status='working']) .run{opacity:0}
+.loader:not([data-status='working']) .run .cell{animation-play-state:paused}
+.loader:not([data-status='working']) .mark{opacity:1;transform:none;transition:opacity 200ms ease,transform 200ms var(--ll-ease-out)}
+.label{position:relative;display:inline-block;font-weight:500}
+.text{
+  position:absolute;
+  top:0;
+  left:0;
+  white-space:nowrap;
+  opacity:0;
+  filter:blur(2px);
+  transition:opacity 200ms ease,filter 200ms ease;
+}
+.text[data-active]{position:static;opacity:1;filter:blur(0)}
+.timer{
+  font-family:var(--mono);
+  font-size:calc(var(--ll-font) * .875);
+  font-variant-numeric:tabular-nums;
+  opacity:.6;
+}
+.sr{
+  position:absolute;
+  width:1px;
+  height:1px;
+  margin:-1px;
+  padding:0;
+  border:0;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
+}
+@keyframes latticeOn{
+  0%,100%{opacity:var(--ll-idle)}
+  18%,42%{opacity:var(--ll-peak)}
+  62%{opacity:var(--ll-idle)}
+}
+@keyframes latticeOn45{
+  0%,100%{opacity:var(--ll-idle)}
+  13%,31%{opacity:var(--ll-peak)}
+  45%{opacity:var(--ll-idle)}
+}
+@keyframes latticeOn35{
+  0%,100%{opacity:var(--ll-idle)}
+  10%,24%{opacity:var(--ll-peak)}
+  35%{opacity:var(--ll-idle)}
+}
+@keyframes latticeOn25{
+  0%,100%{opacity:var(--ll-idle)}
+  7%,17%{opacity:var(--ll-peak)}
+  25%{opacity:var(--ll-idle)}
+}
+@media (prefers-reduced-motion: reduce){
+  .run{--ll-peak:.7}
+  .run .cell{animation-delay:0ms !important;animation-duration:1400ms !important}
+  .mark{transform:none}
+  .text{filter:none}
+}

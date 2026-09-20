@@ -5,15 +5,23 @@
 //   </ApiState>
 import Button from '../Button/Button'
 import EmptyState from '../EmptyState/EmptyState'
+import LatticeLoader from '../LatticeLoader/LatticeLoader'
 import { Warning, ArrowClockwise } from 'phosphor-react'
 import s from './ApiState.module.css'
 
 export default function ApiState({ cargando, error, vacio = false, onReintentar, mensajeVacio, iconoVacio, children }) {
   if (cargando) {
     return (
-      <p className={s.cargando} role="status">
-        <span className={s.spinner} aria-hidden="true" /> Cargando información…
-      </p>
+      <div className={s.cargando}>
+        <LatticeLoader
+          label="Cargando información"
+          pattern="orbit"
+          grid={3}
+          shape="round"
+          showTimer={false}
+          idleOpacity={0.25}
+        />
+      </div>
     )
   }
 
