@@ -3,7 +3,8 @@ import { CaretDown, CaretRight, Eye, MagnifyingGlass } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
-import Badge from '../../../components/Badge/Badge'
+import StatusMark from '../../../components/StatusMark/StatusMark'
+import { PROPUESTA_STATUS } from '../../../constants/estadoStatus'
 import Button from '../../../components/Button/Button'
 import { Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
@@ -25,12 +26,6 @@ const ITEMS_POR_PAGINA = PAGINA_TABLA
 const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
 
 const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
-
-const PROY_VARIANT = {
-  pendiente: 'warning',
-  aprobado: 'success',
-  rechazado: 'danger',
-}
 
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
@@ -175,12 +170,8 @@ export default function SimilitudesInstructor() {
         const estadoB = proyectoPorId.get(Number(sim.id_proyecto_2))?.estado || '—'
         return (
           <span className={local.estadoPair}>
-            <Badge variant={PROY_VARIANT[estadoA] || 'neutral'}>
-              A: {ESTADO_LABEL[estadoA] || estadoA}
-            </Badge>
-            <Badge variant={PROY_VARIANT[estadoB] || 'neutral'}>
-              B: {ESTADO_LABEL[estadoB] || estadoB}
-            </Badge>
+            <StatusMark status={PROPUESTA_STATUS[estadoA] || 'pending'} label={`A: ${ESTADO_LABEL[estadoA] || estadoA}`} />
+            <StatusMark status={PROPUESTA_STATUS[estadoB] || 'pending'} label={`B: ${ESTADO_LABEL[estadoB] || estadoB}`} />
           </span>
         )
       },

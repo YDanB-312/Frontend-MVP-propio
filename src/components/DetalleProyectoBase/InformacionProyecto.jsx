@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
-import Badge from '../Badge/Badge'
+import StatusMark from '../StatusMark/StatusMark'
+import { PROPUESTA_STATUS } from '../../constants/estadoStatus'
 import Tag from '../Tag/Tag'
 import s from './DetalleProyectoBase.module.css'
-import { PROJECT_ESTADO_VARIANT as ESTADO_VARIANT } from '../../constants/badgeVariants'
 import { fechaDesdeApi } from '../../utils/helpers'
 
 // Etiquetas legibles del estado de la propuesta (columnas reales de la API).
@@ -60,9 +60,7 @@ export default function InformacionProyecto({ proyecto, ficha, fichaHref }) {
   return (
     <>
       <div className={s.badgeRow}>
-        <Badge variant={ESTADO_VARIANT[proyecto.estado] || 'neutral'}>
-          {ESTADO_LABEL[proyecto.estado] || proyecto.estado}
-        </Badge>
+        <StatusMark status={PROPUESTA_STATUS[proyecto.estado] || 'pending'} label={ESTADO_LABEL[proyecto.estado] || proyecto.estado} />
         {proyecto.area_aplicacion && <Tag variant="info">{proyecto.area_aplicacion}</Tag>}
       </div>
 

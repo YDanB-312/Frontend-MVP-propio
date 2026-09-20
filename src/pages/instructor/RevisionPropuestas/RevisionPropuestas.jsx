@@ -2,7 +2,8 @@ import { useMemo, useRef, useState } from 'react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
-import Badge from '../../../components/Badge/Badge'
+import StatusMark from '../../../components/StatusMark/StatusMark'
+import { PROPUESTA_STATUS } from '../../../constants/estadoStatus'
 import Button from '../../../components/Button/Button'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
@@ -16,7 +17,6 @@ import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instructores } from '../../../lib/recursos'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import { fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './RevisionPropuestas.module.css'
@@ -270,9 +270,7 @@ export default function RevisionPropuestas() {
                           </span>
                           <span className={local.nodoLado}>
                             {info ? <GradeBadge score={info.pct} size="sm" /> : null}
-                            <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
-                              {ESTADO_LABEL[p.estado] || p.estado}
-                            </Badge>
+                            <StatusMark status={PROPUESTA_STATUS[p.estado] || 'pending'} label={ESTADO_LABEL[p.estado] || p.estado} />
                           </span>
                         </button>
                       </li>

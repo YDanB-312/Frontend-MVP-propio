@@ -5,6 +5,8 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Badge from '../../../components/Badge/Badge'
+import StatusMark from '../../../components/StatusMark/StatusMark'
+import { REPORTE_STATUS } from '../../../constants/estadoStatus'
 import Avatar from '../../../components/Avatar/Avatar'
 import Button from '../../../components/Button/Button'
 import { Select } from '../../../components/Input/Input'
@@ -22,14 +24,6 @@ const ESTADO_LABEL = {
   resuelto: 'Resuelto',
   cerrado: 'Cerrado',
   rechazado: 'Rechazado',
-}
-
-const ESTADO_VARIANT = {
-  pendiente: 'warning',
-  en_revision: 'info',
-  resuelto: 'success',
-  cerrado: 'neutral',
-  rechazado: 'danger',
 }
 
 const TIPO_LABEL = {
@@ -182,9 +176,7 @@ export default function DetalleReporte() {
           title="Información del reporte"
           icon={<FileText />}
           action={
-            <Badge variant={ESTADO_VARIANT[reporte.estado] || 'neutral'} className={s.bigBadge}>
-              {ESTADO_LABEL[reporte.estado] || reporte.estado}
-            </Badge>
+            <StatusMark status={REPORTE_STATUS[reporte.estado] || 'pending'} label={ESTADO_LABEL[reporte.estado] || reporte.estado} />
           }
         >
           <p className={s.description}>{reporte.descripcion}</p>

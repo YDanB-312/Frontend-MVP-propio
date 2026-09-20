@@ -3,7 +3,8 @@ import { FolderOpen, Eye } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
-import Badge from '../../../components/Badge/Badge'
+import StatusMark from '../../../components/StatusMark/StatusMark'
+import { PROPUESTA_STATUS } from '../../../constants/estadoStatus'
 import Button from '../../../components/Button/Button'
 import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
@@ -12,7 +13,6 @@ import DataTable from '../../../components/DataTable/DataTable'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import ApiState from '../../../components/ApiState/ApiState'
 import { norm, fechaDesdeApi } from '../../../utils/helpers'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes, centros, programas, fichas } from '../../../lib/recursos'
 import s from '../../../components/ListaBase/ListaBase.module.css'
@@ -254,9 +254,7 @@ export default function ProyectosAdmin() {
                     key: 'estado',
                     header: 'Estado',
                     render: (p) => (
-                      <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
-                        {ESTADO_LABEL[p.estado] || p.estado}
-                      </Badge>
+                      <StatusMark status={PROPUESTA_STATUS[p.estado] || 'pending'} label={ESTADO_LABEL[p.estado] || p.estado} />
                     ),
                   },
                   {

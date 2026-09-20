@@ -3,6 +3,8 @@ import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
 import Badge from '../../../components/Badge/Badge'
+import StatusMark from '../../../components/StatusMark/StatusMark'
+import { REPORTE_STATUS } from '../../../constants/estadoStatus'
 import Button from '../../../components/Button/Button'
 import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
@@ -24,14 +26,6 @@ const ESTADO_LABEL = {
   resuelto: 'Resuelto',
   cerrado: 'Cerrado',
   rechazado: 'Rechazado',
-}
-
-const ESTADO_VARIANT = {
-  pendiente: 'warning',
-  en_revision: 'info',
-  resuelto: 'success',
-  cerrado: 'neutral',
-  rechazado: 'danger',
 }
 
 const TIPO_LABEL = {
@@ -279,9 +273,7 @@ export default function ReportesFallas() {
                     key: 'estado',
                     header: 'Estado',
                     render: (r) => (
-                      <Badge variant={ESTADO_VARIANT[r.estado] || 'neutral'}>
-                        {ESTADO_LABEL[r.estado] || r.estado}
-                      </Badge>
+                      <StatusMark status={REPORTE_STATUS[r.estado] || 'pending'} label={ESTADO_LABEL[r.estado] || r.estado} />
                     ),
                   },
                   { key: 'fecha', header: 'Fecha', render: (r) => fechaDesdeApi(r.fecha) },
