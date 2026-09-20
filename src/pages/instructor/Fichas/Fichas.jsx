@@ -7,6 +7,7 @@ import DataPanel from '../../../components/DataPanel/DataPanel'
 import FormField from '../../../components/FormField/FormField'
 import Badge from '../../../components/Badge/Badge'
 import Alert from '../../../components/Alert/Alert'
+import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import Button from '../../../components/Button/Button'
 import { Input, Select } from '../../../components/Input/Input'
 import Actions from '../../../components/Actions/Actions'
@@ -14,7 +15,7 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { ArrowClockwise, Books, ChartBar, CheckCircle, Copy, Eye, Plus, Trash } from 'phosphor-react'
+import { ArrowClockwise, Books, ChartBar, CheckCircle, Copy, Eye, Plus, Trash, Warning } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { toFieldErrors } from '../../../lib/api'
@@ -50,6 +51,7 @@ export default function Fichas() {
   }, [searchParams])
 
   const [creadaMsg, setCreadaMsg] = useState(false)
+  const [accionMsg, setAccionMsg] = useState('')
   const msgTimer = useRef(null)
 
   /* ---------- Lista ---------- */
@@ -111,8 +113,9 @@ export default function Fichas() {
     if (!aEliminar) return
     try {
       await fichas.eliminar(aEliminar.id)
-    } catch {
-      // Si falla, la lista recargará y la ficha seguirá allí.
+      setAccionMsg('')
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudo eliminar la ficha. Intenta de nuevo.')
     }
     setAEliminar(null)
     await recargar()
@@ -362,6 +365,12 @@ export default function Fichas() {
               </Alert>
             )}
 
+            {accionMsg && (
+              <Alert variant="danger">
+                <Warning size={14} /> {accionMsg}
+              </Alert>
+            )}
+
             <FilterBar title="Buscar y filtrar">
               <label className={s.field}>
                 <span className={s.label}>Buscar</span>
@@ -456,16 +465,24 @@ export default function Fichas() {
                             >
                               <Eye size={14} /> Ver
                             </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="danger"
-                              disabled={bloqueada}
-                              title={bloqueada ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
-                              onClick={() => setAEliminar(f)}
-                            >
-                              <Trash size={14} /> Eliminar
-                            </Button>
+                            <span className={s.accionCol}>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="danger"
+                                disabled={bloqueada}
+                                aria-describedby={bloqueada ? `motivo-ficha-ins-${f.id}` : undefined}
+                                title={bloqueada ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
+                                onClick={() => setAEliminar(f)}
+                              >
+                                <Trash size={14} /> Eliminar
+                              </Button>
+                              {bloqueada && (
+                                <MotivoBloqueo compact id={`motivo-ficha-ins-${f.id}`}>
+                                  Con datos · {estudiantes} aprendices · {props.length} propuestas
+                                </MotivoBloqueo>
+                              )}
+                            </span>
                           </footer>
                         </article>
                       )

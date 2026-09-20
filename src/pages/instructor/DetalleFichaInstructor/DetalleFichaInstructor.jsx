@@ -6,6 +6,8 @@ import DataPanel from '../../../components/DataPanel/DataPanel'
 import Avatar from '../../../components/Avatar/Avatar'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import Alert from '../../../components/Alert/Alert'
+import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import ApiState from '../../../components/ApiState/ApiState'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
@@ -20,7 +22,7 @@ import { useApi } from '../../../lib/useApi'
 import { fichas, instructores, proyectos } from '../../../lib/recursos'
 import { formatearFecha } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
-import { ArrowRight, Books, CalendarBlank, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users } from 'phosphor-react'
+import { ArrowRight, Books, CalendarBlank, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users, Warning } from 'phosphor-react'
 
 const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
@@ -38,6 +40,7 @@ export default function DetalleFichaInstructor() {
   const [errores, setErrores] = useState({})
   const [modalEliminar, setModalEliminar] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [accionMsg, setAccionMsg] = useState('')
 
   // Ficha con aprendices incluidos, propuestas y catálogo de instructores.
   const { data: ficha, cargando, error, recargar } = useApi(
@@ -163,8 +166,9 @@ export default function DetalleFichaInstructor() {
     try {
       await fichas.eliminar(ficha.id)
       navigate('/instructor/fichas')
-    } catch {
+    } catch (err) {
       setModalEliminar(false)
+      setAccionMsg(err?.data?.message || 'No se pudo eliminar la ficha.')
     }
   }
 
@@ -182,6 +186,16 @@ export default function DetalleFichaInstructor() {
           ]}
         />
 
+        {accionMsg && (
+          <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
+        )}
+
+        {tieneDatos && (
+          <MotivoBloqueo id="motivo-eliminar-ficha-instructor">
+            No se puede eliminar: tiene aprendices o propuestas asociadas ({estudiantes.length} aprendices · {proyectosFicha.length} propuestas).
+          </MotivoBloqueo>
+        )}
+
         <DataPanel
           title="Información de la ficha"
           icon={<IdentificationCard />}
@@ -198,6 +212,7 @@ export default function DetalleFichaInstructor() {
                 type="button"
                 variant="danger"
                 disabled={tieneDatos}
+                aria-describedby={tieneDatos ? 'motivo-eliminar-ficha-instructor' : undefined}
                 title={tieneDatos ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
                 onClick={() => setModalEliminar(true)}
               >

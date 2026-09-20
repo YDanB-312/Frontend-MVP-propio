@@ -9,6 +9,7 @@ import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import Alert from '../../../components/Alert/Alert'
 import FormField from '../../../components/FormField/FormField'
 import { Input, PasswordInput, Select } from '../../../components/Input/Input'
@@ -377,6 +378,7 @@ export default function DetalleUsuario() {
               type="button"
               variant="dangerGhost"
               disabled={esMiCuenta || noEliminable}
+              aria-describedby={noEliminable ? 'motivo-eliminar-usuario' : undefined}
               title={
                 esMiCuenta
                   ? 'No puedes eliminar tu propia cuenta'
@@ -393,9 +395,7 @@ export default function DetalleUsuario() {
 
         {/* Por qué no se puede eliminar: el backend responde 409 en estos casos. */}
         {motivoNoEliminar && (
-          <Alert variant="warning">
-            <Warning size={14} /> {motivoNoEliminar}
-          </Alert>
+          <MotivoBloqueo id="motivo-eliminar-usuario">{motivoNoEliminar}</MotivoBloqueo>
         )}
 
         {claveTemporal && (

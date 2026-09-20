@@ -198,6 +198,14 @@
   flex-wrap: nowrap;
 }
 
+/* Columna de acción con su motivo de bloqueo debajo */
+.accionCol {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--sp-1);
+}
+
 /* ── Mobile: table → cards ── */
 @media (max-width: 768px) {
   .tableWrap {

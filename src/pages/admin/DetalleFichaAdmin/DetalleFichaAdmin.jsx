@@ -13,6 +13,7 @@ import Avatar from '../../../components/Avatar/Avatar'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
 import { useApi } from '../../../lib/useApi'
 import { fichas, programas, redes, instructores, centros, proyectos } from '../../../lib/recursos'
@@ -218,6 +219,12 @@ export default function DetalleFichaAdmin() {
           <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
         )}
 
+        {tieneDatos && (
+          <MotivoBloqueo id="motivo-eliminar-ficha-admin">
+            No se puede eliminar: tiene aprendices o propuestas asociadas ({estudiantes.length} aprendices · {proyectosDeLaFicha.length} propuestas).
+          </MotivoBloqueo>
+        )}
+
         <DataPanel
           title="Información de la ficha"
           icon={<IdentificationCard />}
@@ -234,6 +241,7 @@ export default function DetalleFichaAdmin() {
                 type="button"
                 variant="danger"
                 disabled={tieneDatos}
+                aria-describedby={tieneDatos ? 'motivo-eliminar-ficha-admin' : undefined}
                 title={tieneDatos ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
                 onClick={() => setModalEliminar(true)}
               >

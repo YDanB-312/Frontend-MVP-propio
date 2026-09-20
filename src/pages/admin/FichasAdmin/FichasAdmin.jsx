@@ -15,6 +15,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash, Warning } from 'phosphor-react'
 import { useApi } from '../../../lib/useApi'
 import { fichas, centros, programas, redes, instructores, proyectos } from '../../../lib/recursos'
@@ -524,7 +525,9 @@ export default function FichasAdmin() {
                       header: 'Acciones',
                       align: 'end',
                       render: (f) => {
-                        const conDatos = (f.apprentices || []).length > 0 || (propuestasPorFicha.get(Number(f.id)) || 0) > 0
+                        const aprendices = (f.apprentices || []).length
+                        const propuestas = propuestasPorFicha.get(Number(f.id)) || 0
+                        const conDatos = aprendices > 0 || propuestas > 0
                         return (
                           <div className={s.actions}>
                             <Button
@@ -536,16 +539,24 @@ export default function FichasAdmin() {
                             >
                               <Eye size={14} /> Ver
                             </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="danger"
-                              disabled={conDatos}
-                              title={conDatos ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
-                              onClick={() => setAEliminar(f)}
-                            >
-                              <Trash size={14} /> Eliminar
-                            </Button>
+                            <span className={s.accionCol}>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="danger"
+                                disabled={conDatos}
+                                aria-describedby={conDatos ? `motivo-ficha-${f.id}` : undefined}
+                                title={conDatos ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
+                                onClick={() => setAEliminar(f)}
+                              >
+                                <Trash size={14} /> Eliminar
+                              </Button>
+                              {conDatos && (
+                                <MotivoBloqueo compact id={`motivo-ficha-${f.id}`}>
+                                  Con datos · {aprendices} aprendices · {propuestas} propuestas
+                                </MotivoBloqueo>
+                              )}
+                            </span>
                           </div>
                         )
                       },

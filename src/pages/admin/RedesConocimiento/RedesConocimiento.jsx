@@ -14,6 +14,8 @@ import DataTable from '../../../components/DataTable/DataTable'
 import Pagination from '../../../components/Pagination/Pagination'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
+import Tooltip from '../../../components/Tooltip/Tooltip'
 import { norm } from '../../../utils/helpers'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 import { MAX_NOMBRE, MAX_PROGRAMA } from '../../../utils/validation'
@@ -117,15 +119,16 @@ function ProgramasInput({ programas: lista, setProgramas, error }) {
                 aria-label={`Nombre del programa ${i + 1}`}
                 maxLength={MAX_PROGRAMA}
               />
-              <button
-                type="button"
-                className={cs.clearBtn}
-                onClick={() => quitar(i)}
-                aria-label={`Quitar ${p.nombre}`}
-                title="Quitar programa"
-              >
-                <X size={12} weight="bold" />
-              </button>
+              <Tooltip content="Quitar programa">
+                <button
+                  type="button"
+                  className={cs.clearBtn}
+                  onClick={() => quitar(i)}
+                  aria-label={`Quitar ${p.nombre}`}
+                >
+                  <X size={12} weight="bold" />
+                </button>
+              </Tooltip>
             </div>
           </div>
         ))}
@@ -459,7 +462,7 @@ export default function RedesConocimiento() {
                             {enUso && (
                               <>
                                 <br />
-                                <span className={s.subText}>En uso</span>
+                                <span className={s.subText}>En uso por {fichasDeRed(r.id)} ficha(s) · quita sus programas</span>
                               </>
                             )}
                           </>
@@ -487,15 +490,23 @@ export default function RedesConocimiento() {
                             <Button size="sm" variant="secondary" onClick={() => abrirEditar(r)}>
                               <PencilSimple size={14} /> Editar
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              disabled={enUso}
-                              onClick={() => setConfirmId(r.id)}
-                              title={enUso ? 'No se puede eliminar: la red está en uso por fichas' : 'Eliminar red'}
-                            >
-                              <Trash size={14} /> Eliminar
-                            </Button>
+                            <span className={s.accionCol}>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                disabled={enUso}
+                                aria-describedby={enUso ? `motivo-red-${r.id}` : undefined}
+                                onClick={() => setConfirmId(r.id)}
+                                title={enUso ? 'No se puede eliminar: la red está en uso por fichas' : 'Eliminar red'}
+                              >
+                                <Trash size={14} /> Eliminar
+                              </Button>
+                              {enUso && (
+                                <MotivoBloqueo compact id={`motivo-red-${r.id}`}>
+                                  En uso · quita sus programas
+                                </MotivoBloqueo>
+                              )}
+                            </span>
                           </span>
                         )
                       },
@@ -523,7 +534,7 @@ export default function RedesConocimiento() {
           titulo="Eliminar red"
           mensaje={
             redAEliminar
-              ? `¿Eliminar la red "${redAEliminar.nombre}"? Si tiene programas asociados, primero debes quitarlos. Esta acción no se puede deshacer.`
+              ? `¿Eliminar la red "${redAEliminar.nombre}"? Se quitarán también sus programas asociados. Esta acción no se puede deshacer.`
               : ''
           }
           textoConfirmar="Sí, eliminar"

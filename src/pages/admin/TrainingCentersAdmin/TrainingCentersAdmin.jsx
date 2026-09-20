@@ -15,6 +15,7 @@ import ApiState from '../../../components/ApiState/ApiState'
 import { norm } from '../../../utils/helpers'
 import { MAX_TITULO, MAX_CIUDAD } from '../../../utils/validation'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import { Buildings, ChartBar, CheckCircle, PencilSimple, Plus, Trash, Warning } from 'phosphor-react'
 import { useApi } from '../../../lib/useApi'
 import { centros, fichas } from '../../../lib/recursos'
@@ -247,16 +248,24 @@ export default function TrainingCentersAdmin() {
                               >
                                 <PencilSimple size={14} /> Editar
                               </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="danger"
-                                disabled={enUso}
-                                title={enUso ? 'No se puede eliminar: tiene fichas asociadas' : undefined}
-                                onClick={() => setAEliminar(centro)}
-                              >
-                                <Trash size={14} /> Eliminar
-                              </Button>
+                              <span className={s.accionCol}>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="danger"
+                                  disabled={enUso}
+                                  aria-describedby={enUso ? `motivo-centro-${centro.id}` : undefined}
+                                  title={enUso ? 'No se puede eliminar: tiene fichas asociadas' : undefined}
+                                  onClick={() => setAEliminar(centro)}
+                                >
+                                  <Trash size={14} /> Eliminar
+                                </Button>
+                                {enUso && (
+                                  <MotivoBloqueo compact id={`motivo-centro-${centro.id}`}>
+                                    En uso · {fichasDeCentro(centro.id)} ficha(s)
+                                  </MotivoBloqueo>
+                                )}
+                              </span>
                             </div>
                           )
                         },
