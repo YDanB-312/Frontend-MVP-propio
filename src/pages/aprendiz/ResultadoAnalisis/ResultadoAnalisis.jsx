@@ -66,6 +66,12 @@ export default function ResultadoAnalisis() {
 
   const { base, propias, seleccionada } = useMemo(() => {
     const mapa = new Map(proyectosApi.map((p) => [Number(p.id), p]))
+    // Los proyectos del par pueden estar fuera del alcance (otra ficha): la
+    // similitud ya los trae incluidos.
+    for (const x of similitudesApiData) {
+      if (x.project1) mapa.set(Number(x.project1.id), x.project1)
+      if (x.project2) mapa.set(Number(x.project2.id), x.project2)
+    }
     let propio = null
 
     if (projectId) {

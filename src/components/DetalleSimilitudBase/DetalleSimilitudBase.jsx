@@ -60,6 +60,30 @@ export default function DetalleSimilitudBase({
   const proyecto1 = similitud?.project1 || null
   const proyecto2 = similitud?.project2 || null
 
+  // ¿La propuesta es del usuario (creador o integrante del equipo)?
+  const esMia = (p) => !!p && (
+    Number(p.id_creador) === Number(user?.id) ||
+    (p.apprentices || []).some(
+      (a) => Number(a.generalUser?.id) === Number(user?.id) || Number(a.id_usuario) === Number(user?.id)
+    )
+  )
+
+  // Lados del par que son del usuario. Sin esto, "A" era el id menor y la
+  // propuesta propia podía salir como B.
+  const misIds = useMemo(
+    () => new Set([proyecto1, proyecto2].filter(esMia).map((p) => Number(p.id))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- esMia depende de user?.id
+    [proyecto1, proyecto2, user?.id]
+  )
+
+  // Orden mostrado: si una es mía, va como A (yo la subí); la otra es B.
+  const [propuestaA, propuestaB] = useMemo(() => {
+    if (!proyecto1 || !proyecto2) return [proyecto1, proyecto2]
+    const p1Mia = misIds.has(Number(proyecto1.id))
+    const p2Mia = misIds.has(Number(proyecto2.id))
+    return p2Mia && !p1Mia ? [proyecto2, proyecto1] : [proyecto1, proyecto2]
+  }, [proyecto1, proyecto2, misIds])
+
   // Fichas del instructor: se identifican por el generalUser anidado.
   const { data: listaFichas, cargando: cargandoFichas } = useApi(() => fichas.listar(), [], { inicial: [] })
   const misFichasIds = useMemo(
@@ -98,13 +122,21 @@ export default function DetalleSimilitudBase({
 
   const otras = useMemo(() => {
     if (!similitud) return []
-    const idA = Number(proyecto1?.id)
-    const idB = Number(proyecto2?.id)
+    const idA = Number(propuestaA?.id)
+    const idB = Number(propuestaB?.id)
+    const esPropietario = misIds.size > 0
     const vistas = new Map()
     for (const x of todas || []) {
       if (Number(x.id) === Number(similitud.id)) continue
       const x1 = Number(x.id_proyecto_1)
       const x2 = Number(x.id_proyecto_2)
+      // Del aprendiz: solo coincidencias de SUS propuestas del par (lado A).
+      // Del staff: las de cualquiera de los dos lados del par abierto.
+      const comparte = esPropietario
+        ? (misIds.has(x1) || misIds.has(x2))
+        : (x1 === idA || x2 === idA || x1 === idB || x2 === idB)
+      if (!comparte) continue
+
       let origen = null
       let otroPid = null
       if (x1 === idA || x2 === idA) {
@@ -122,7 +154,7 @@ export default function DetalleSimilitudBase({
       vistas.set(x.id, { ...x, origen, otroPid })
     }
     return [...vistas.values()].sort((a, b) => Number(b.porcentaje) - Number(a.porcentaje))
-  }, [similitud, proyecto1, proyecto2, todas, esInstructor, cargandoFichas, proyectosPorId, misFichasIds, misProgramas])
+  }, [similitud, propuestaA, propuestaB, misIds, todas, esInstructor, cargandoFichas, proyectosPorId, misFichasIds, misProgramas])
 
   // Guard instructor: bloquear si el par no es de su programa/fichas (hooks antes de returns).
   const noAutorizado = useMemo(() => {
@@ -158,8 +190,8 @@ export default function DetalleSimilitudBase({
 
   const pct = Math.round(Number(similitud.porcentaje) || 0)
   const proyectos = [
-    { p: proyecto1, tag: 'A' },
-    { p: proyecto2, tag: 'B' },
+    { p: propuestaA, tag: 'A' },
+    { p: propuestaB, tag: 'B' },
   ]
 
   // Ver proyecto: propio de la ficha o mismo programa exacto (ADSO solo con ADSO, etc.)
@@ -181,8 +213,8 @@ export default function DetalleSimilitudBase({
         ]
       : [{ label: ruta.label, to: ruta.volver }]
 
-  const subtitulo = proyecto1 && proyecto2
-    ? `Detectada el ${fechaDesdeApi(similitud.fecha)} · ${proyecto1.titulo} vs. ${proyecto2.titulo}`
+  const subtitulo = propuestaA && propuestaB
+    ? `Detectada el ${fechaDesdeApi(similitud.fecha)} · ${propuestaA.titulo} vs. ${propuestaB.titulo}`
     : `Detectada el ${fechaDesdeApi(similitud.fecha)}`
 
   return (
@@ -208,6 +240,7 @@ export default function DetalleSimilitudBase({
             {p ? (
               <div className={s.projectCard}>
                 <h3 className={s.projectTitle}>{p.titulo}</h3>
+                {esMia(p) && <span className={s.muted}>Tu propuesta</span>}
                 <p className={s.projectMeta}>
                   <User size={14} /> {autorDe(p)}
                 </p>

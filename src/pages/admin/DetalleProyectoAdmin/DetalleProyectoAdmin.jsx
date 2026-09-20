@@ -67,7 +67,7 @@ export default function DetalleProyectoAdmin() {
     async () => {
       const [proyecto, listaSimilitudes, listaObservaciones] = await Promise.all([
         proyectos.obtener(id),
-        similitudes.listar(),
+        similitudes.listar({ proyecto_id: id }),
         observaciones.listar('user', { id_proyecto: id }),
       ])
       return { proyecto, listaSimilitudes, listaObservaciones }

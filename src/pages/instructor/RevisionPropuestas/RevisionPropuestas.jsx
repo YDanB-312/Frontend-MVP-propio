@@ -66,7 +66,8 @@ export default function RevisionPropuestas() {
     [],
     { inicial: [] }
   )
-  const { data: similitudes, setData: setSimilitudes } = useApi(
+  // Lista global (solo pares con ambas aprobadas): para el % por tarjeta.
+  const { data: similitudes } = useApi(
     () => similitudesApi.listar(),
     [],
     { inicial: [] }
@@ -110,12 +111,16 @@ export default function RevisionPropuestas() {
   )
 
   const seleccionada = paginados.find((p) => p.id === selId) || paginados[0] || null
-  const simsSel = seleccionada
-    ? similitudes.filter(
-        (x) => Number(x.id_proyecto_1) === Number(seleccionada.id) || Number(x.id_proyecto_2) === Number(seleccionada.id)
-      )
-    : []
-  const infoSel = seleccionada ? infoSimilitud(similitudes, seleccionada.id) : null
+
+  // Similitudes de la propuesta seleccionada (la contraparte debe estar
+  // aprobada). Así una propuesta pendiente muestra sus coincidencias al revisar.
+  const { data: simsProyecto, recargar: recargarSimsProyecto } = useApi(
+    () => (seleccionada ? similitudesApi.listar({ proyecto_id: seleccionada.id }) : Promise.resolve([])),
+    [seleccionada?.id],
+    { inicial: [] }
+  )
+  const simsSel = simsProyecto || []
+  const infoSel = seleccionada ? infoSimilitud(simsProyecto || [], seleccionada.id) : null
   const fichaSel = seleccionada?.classGroup || null
 
   const abrirModal = (proyecto, accion) => setModal({ proyecto, accion })
@@ -147,11 +152,9 @@ export default function RevisionPropuestas() {
           // El análisis puede recalcularse después; no impide continuar.
         }
         try {
-          const lista = await similitudesApi.listar()
-          setSimilitudes(lista)
-          const total = lista.filter(
-            (x) => Number(x.id_proyecto_1) === Number(proyecto.id) || Number(x.id_proyecto_2) === Number(proyecto.id)
-          ).length
+          const lista = await similitudesApi.listar({ proyecto_id: proyecto.id })
+          await recargarSimsProyecto()
+          const total = lista.length
           setMsgAprobacion(
             total > 0
               ? `Propuesta aprobada · se detectaron ${total} coincidencia(s) con propuestas anteriores.`

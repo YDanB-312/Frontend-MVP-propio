@@ -39,7 +39,16 @@ export default function Similitudes() {
     [todosProyectos, user.id]
   )
   const idsPropios = useMemo(() => new Set(misProyectos.map((p) => Number(p.id))), [misProyectos])
-  const mapaProyectos = useMemo(() => new Map(todosProyectos.map((p) => [Number(p.id), p])), [todosProyectos])
+  const mapaProyectos = useMemo(() => {
+    const mapa = new Map(todosProyectos.map((p) => [Number(p.id), p]))
+    // El otro proyecto del par puede estar fuera del alcance (otra ficha); la
+    // similitud ya lo trae incluido, así que también entra al mapa.
+    for (const x of todasSimilitudesApi) {
+      if (x.project1) mapa.set(Number(x.project1.id), x.project1)
+      if (x.project2) mapa.set(Number(x.project2.id), x.project2)
+    }
+    return mapa
+  }, [todosProyectos, todasSimilitudesApi])
 
   const sims = useMemo(
     () =>

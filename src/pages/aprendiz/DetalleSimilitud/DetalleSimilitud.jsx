@@ -7,11 +7,9 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi, observaciones as observacionesApi } from '../../../lib/recursos'
+import { similitudes as similitudesApi, observaciones as observacionesApi } from '../../../lib/recursos'
 import { formatearFecha } from '../../../utils/helpers'
 import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
-
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
 
 function nombreUsuario(u) {
   if (!u) return 'Usuario'
@@ -23,16 +21,11 @@ export default function DetalleSimilitud() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  // Similitud y proyectos del par: fuente única la API.
+  // Similitud con su par de proyectos incluido: fuente única la API.
   const { data: similitud, cargando, error, recargar } = useApi(
     () => similitudesApi.obtener(id),
     [id],
     { inicial: null }
-  )
-  const { data: todosProyectos } = useApi(
-    () => proyectos.listar({ included: INCLUDE_PROYECTOS }),
-    [],
-    { inicial: [] }
   )
 
   // Solo las observaciones de MI propuesta del par — nunca las de la ajena.
@@ -44,12 +37,17 @@ export default function DetalleSimilitud() {
   )
 
   let miPid = null
+  let contraparte = null
   if (similitud && user) {
-    const p1 = todosProyectos.find((p) => Number(p.id) === Number(similitud.id_proyecto_1))
-    const p2 = todosProyectos.find((p) => Number(p.id) === Number(similitud.id_proyecto_2))
-    if (esMia(p1)) miPid = p1.id
-    else if (esMia(p2)) miPid = p2.id
+    const p1 = similitud.project1
+    const p2 = similitud.project2
+    if (esMia(p1)) { miPid = p1.id; contraparte = p2 }
+    else if (esMia(p2)) { miPid = p2.id; contraparte = p1 }
   }
+
+  // Regla: la coincidencia (el lado ajeno) debe estar aprobada. Una propuesta
+  // pendiente puede ver sus matches con aprobadas, pero nunca al revés.
+  const autorizada = !!miPid && (!contraparte || contraparte.estado === 'aprobado')
 
   const { data: comentariosApi } = useApi(
     () => (miPid ? observacionesApi.listar('user', { id_proyecto: miPid }) : Promise.resolve([])),
@@ -72,7 +70,7 @@ export default function DetalleSimilitud() {
     )
   }
 
-  if (error) {
+  if (error && error.status !== 403) {
     return (
       <DashboardLayout role="aprendiz" titulo="Detalle de Similitud">
         <div className={s.wrapper}><ApiState error={error} onReintentar={recargar} /></div>
@@ -80,14 +78,14 @@ export default function DetalleSimilitud() {
     )
   }
 
-  if (similitud && user && miPid == null) {
+  if (error?.status === 403 || (similitud && user && !autorizada)) {
     return (
       <DashboardLayout role="aprendiz" titulo="Detalle de Similitud">
         <div className={s.wrapper}>
           <EmptyState
             icon={<MagnifyingGlass />}
             title="Similitud no autorizada"
-            message="Esta similitud no pertenece a ninguna de tus propuestas."
+            message="Esta similitud no es una coincidencia válida de tus propuestas. Solo se muestran coincidencias con propuestas aprobadas."
             actionLabel="Volver a similitudes"
             onAction={() => navigate('/aprendiz/similitudes')}
           />

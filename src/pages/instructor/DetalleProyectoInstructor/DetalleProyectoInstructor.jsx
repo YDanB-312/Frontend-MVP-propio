@@ -67,7 +67,12 @@ export default function DetalleProyectoInstructor() {
     [id],
     { inicial: null }
   )
-  const { data: todasSimilitudes } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
+  // Similitudes de ESTA propuesta (la contraparte debe estar aprobada).
+  const { data: todasSimilitudes } = useApi(
+    () => similitudesApi.listar({ proyecto_id: id }),
+    [id],
+    { inicial: [] }
+  )
   const { data: comentariosApi, cargando: cargandoObs, recargar: recargarObs } = useApi(
     () => observacionesApi.listar('user', { id_proyecto: id }),
     [id],
@@ -102,11 +107,7 @@ export default function DetalleProyectoInstructor() {
   )
 
   const similitudes = useMemo(
-    () => (proyecto
-      ? (todasSimilitudes || []).filter(
-          (x) => Number(x.id_proyecto_1) === Number(proyecto.id) || Number(x.id_proyecto_2) === Number(proyecto.id)
-        )
-      : []),
+    () => (proyecto ? (todasSimilitudes || []) : []),
     [proyecto, todasSimilitudes]
   )
 
