@@ -2,6 +2,7 @@ import { Sun, Moon } from 'phosphor-react'
 import { useTheme } from '../../contexts/useTheme'
 import { useApi } from '../../lib/useApi'
 import { motor as apiMotor } from '../../lib/recursos'
+import Tooltip from '../Tooltip/Tooltip'
 import s from './GovernmentBar.module.css'
 
 export default function GovernmentBar() {
@@ -34,15 +35,16 @@ export default function GovernmentBar() {
             {umbralPct != null ? `UMBRAL ${umbralPct}%` : 'MOTOR'}
           </span>
         </p>
-        <button
-          type="button"
-          className={s.themeBtn}
-          onClick={alternarTema}
-          aria-label={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
-          title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-        >
-          {theme === 'dark' ? <Sun size={16} weight="regular" /> : <Moon size={16} weight="regular" />}
-        </button>
+        <Tooltip content={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}>
+          <button
+            type="button"
+            className={s.themeBtn}
+            onClick={alternarTema}
+            aria-label={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
+          >
+            {theme === 'dark' ? <Sun size={16} weight="regular" /> : <Moon size={16} weight="regular" />}
+          </button>
+        </Tooltip>
       </div>
     </div>
   )

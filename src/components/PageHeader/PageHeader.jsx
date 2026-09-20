@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'phosphor-react'
 import Actions from '../Actions/Actions'
+import Tooltip from '../Tooltip/Tooltip'
 import s from './PageHeader.module.css'
 
 function CrumbIcon({ icon }) {
@@ -29,9 +30,11 @@ export default function PageHeader({ title, subtitle, icon, actions, breadcrumb 
       {breadcrumb.length > 0 && (
         <nav className={s.breadcrumbNav} aria-label="Breadcrumb">
           {showBack && (
-            <button type="button" className={s.backBtn} onClick={handleBack} aria-label="Volver">
-              <ArrowLeft size={16} weight="bold" />
-            </button>
+            <Tooltip content="Volver">
+              <button type="button" className={s.backBtn} onClick={handleBack} aria-label="Volver">
+                <ArrowLeft size={16} weight="bold" />
+              </button>
+            </Tooltip>
           )}
           <ol className={s.breadcrumb}>
             {breadcrumb.map((item, i) => {

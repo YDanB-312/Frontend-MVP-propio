@@ -9,7 +9,8 @@ import Alert from '../Alert/Alert'
 import Actions from '../Actions/Actions'
 import Button from '../Button/Button'
 import ConfirmModal from '../ConfirmModal/ConfirmModal'
-import StatCard from '../StatCard/StatCard'
+import MetricCard from '../MetricCard/MetricCard'
+import Tooltip from '../Tooltip/Tooltip'
 import { Input, PasswordInput } from '../Input/Input'
 import Lightbox from '../Lightbox/Lightbox'
 import { useAuth } from '../../contexts/AuthContext'
@@ -291,7 +292,7 @@ export default function PerfilBase({
       {stats.length > 0 && (
         <div className={s.stats}>
           {stats.map((st) => (
-            <StatCard key={st.label} value={st.value} label={st.label} />
+            <MetricCard key={st.label} variant="minimal" value={st.value} label={st.label} />
           ))}
         </div>
       )}
@@ -311,55 +312,58 @@ export default function PerfilBase({
           <div className={s.fotoCol}>
               <div className={s.fotoWrap}>
                 {!soloLectura && editando ? (
-                  <button
-                    type="button"
-                    className={`${s.fotoBtn} ${foto ? s.fotoBtnVer : ''}`}
-                    title={foto ? 'Ver foto' : 'Subir foto de perfil'}
-                    aria-label={foto ? `Ver foto de ${nombre}` : 'Subir foto de perfil'}
-                    onClick={() => (foto ? setViendoFoto(true) : fileRef.current?.click())}
-                    disabled={subiendoFoto}
-                  >
-                    {subiendoFoto ? (
-                      <span className={s.fotoOverlay}>
-                        <span className={s.spinner} aria-hidden="true" />
-                      </span>
-                    ) : foto ? (
-                      <Avatar key={foto} name={nombre} src={foto} size="xl" />
-                    ) : (
-                      <span className={s.fotoPlaceholder}>
-                        <Camera size={28} />
-                      </span>
-                    )}
-                  </button>
+                  <Tooltip content={foto ? 'Ver foto' : 'Subir foto de perfil'}>
+                    <button
+                      type="button"
+                      className={`${s.fotoBtn} ${foto ? s.fotoBtnVer : ''}`}
+                      aria-label={foto ? `Ver foto de ${nombre}` : 'Subir foto de perfil'}
+                      onClick={() => (foto ? setViendoFoto(true) : fileRef.current?.click())}
+                      disabled={subiendoFoto}
+                    >
+                      {subiendoFoto ? (
+                        <span className={s.fotoOverlay}>
+                          <span className={s.spinner} aria-hidden="true" />
+                        </span>
+                      ) : foto ? (
+                        <Avatar key={foto} name={nombre} src={foto} size="xl" />
+                      ) : (
+                        <span className={s.fotoPlaceholder}>
+                          <Camera size={28} />
+                        </span>
+                      )}
+                    </button>
+                  </Tooltip>
                 ) : (
-                  <div
-                    className={`${s.fotoBtn} ${foto ? s.fotoBtnVer : ''}`}
-                    title={foto ? 'Ver foto' : undefined}
-                    onClick={foto ? () => setViendoFoto(true) : undefined}
-                    role={foto ? 'button' : undefined}
-                    tabIndex={foto ? 0 : undefined}
-                    aria-label={foto ? `Ver foto de ${nombre}` : undefined}
-                    onKeyDown={foto ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViendoFoto(true) } } : undefined}
-                  >
-                    {foto ? (
-                      <Avatar key={foto} name={nombre} src={foto} size="xl" />
-                    ) : (
-                      <span className={s.fotoPlaceholder}>
-                        <Camera size={28} />
-                      </span>
-                    )}
-                  </div>
+                  <Tooltip content={foto ? 'Ver foto' : undefined}>
+                    <div
+                      className={`${s.fotoBtn} ${foto ? s.fotoBtnVer : ''}`}
+                      onClick={foto ? () => setViendoFoto(true) : undefined}
+                      role={foto ? 'button' : undefined}
+                      tabIndex={foto ? 0 : undefined}
+                      aria-label={foto ? `Ver foto de ${nombre}` : undefined}
+                      onKeyDown={foto ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViendoFoto(true) } } : undefined}
+                    >
+                      {foto ? (
+                        <Avatar key={foto} name={nombre} src={foto} size="xl" />
+                      ) : (
+                        <span className={s.fotoPlaceholder}>
+                          <Camera size={28} />
+                        </span>
+                      )}
+                    </div>
+                  </Tooltip>
                 )}
                 {!soloLectura && editando && foto && !subiendoFoto && (
-                  <button
-                    type="button"
-                    className={s.fotoCam}
-                    title="Cambiar foto de perfil"
-                    aria-label="Cambiar foto de perfil"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    <Camera size={14} />
-                  </button>
+                  <Tooltip content="Cambiar foto de perfil">
+                    <button
+                      type="button"
+                      className={s.fotoCam}
+                      aria-label="Cambiar foto de perfil"
+                      onClick={() => fileRef.current?.click()}
+                    >
+                      <Camera size={14} />
+                    </button>
+                  </Tooltip>
                 )}
                 {!soloLectura && editando && (
                   <input

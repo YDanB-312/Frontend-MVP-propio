@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Eye, EyeSlash } from 'phosphor-react'
+import Tooltip from '../Tooltip/Tooltip'
 import s from './Input.module.css'
 
 export function Input({ className = '', error, ...props }) {
@@ -20,16 +21,17 @@ export function PasswordInput({ className = '', error, ...props }) {
         type={visible ? 'text' : 'password'}
         {...props}
       />
-      <button
-        type="button"
-        className={s.toggle}
-        onClick={() => setVisible((v) => !v)}
-        aria-label={etiqueta}
-        aria-pressed={visible}
-        title={etiqueta}
-      >
-        {visible ? <EyeSlash size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
-      </button>
+      <Tooltip content={etiqueta}>
+        <button
+          type="button"
+          className={s.toggle}
+          onClick={() => setVisible((v) => !v)}
+          aria-label={etiqueta}
+          aria-pressed={visible}
+        >
+          {visible ? <EyeSlash size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+        </button>
+      </Tooltip>
     </span>
   )
 }

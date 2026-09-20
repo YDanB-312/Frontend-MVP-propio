@@ -1,3 +1,4 @@
+import Tooltip from '../Tooltip/Tooltip'
 import s from './Pagination.module.css'
 
 export default function Pagination({
@@ -39,15 +40,17 @@ export default function Pagination({
         </p>
       )}
       <div className={s.pages}>
-        <button
-          type="button"
-          className={s.navBtn}
-          disabled={pagina === 1}
-          onClick={() => setPaginaActual(pagina - 1)}
-          aria-label="Página anterior"
-        >
-          ‹
-        </button>
+        <Tooltip content="Página anterior">
+          <button
+            type="button"
+            className={s.navBtn}
+            disabled={pagina === 1}
+            onClick={() => setPaginaActual(pagina - 1)}
+            aria-label="Página anterior"
+          >
+            ‹
+          </button>
+        </Tooltip>
         {pages.map((p, i) =>
           p === '…' ? (
             <span key={`e${i}`} className={s.ellipsis}>…</span>
@@ -63,15 +66,17 @@ export default function Pagination({
             </button>
           )
         )}
-        <button
-          type="button"
-          className={s.navBtn}
-          disabled={pagina === totalPages}
-          onClick={() => setPaginaActual(pagina + 1)}
-          aria-label="Página siguiente"
-        >
-          ›
-        </button>
+        <Tooltip content="Página siguiente">
+          <button
+            type="button"
+            className={s.navBtn}
+            disabled={pagina === totalPages}
+            onClick={() => setPaginaActual(pagina + 1)}
+            aria-label="Página siguiente"
+          >
+            ›
+          </button>
+        </Tooltip>
       </div>
     </nav>
   )

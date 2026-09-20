@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../lib/useApi'
 import { usuarios } from '../../lib/recursos'
+import Tooltip from '../Tooltip/Tooltip'
 import s from './TopNav.module.css'
 
 const RUTA_NOTIFICACIONES = {
@@ -99,9 +100,11 @@ export default function TopNav({ titulo = '', usuario = null, notificaciones = 0
     <header className={s.topnav}>
       <div className={s.bar}>
         <div className={s.left}>
-          <button type="button" className={s.hamburger} onClick={onToggleSidebar} aria-label="Abrir menú de navegación">
-            <HamburgerIcon />
-          </button>
+          <Tooltip content="Abrir menú de navegación">
+            <button type="button" className={s.hamburger} onClick={onToggleSidebar} aria-label="Abrir menú de navegación">
+              <HamburgerIcon />
+            </button>
+          </Tooltip>
           <Link to="/" viewTransition className={s.logo} aria-label="Ir al inicio">
             <img src="/images/Logo-ProyecTwin.png" alt="ProyecTwin SENA" />
           </Link>
@@ -110,30 +113,33 @@ export default function TopNav({ titulo = '', usuario = null, notificaciones = 0
 
         <div className={s.right}>
           {RUTA_CREAR[role] && (
-            <button
-              type="button"
-              className={s.ctaNueva}
-              onClick={() => navigate(RUTA_CREAR[role])}
-              aria-label={TITULO_CREAR[role]}
-              title={TITULO_CREAR[role]}
-            >
-              <PlusIcon />
-            </button>
+            <Tooltip content={TITULO_CREAR[role]}>
+              <button
+                type="button"
+                className={s.ctaNueva}
+                onClick={() => navigate(RUTA_CREAR[role])}
+                aria-label={TITULO_CREAR[role]}
+              >
+                <PlusIcon />
+              </button>
+            </Tooltip>
           )}
 
           <span className={s.senaWrap}>
             <img className={s.senaLogo} src="/images/logo-sena-blanco.png" alt="SENA" />
           </span>
 
-          <button
-            type="button"
-            className={`${s.notif} ${notificaciones > 0 ? s.notifUnread : ''}`}
-            onClick={irANotificaciones}
-            aria-label={`Notificaciones${notificaciones > 0 ? ` (${notificaciones} sin leer)` : ''}`}
-          >
-            <BellIcon />
-            {notificaciones > 0 && <span className={s.dot} aria-hidden="true" />}
-          </button>
+          <Tooltip content={notificaciones > 0 ? `Notificaciones (${notificaciones} sin leer)` : 'Notificaciones'}>
+            <button
+              type="button"
+              className={`${s.notif} ${notificaciones > 0 ? s.notifUnread : ''}`}
+              onClick={irANotificaciones}
+              aria-label={`Notificaciones${notificaciones > 0 ? ` (${notificaciones} sin leer)` : ''}`}
+            >
+              <BellIcon />
+              {notificaciones > 0 && <span className={s.dot} aria-hidden="true" />}
+            </button>
+          </Tooltip>
 
           <div className={s.user} title={correoPerfil}>
             <Link to={`/${role}/perfil`} viewTransition className={s.avatarLink} aria-label="Ir a mi perfil">
