@@ -1,5 +1,7 @@
 .card{position:relative;display:flex;align-items:center;gap:var(--sp-4);background:var(--c-surface);border:1px solid var(--c-border);border-top:2px solid transparent;border-radius:var(--r-xl);padding:var(--sp-5);box-shadow:var(--sh-card);transition:all var(--dur-normal) var(--ease-out);overflow:hidden}
 .card:hover{box-shadow:var(--sh-card-h);border-color:var(--c-border-h);transform:translateY(-1px)}
+.link{display:flex;text-decoration:none;color:inherit;min-width:0}
+.minimal{display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-4) var(--sp-5);background:var(--c-surface);border-radius:var(--r-md);box-shadow:var(--sh-card);min-width:0}
 .primary{border-top-color:var(--c-primary)}
 .warning{border-top-color:var(--c-warning)}
 .danger{border-top-color:var(--c-danger)}
@@ -16,6 +18,8 @@
 .content{flex:1;display:flex;flex-direction:column;gap:var(--sp-0_5);min-width:0}
 .value{font-family:var(--mono);font-size:var(--text-2xl);font-weight:800;color:var(--c-text);line-height:1.1}
 .label{font-size:var(--text-sm);color:var(--c-text-2)}
+.minimal .value{font-family:inherit;font-size:var(--text-xl);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.minimal .label{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.04em}
 
 .trend{font-family:var(--mono);font-size:var(--text-xs);font-weight:700;padding:var(--sp-1) var(--sp-2_5);border-radius:var(--r-full);white-space:nowrap;display:inline-flex;align-items:center;gap:var(--sp-1)}
 .up{background:var(--c-success-bg);color:var(--c-success)}

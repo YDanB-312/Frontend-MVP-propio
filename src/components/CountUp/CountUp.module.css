@@ -1,0 +1,21 @@
+/* Rodillo de dígitos del contador (ReactBits Counter adaptado a CSS Modules). */
+.counter{display:inline-flex;line-height:1;font-variant-numeric:tabular-nums}
+.afijo{white-space:pre}
+.col{
+  position:relative;
+  display:inline-block;
+  width:1ch;
+  height:1em;
+  overflow:hidden;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 30%,#000 70%,transparent 100%);
+  mask-image:linear-gradient(to bottom,transparent 0,#000 30%,#000 70%,transparent 100%);
+}
+.numero{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform var(--countup-dur,900ms) cubic-bezier(.22,1.2,.36,1);
+}
+.punto{display:inline-flex;align-items:center}
