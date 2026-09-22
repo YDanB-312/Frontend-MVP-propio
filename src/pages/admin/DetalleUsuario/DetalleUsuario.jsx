@@ -25,7 +25,7 @@ import { fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import formStyles from '../../../components/FormularioBase/FormularioBase.module.css'
 
-const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }
+const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador', superadmin: 'Superadministrador' }
 const PROYECTO_ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
 // Campos que acepta PUT /general-users (requiere los escalares obligatorios).
@@ -57,6 +57,7 @@ export default function DetalleUsuario() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user: sesion, sincronizarSesion } = useAuth()
+  const esSuperadmin = sesion?.rol === 'superadmin'
   const [modalEliminar, setModalEliminar] = useState(false)
   // Cambio del propio correo: exige la contraseña actual del admin.
   const [correoPendiente, setCorreoPendiente] = useState(null)
@@ -438,7 +439,8 @@ export default function DetalleUsuario() {
                 <Select name="role" value={form.role} onChange={onChange} disabled={esMiCuenta}>
                   <option value="aprendiz">Aprendiz</option>
                   <option value="instructor">Instructor</option>
-                  <option value="admin">Administrador</option>
+                  {esSuperadmin && <option value="admin">Administrador</option>}
+                  {esSuperadmin && <option value="superadmin">Superadministrador</option>}
                 </Select>
               </FormField>
               {usuario.rol === 'aprendiz' && perfilAprendiz && (

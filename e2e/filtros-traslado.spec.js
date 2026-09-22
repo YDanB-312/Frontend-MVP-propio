@@ -16,7 +16,8 @@ test.describe('Admin: filtros exactos de usuarios', () => {
 
 test.describe('Admin: traslado inter-centros', () => {
   test('cambiar de ficha avisa centro y programa, y persiste', async ({ page }) => {
-    await login(page, 'admin')
+    // Traslado entre centros: es gobernanza, lo hace el superadmin.
+    await login(page, 'superadmin')
     await page.goto('/admin/detalle-usuario/1')
     await page.getByRole('button', { name: /^Editar$/i }).click()
 

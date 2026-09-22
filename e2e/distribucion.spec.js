@@ -5,7 +5,7 @@ test.describe('Navegación lateral (sidebar)', () => {
     await login(page, 'admin')
     await page.goto('/admin/dashboard')
     const sidebar = page.locator('aside')
-    for (const nombre of ['Dashboard', 'Propuestas', 'Similitudes', 'Reportes de Fallas', 'Alertas', 'Usuarios', 'Fichas', 'Configuración', 'Mi Perfil']) {
+    for (const nombre of ['Dashboard', 'Propuestas', 'Similitudes', 'Reportes de Fallas', 'Alertas', 'Usuarios', 'Fichas', 'Bitácora', 'Motor de similitud', 'Mi Perfil']) {
       await expect(sidebar.getByRole('link', { name: nombre })).toBeVisible()
     }
     // Sin títulos separadores
@@ -34,6 +34,15 @@ test.describe('Navegación lateral (sidebar)', () => {
     }
   })
 
+  test('superadmin ve los enlaces de gobernanza', async ({ page }) => {
+    await login(page, 'superadmin')
+    await page.goto('/admin/dashboard')
+    const sidebar = page.locator('aside')
+    for (const nombre of ['Dashboard', 'Usuarios', 'Fichas', 'Centros', 'Administradores', 'Redes y programas', 'Motor (por defecto)', 'Mi Perfil']) {
+      await expect(sidebar.getByRole('link', { name: nombre })).toBeVisible()
+    }
+  })
+
   test('el enlace queda activo en las subrutas de detalle', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/detalle-proyecto/4')
@@ -48,7 +57,7 @@ test.describe('Footer espejo y migas', () => {
     await login(page, 'admin')
     await page.goto('/admin/dashboard')
     const footer = page.locator('footer')
-    for (const nombre of ['Dashboard', 'Usuarios', 'Propuestas', 'Similitudes', 'Configuración', 'Mi Perfil']) {
+    for (const nombre of ['Dashboard', 'Usuarios', 'Propuestas', 'Similitudes', 'Motor de similitud', 'Mi Perfil']) {
       await expect(footer.getByRole('link', { name: nombre })).toBeVisible()
     }
   })

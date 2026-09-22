@@ -29,8 +29,8 @@ import nu from '../../../components/FormularioBase/FormularioBase.module.css'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
-const ROL_VARIANT = { aprendiz: 'info', instructor: 'primary', admin: 'warning' }
-const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }
+const ROL_VARIANT = { aprendiz: 'info', instructor: 'primary', admin: 'warning', superadmin: 'danger' }
+const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador', superadmin: 'Superadministrador' }
 const ESTADO_VARIANT = { activo: 'success', suspendido: 'danger' }
 const ESTADO_LABEL = { activo: 'Activo', suspendido: 'Suspendido' }
 
@@ -55,6 +55,7 @@ function payloadCuenta(cuenta, extra = {}) {
 
 export default function Usuarios() {
   const { user } = useAuth()
+  const esSuperadmin = user?.rol === 'superadmin'
   const [searchParams] = useSearchParams()
   const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
 
@@ -305,7 +306,8 @@ export default function Usuarios() {
                   <Select name="role" value={form.role} onChange={onChange}>
                     <option value="aprendiz">Aprendiz</option>
                     <option value="instructor">Instructor</option>
-                    <option value="admin">Administrador</option>
+                    {esSuperadmin && <option value="admin">Administrador</option>}
+                    {esSuperadmin && <option value="superadmin">Superadministrador</option>}
                   </Select>
                 </FormField>
               </div>
@@ -368,6 +370,7 @@ export default function Usuarios() {
                   <option value="aprendiz">Aprendiz</option>
                   <option value="instructor">Instructor</option>
                   <option value="admin">Administrador</option>
+                  {esSuperadmin && <option value="superadmin">Superadministrador</option>}
                 </Select>
               </label>
               <label className={s.field}>

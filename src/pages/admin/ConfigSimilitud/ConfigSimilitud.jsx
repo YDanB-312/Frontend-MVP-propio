@@ -12,14 +12,18 @@ import ApiState from '../../../components/ApiState/ApiState'
 import { ChartBar, CheckCircle, SlidersHorizontal, ArrowClockwise, Gauge, Database, MagnifyingGlass, Warning } from 'phosphor-react'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { useApi } from '../../../lib/useApi'
+import { useAuth } from '../../../contexts/AuthContext'
 import { motor, similitudes } from '../../../lib/recursos'
 import s from './ConfigSimilitud.module.css'
 
 export default function ConfigSimilitud() {
+  const { user } = useAuth()
+  const esCentro = user?.rol === 'admin'
+
   // Fuente única: la API. Config vigente del motor + conteo de coincidencias.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [configMotor, listaSimilitudes] = await Promise.all([motor.obtener(), similitudes.listar()])
+      const [configMotor, listaSimilitudes] = await Promise.all([motor.actual(), similitudes.listar()])
       return { configMotor, listaSimilitudes }
     },
     [],
@@ -36,6 +40,7 @@ export default function ConfigSimilitud() {
   const [msgTipo, setMsgTipo] = useState('ok')
   const [confirmRecalcular, setConfirmRecalcular] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [restaurando, setRestaurando] = useState(false)
 
   // Sincroniza el formulario cuando llega la config de la API.
   useEffect(() => {
@@ -71,6 +76,22 @@ export default function ConfigSimilitud() {
     }
   }
 
+  const restaurar = async () => {
+    setRestaurando(true)
+    setMsg(null)
+    try {
+      await motor.restablecer()
+      await recargar()
+      setMsgTipo('ok')
+      setMsg('Tu centro usa ahora el valor por defecto definido por el superadministrador.')
+    } catch (err) {
+      setMsgTipo('error')
+      setMsg(err?.data?.message || 'No fue posible restaurar el valor por defecto.')
+    } finally {
+      setRestaurando(false)
+    }
+  }
+
   const ejecutarRecalcular = async () => {
     setConfirmRecalcular(false)
     try {
@@ -89,7 +110,11 @@ export default function ConfigSimilitud() {
       <div className={s.page}>
         <PageHeader
           title="Motor de similitudes"
-          subtitle={`Umbral vigente: ${Math.round(vigente.umbral * 100)}% · Ventana: ${vigente.meses} meses.`}
+          subtitle={
+            esCentro
+              ? `Tu centro · Umbral: ${Math.round(vigente.umbral * 100)}% · Ventana: ${vigente.meses} meses${vigente.hereda ? ' (heredado del valor por defecto)' : ''}.`
+              : `Valor por defecto global · Umbral: ${Math.round(vigente.umbral * 100)}% · Ventana: ${vigente.meses} meses.`
+          }
           icon={<SlidersHorizontal />}
           breadcrumb={[
             { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
@@ -117,7 +142,7 @@ export default function ConfigSimilitud() {
                   label="Porcentaje límite de coincidencia"
                   required
                   error={errores.umbral}
-                  help="Se alerta si una propuesta supera este porcentaje frente a otra del mismo programa."
+                  help="Se alerta si una propuesta supera este porcentaje frente a otra del mismo programa y centro."
                 >
                   <Input
                     type="number"
@@ -148,6 +173,16 @@ export default function ConfigSimilitud() {
                   <Button type="button" variant="secondary" onClick={() => setConfirmRecalcular(true)}>
                     <ArrowClockwise size={14} /> Recalcular base existente
                   </Button>
+                  {esCentro && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={restaurar}
+                      disabled={restaurando || vigente.hereda}
+                    >
+                      <ArrowClockwise size={14} /> {vigente.hereda ? 'Usando valor por defecto' : 'Usar valor por defecto'}
+                    </Button>
+                  )}
                 </Actions>
               </form>
             </ConsoleCard>

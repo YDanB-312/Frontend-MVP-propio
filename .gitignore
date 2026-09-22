@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Reportes de los agentes (se regeneran en cada corrida)
+agentes-reportes
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

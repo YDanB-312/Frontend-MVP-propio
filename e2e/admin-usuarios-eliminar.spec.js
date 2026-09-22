@@ -21,7 +21,7 @@ test.describe('Admin: eliminar usuarios', () => {
   })
 
   test('sin propuestas elimina con confirmación y vuelve al listado', async ({ page }) => {
-    await login(page, 'admin')
+    await login(page, 'superadmin')
     await page.goto('/admin/detalle-usuario/12')
     await page.getByRole('button', { name: /^Eliminar$/i }).click()
     await expect(page.getByText(/Eliminar usuario/i)).toBeVisible()
@@ -32,7 +32,7 @@ test.describe('Admin: eliminar usuarios', () => {
   })
 
   test('editar a un correo existente muestra error', async ({ page }) => {
-    await login(page, 'admin')
+    await login(page, 'superadmin')
     await page.goto('/admin/detalle-usuario/9')
     await page.getByRole('button', { name: /^Editar$/i }).click()
     await page.getByLabel('Correo electrónico').fill('maria.gonzalez@soy.sena.edu.co')

@@ -2,7 +2,7 @@ import { test, expect, login } from './helpers'
 
 test.describe('Admin: filtros combinados', () => {
   test('rol + programa aísla a la aprendiz de otro programa', async ({ page }) => {
-    await login(page, 'admin')
+    await login(page, 'superadmin')
     await page.goto('/admin/usuarios')
     const campo = (nombre) => page.locator('label', { hasText: new RegExp('^' + nombre) }).locator('select')
     await campo('Rol').selectOption('aprendiz')

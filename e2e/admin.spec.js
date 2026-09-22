@@ -2,9 +2,11 @@ import { test, expect, login } from './helpers'
 
 const RED_INFO = 'Informática, Diseño y Desarrollo de Software'
 
-test.describe('Administración de usuarios (admin)', () => {
+test.describe('Administración de usuarios (superadmin)', () => {
   test('crear instructor básico y verificarlo en listado y detalle', async ({ page }) => {
-    await login(page, 'admin')
+    // El listado del admin de centro solo muestra gente adscrita a su centro;
+    // un instructor recién creado (sin ficha) se ve en la vista global.
+    await login(page, 'superadmin')
 
     // 1. Crear instructor: solo datos de cuenta — la taxonomía vive en la ficha
     await page.goto('/admin/usuarios')

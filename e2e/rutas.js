@@ -41,7 +41,18 @@ export const RUTAS_POR_ROL = {
     '/admin/detalle-reporte/1',
     '/admin/notificaciones',
     '/admin/bitacora',
+    '/admin/config-similitud',
     '/admin/perfil',
+  ],
+  // Lista acotada de gobernanza (las suites a11y/responsive iteran esta lista).
+  superadmin: [
+    '/admin/dashboard',
+    '/admin/usuarios',
+    '/admin/fichas',
+    '/admin/training-centers',
+    '/admin/administradores',
+    '/admin/redes-conocimiento',
+    '/admin/config-similitud',
   ],
 }
 

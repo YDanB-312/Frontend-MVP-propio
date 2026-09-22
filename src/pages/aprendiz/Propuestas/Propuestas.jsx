@@ -282,8 +282,8 @@ export default function Propuestas() {
           <EmptyState
             icon={<GraduationCap size={40} weight="light" />}
             title="Aún no perteneces a una ficha"
-            message="La asignación de tu ficha la gestiona coordinación. Consulta tu ficha o contacta a tu instructor."
-            actionLabel="Ir a Mi Ficha"
+            message="Únete a tu ficha con el código que te comparta tu instructor para poder registrar tus propuestas."
+            actionLabel="Unirme a una ficha"
             onAction={() => navigate('/aprendiz/ficha')}
           />
         </div>

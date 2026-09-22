@@ -46,7 +46,7 @@ export default function SimilitudesAdmin() {
         centros.listar(),
         programas.listar(),
         fichas.listar('program,trainingCenter'),
-        motor.obtener(),
+        motor.actual(),
       ])
       return { listaSimilitudes, listaProyectos, listaCentros, listaProgramas, listaFichas, configMotor }
     },

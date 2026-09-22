@@ -20,6 +20,14 @@ export const usuarios = {
   eliminar: (id) => apiFetch(`/general-users/${id}`, { method: 'DELETE' }),
 }
 
+// ---------------------------------------------------------------- Admins
+// Perfiles de administración (coordinadores): solo superadmin.
+export const admins = {
+  listar: (included = 'generalUser,trainingCenter') => apiFetch(`/admins${qs({ included })}`).then(lista),
+  asignarCentro: (id, trainingCenterId) =>
+    apiFetch(`/admins/${id}`, { method: 'PUT', body: { training_center_id: trainingCenterId } }),
+}
+
 // ---------------------------------------------------------------- Catálogos
 export const centros = {
   listar: () => apiFetch('/training-centers').then(lista),
@@ -103,8 +111,13 @@ export const similitudes = {
 
 // ---------------------------------------------------------------- Motor
 export const motor = {
+  // Lectura pública global (landing y barra de gobierno, sin sesión).
   obtener: () => apiFetch('/config-similitud'),
+  // Config vigente según el rol (el admin de centro ve la de su centro).
+  actual: () => apiFetch('/config-similitud/actual'),
   actualizar: (umbral, meses) => apiFetch('/config-similitud', { method: 'PUT', body: { umbral, meses } }),
+  // Restaura el valor por defecto del centro (solo admin de centro).
+  restablecer: () => apiFetch('/config-similitud', { method: 'DELETE' }),
 }
 
 // ---------------------------------------------------------------- Demo pública

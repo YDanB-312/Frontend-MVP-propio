@@ -2,7 +2,7 @@ import { test, expect, login } from './helpers'
 
 test.describe('Admin: redes de conocimiento CRUD', () => {
   test('valida nombre y programas al crear', async ({ page }) => {
-    await login(page, 'admin')
+    await login(page, 'superadmin')
     await page.goto('/admin/redes-conocimiento')
     await page.getByRole('button', { name: /Nueva Red/i }).click()
     await page.getByRole('button', { name: /^Crear red$/i }).click()
@@ -11,7 +11,7 @@ test.describe('Admin: redes de conocimiento CRUD', () => {
   })
 
   test('programa duplicado muestra error', async ({ page }) => {
-    await login(page, 'admin')
+    await login(page, 'superadmin')
     await page.goto('/admin/redes-conocimiento')
     await page.getByRole('button', { name: /Nueva Red/i }).click()
     await page.getByPlaceholder(/Nuevo programa/i).fill('ADSO')
@@ -22,7 +22,7 @@ test.describe('Admin: redes de conocimiento CRUD', () => {
   })
 
   test('crea, edita y elimina una red libre', async ({ page }) => {
-    await login(page, 'admin')
+    await login(page, 'superadmin')
     await page.goto('/admin/redes-conocimiento')
     await page.getByRole('button', { name: /Nueva Red/i }).click()
     await page.getByPlaceholder(/Ej\. Informática/i).fill('Red E2E Temporal')
@@ -47,3 +47,4 @@ test.describe('Admin: redes de conocimiento CRUD', () => {
     await expect(page.getByText('Red E2E Temporal Editada')).toHaveCount(0)
   })
 })
+

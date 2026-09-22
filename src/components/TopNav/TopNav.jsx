@@ -9,24 +9,28 @@ const RUTA_NOTIFICACIONES = {
   aprendiz: '/aprendiz/alertas',
   instructor: '/instructor/alertas',
   admin: '/admin/notificaciones',
+  superadmin: '/admin/notificaciones',
 }
 
 const RUTA_CREAR = {
   aprendiz: '/aprendiz/propuestas?crear=1',
   instructor: '/instructor/fichas?crear=1',
   admin: '/admin/usuarios?crear=1',
+  superadmin: '/admin/usuarios?crear=1',
 }
 
 const TITULO_CREAR = {
   aprendiz: 'Nueva propuesta',
   instructor: 'Crear ficha',
   admin: 'Crear usuario',
+  superadmin: 'Crear usuario',
 }
 
 const ROL_LABEL = {
   aprendiz: 'Aprendiz',
   instructor: 'Instructor',
   admin: 'Administrador',
+  superadmin: 'Superadministrador',
 }
 
 function iniciales(nombre = '') {

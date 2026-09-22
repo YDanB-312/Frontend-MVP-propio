@@ -11,7 +11,13 @@
     "test:e2e": "node e2e/run-aislado.mjs",
     "test:unit": "vitest run",
     "preview": "vite preview",
-    "test:e2e:aislado": "node e2e/run-aislado.mjs"
+    "test:e2e:aislado": "node e2e/run-aislado.mjs",
+    "test:agentes": "playwright test e2e/agentes.spec.js --workers=4",
+    "test:agentes:acciones": "node e2e/run-agentes-acciones.mjs",
+    "test:agentes:cobertura": "playwright test e2e/agentes/cobertura.spec.js --workers=4",
+    "test:agentes:negativos": "playwright test e2e/agentes/negativos.spec.js --workers=4",
+    "test:volumen": "node e2e/run-volumen.mjs",
+    "test:full": "node e2e/run-full.mjs"
   },
   "dependencies": {
     "phosphor-react": "^1.4.1",

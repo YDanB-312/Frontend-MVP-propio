@@ -35,7 +35,9 @@ for (const [role, rutas] of Object.entries(RUTAS_POR_ROL)) {
 
     test(`${role} → los elementos interactivos muestran indicador de foco visible`, async ({ page }) => {
       await login(page, role)
-      await page.goto(`/${role}/dashboard`)
+      // El superadmin comparte el área /admin (no existe /superadmin/dashboard).
+      const home = role === 'superadmin' ? '/admin/dashboard' : `/${role}/dashboard`
+      await page.goto(home)
 
       await page.locator('a[href], button').first().waitFor({ state: 'visible' })
       await page.waitForTimeout(300)
