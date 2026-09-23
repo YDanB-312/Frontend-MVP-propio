@@ -9,11 +9,6 @@ test.describe('Autenticación por rol', () => {
     })
   }
 
-  test('login como superadmin lleva al área de administración', async ({ page }) => {
-    await login(page, 'superadmin')
-    await expect(page).toHaveURL(/\/admin\/dashboard/)
-  })
-
   test('credenciales inválidas muestran error y no ingresan', async ({ page }) => {
     await page.goto('/login')
     await page.getByPlaceholder('tu.correo@ejemplo.com').fill('maria.gonzalez@soy.sena.edu.co')

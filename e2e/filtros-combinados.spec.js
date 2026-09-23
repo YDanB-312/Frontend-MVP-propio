@@ -2,7 +2,7 @@ import { test, expect, login } from './helpers'
 
 test.describe('Admin: filtros combinados', () => {
   test('rol + programa aísla a la aprendiz de otro programa', async ({ page }) => {
-    await login(page, 'superadmin')
+    await login(page, 'admin')
     await page.goto('/admin/usuarios')
     const campo = (nombre) => page.locator('label', { hasText: new RegExp('^' + nombre) }).locator('select')
     await campo('Rol').selectOption('aprendiz')
@@ -14,11 +14,10 @@ test.describe('Admin: filtros combinados', () => {
     await expect(page.getByText('María González')).toBeVisible()
   })
 
-  test('centro + ficha encadenados filtran juntos', async ({ page }) => {
+  test('la ficha filtra a sus integrantes', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/usuarios')
     const campo = (nombre) => page.locator('label', { hasText: new RegExp('^' + nombre) }).locator('select')
-    await campo('Centro').selectOption('1')
     await campo('Ficha').selectOption('2')
     await expect(page.getByText('Laura Gómez')).toBeVisible()
     await expect(page.getByText('María González')).toHaveCount(0)
@@ -35,3 +34,4 @@ test.describe('Admin: filtros combinados', () => {
     await expect(page.getByText(/Sistema de Gestión de Inventarios/i)).toBeVisible()
   })
 })
+

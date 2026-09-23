@@ -42,6 +42,7 @@ export default function MiFicha() {
   const [confirmarSalida, setConfirmarSalida] = useState(false)
   const [saliendo, setSaliendo] = useState(false)
   const [aviso, setAviso] = useState('')
+  const [busquedaComp, setBusquedaComp] = useState('')
 
   const miAprendiz = aprendicesApi.find((a) => Number(a.id_usuario) === Number(user.id)) || null
   const ficha = miAprendiz
@@ -51,6 +52,12 @@ export default function MiFicha() {
   const compañeros = ficha
     ? aprendicesApi.filter((a) => Number(a.id_class_group) === Number(ficha.id))
     : []
+  const compañerosFiltrados = compañeros.filter((est) => {
+    const q = busquedaComp.trim().toLowerCase()
+    if (!q) return true
+    const g = est.generalUser || {}
+    return nombreUsuario(g).toLowerCase().includes(q) || (g.correo || '').toLowerCase().includes(q)
+  })
   const proyectosFicha = ficha
     ? todosProyectos.filter((p) => Number(p.id_class_group) === Number(ficha.id))
     : []
@@ -311,8 +318,22 @@ export default function MiFicha() {
         ) : (
           <>
             <h3 className={sd.sectionTitle}>Integrantes de la ficha ({compañeros.length})</h3>
+            <FormField label="Buscar integrante">
+              <Input
+                value={busquedaComp}
+                onChange={(e) => setBusquedaComp(e.target.value)}
+                placeholder="Nombre o correo…"
+              />
+            </FormField>
+            {compañerosFiltrados.length === 0 ? (
+              <EmptyState
+                icon={<Users />}
+                title="Sin resultados"
+                message={`Ningún integrante coincide con "${busquedaComp}".`}
+              />
+            ) : (
             <ul className={sd.studentsGrid}>
-              {compañeros.map((est, i) => {
+              {compañerosFiltrados.map((est, i) => {
                 const g = est.generalUser || {}
                 return (
                   <li key={est.id} className="fx-rise" style={{ '--fx-i': i }}>
@@ -327,6 +348,7 @@ export default function MiFicha() {
                 )
               })}
             </ul>
+            )}
           </>
         )}
 

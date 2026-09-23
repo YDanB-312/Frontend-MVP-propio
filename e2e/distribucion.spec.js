@@ -34,15 +34,6 @@ test.describe('Navegación lateral (sidebar)', () => {
     }
   })
 
-  test('superadmin ve los enlaces de gobernanza', async ({ page }) => {
-    await login(page, 'superadmin')
-    await page.goto('/admin/dashboard')
-    const sidebar = page.locator('aside')
-    for (const nombre of ['Dashboard', 'Usuarios', 'Fichas', 'Centros', 'Administradores', 'Redes y programas', 'Motor (por defecto)', 'Mi Perfil']) {
-      await expect(sidebar.getByRole('link', { name: nombre })).toBeVisible()
-    }
-  })
-
   test('el enlace queda activo en las subrutas de detalle', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/detalle-proyecto/4')

@@ -19,7 +19,7 @@ import { norm } from '../../../utils/helpers'
 import { Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise, Warning } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { usuarios, aprendices, fichas, centros, programas } from '../../../lib/recursos'
+import { usuarios, aprendices, fichas, programas } from '../../../lib/recursos'
 import { esEmailValido, esPasswordValida, MAX_NOMBRE } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
@@ -29,8 +29,8 @@ import nu from '../../../components/FormularioBase/FormularioBase.module.css'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
-const ROL_VARIANT = { aprendiz: 'info', instructor: 'primary', admin: 'warning', superadmin: 'danger' }
-const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador', superadmin: 'Superadministrador' }
+const ROL_VARIANT = { aprendiz: 'info', instructor: 'primary', admin: 'warning' }
+const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }
 const ESTADO_VARIANT = { activo: 'success', suspendido: 'danger' }
 const ESTADO_LABEL = { activo: 'Activo', suspendido: 'Suspendido' }
 
@@ -55,7 +55,6 @@ function payloadCuenta(cuenta, extra = {}) {
 
 export default function Usuarios() {
   const { user } = useAuth()
-  const esSuperadmin = user?.rol === 'superadmin'
   const [searchParams] = useSearchParams()
   const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
 
@@ -74,7 +73,6 @@ export default function Usuarios() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroRol, setFiltroRol] = useState('todos')
   const [filtroEstado, setFiltroEstado] = useState('todos')
-  const [filtroCentro, setFiltroCentro] = useState('todos')
   const [filtroFicha, setFiltroFicha] = useState('todos')
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
@@ -82,14 +80,13 @@ export default function Usuarios() {
   // Fuente única: la API. Se traen usuarios y los catálogos que resuelven ficha/centro/programa.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [listaUsuarios, listaAprendices, listaFichas, listaCentros, listaProgramas] = await Promise.all([
+      const [listaUsuarios, listaAprendices, listaFichas, listaProgramas] = await Promise.all([
         usuarios.listar(),
-        aprendices.listar('generalUser,classGroup.program,classGroup.trainingCenter'),
-        fichas.listar('program,trainingCenter', {}),
-        centros.listar(),
+        aprendices.listar('generalUser,classGroup.program'),
+        fichas.listar('program', {}),
         programas.listar(),
       ])
-      return { listaUsuarios, listaAprendices, listaFichas, listaCentros, listaProgramas }
+      return { listaUsuarios, listaAprendices, listaFichas, listaProgramas }
     },
     [],
     { inicial: null }
@@ -98,13 +95,11 @@ export default function Usuarios() {
   const usuariosLista = data?.listaUsuarios || []
   const aprendicesLista = data?.listaAprendices || []
   const fichasLista = data?.listaFichas || []
-  const centrosLista = data?.listaCentros || []
   const programasLista = data?.listaProgramas || []
 
   // Índices para resolver relaciones sin recorrer arrays en cada celda.
   const aprendicesPorUsuario = new Map(aprendicesLista.map((a) => [Number(a.id_usuario), a]))
   const fichasPorId = new Map(fichasLista.map((f) => [Number(f.id), f]))
-  const centrosPorId = new Map(centrosLista.map((c) => [Number(c.id), c]))
 
   const fichaDeUsuario = (usr) => {
     const perfil = aprendicesPorUsuario.get(Number(usr.id))
@@ -112,25 +107,27 @@ export default function Usuarios() {
     return perfil.classGroup || fichasPorId.get(Number(perfil.id_class_group)) || null
   }
 
-  const fichasFiltro = filtroCentro === 'todos'
-    ? fichasLista
-    : fichasLista.filter((f) => String(f.training_center_id) === String(filtroCentro))
+  const fichasFiltro = fichasLista
   const programasFiltro = [...new Set(programasLista.map((p) => p.nombre))].sort()
 
   const filtrados = usuariosLista.filter((usr) => {
     const q = norm(busqueda.trim())
     const nombreCompleto = `${usr.nombre || ''} ${usr.apellido || ''}`
-    const coincideQ = !q || norm(nombreCompleto).includes(q) || norm(usr.correo).includes(q)
+    const coincideId = busqueda.trim() !== '' && String(usr.id) === busqueda.trim()
+    const coincideQ = !q || norm(nombreCompleto).includes(q) || norm(usr.correo).includes(q) || coincideId
     const coincideRol = filtroRol === 'todos' || usr.rol === filtroRol
     const estado = usr.estado === false ? 'suspendido' : 'activo'
     const coincideEstado = filtroEstado === 'todos' || estado === filtroEstado
     const perfil = aprendicesPorUsuario.get(Number(usr.id))
     const ficha = fichaDeUsuario(usr)
-    const coincideCentro = filtroCentro === 'todos' || (ficha && String(ficha.training_center_id) === String(filtroCentro))
-    const coincideFicha = filtroFicha === 'todos' || String(perfil?.id_class_group || '') === String(filtroFicha)
+    const coincideFicha =
+      filtroFicha === 'todos' ||
+      (filtroFicha === 'sin'
+        ? !perfil?.id_class_group
+        : String(perfil?.id_class_group || '') === String(filtroFicha))
     const programa = perfil?.program?.nombre || ficha?.program?.nombre || ''
     const coincidePrograma = filtroPrograma === 'todos' || programa === filtroPrograma
-    return coincideQ && coincideRol && coincideEstado && coincideCentro && coincideFicha && coincidePrograma
+    return coincideQ && coincideRol && coincideEstado && coincideFicha && coincidePrograma
   })
 
   const paginados = filtrados.slice(
@@ -142,7 +139,6 @@ export default function Usuarios() {
     setBusqueda('')
     setFiltroRol('todos')
     setFiltroEstado('todos')
-    setFiltroCentro('todos')
     setFiltroFicha('todos')
     setFiltroPrograma('todos')
     setPagina(1)
@@ -306,8 +302,7 @@ export default function Usuarios() {
                   <Select name="role" value={form.role} onChange={onChange}>
                     <option value="aprendiz">Aprendiz</option>
                     <option value="instructor">Instructor</option>
-                    {esSuperadmin && <option value="admin">Administrador</option>}
-                    {esSuperadmin && <option value="superadmin">Superadministrador</option>}
+                    <option value="admin">Administrador</option>
                   </Select>
                 </FormField>
               </div>
@@ -370,25 +365,6 @@ export default function Usuarios() {
                   <option value="aprendiz">Aprendiz</option>
                   <option value="instructor">Instructor</option>
                   <option value="admin">Administrador</option>
-                  {esSuperadmin && <option value="superadmin">Superadministrador</option>}
-                </Select>
-              </label>
-              <label className={s.field}>
-                <span className={s.label}>Centro</span>
-                <Select
-                  value={filtroCentro}
-                  onChange={(e) => {
-                    setFiltroCentro(e.target.value)
-                    setFiltroFicha('todos')
-                    setPagina(1)
-                  }}
-                >
-                  <option value="todos">Todos</option>
-                  {centrosLista.map((ct) => (
-                    <option key={ct.id} value={String(ct.id)}>
-                      {ct.name}
-                    </option>
-                  ))}
                 </Select>
               </label>
               <label className={s.field}>
@@ -415,6 +391,7 @@ export default function Usuarios() {
                   }}
                 >
                   <option value="todos">Todas</option>
+                  <option value="sin">Sin ficha</option>
                   {fichasFiltro.map((f) => (
                     <option key={f.id} value={String(f.id)}>
                       {f.codigo} · {f.nombre}
@@ -487,15 +464,6 @@ export default function Usuarios() {
                       render: (usr) => {
                         const ficha = fichaDeUsuario(usr)
                         return ficha ? <code className={s.codigo}>{ficha.codigo}</code> : <span className={s.muted}>—</span>
-                      },
-                    },
-                    {
-                      key: 'centro',
-                      header: 'Centro',
-                      render: (usr) => {
-                        const ficha = fichaDeUsuario(usr)
-                        const centro = ficha?.training_center_id ? centrosPorId.get(Number(ficha.training_center_id)) : null
-                        return centro?.name || <span className={s.muted}>—</span>
                       },
                     },
                     {

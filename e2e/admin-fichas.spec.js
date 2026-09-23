@@ -8,7 +8,6 @@ test.describe('Admin: gestión de fichas', () => {
 
     await page.locator('form select[name="red"]').selectOption('Informática, Diseño y Desarrollo de Software')
     await page.locator('form select[name="programa"]').selectOption('ADSO')
-    await page.locator('form select[name="centroId"]').selectOption({ index: 1 })
     await page.locator('form select[name="instructorId"]').selectOption({ index: 1 })
     await page.getByPlaceholder('Ej. Análisis y Desarrollo 2718').fill('Ficha Admin E2E')
     await page.getByPlaceholder('Ej. 3142101').fill('7777')
@@ -19,7 +18,7 @@ test.describe('Admin: gestión de fichas', () => {
 
     await page.getByRole('link', { name: 'Ver' }).first().click()
     await page.waitForURL('**/admin/detalle-ficha/**')
-    await expect(page.getByText('Centro de formación').first()).toBeVisible()
+    await expect(page.getByText('Instructor').first()).toBeVisible()
   })
 
   test('eliminar ficha con datos está bloqueado y el detalle enlaza', async ({ page }) => {

@@ -7,7 +7,7 @@ import { PROPUESTA_STATUS } from '../../../constants/estadoStatus'
 import Button from '../../../components/Button/Button'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
-import { Select } from '../../../components/Input/Input'
+import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
@@ -17,7 +17,7 @@ import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instructores } from '../../../lib/recursos'
-import { fechaDesdeApi } from '../../../utils/helpers'
+import { fechaDesdeApi, norm } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './RevisionPropuestas.module.css'
 import { ArrowRight, CheckCircle, ClipboardText, Tray, XCircle } from 'phosphor-react'
@@ -26,7 +26,7 @@ import { PAGINA_TABLA } from '../../../constants/pagination'
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 // Relaciones necesarias para mostrar creador y ficha en la cola de revisión.
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
@@ -49,6 +49,7 @@ function infoSimilitud(lista, projectId) {
 
 export default function RevisionPropuestas() {
   const { user } = useAuth()
+  const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroFicha, setFiltroFicha] = useState('todos')
   const [pagina, setPagina] = useState(1)
@@ -102,8 +103,17 @@ export default function RevisionPropuestas() {
     if (filtroEstado !== 'todos') lista = lista.filter((p) => p.estado === filtroEstado)
     if (filtroFicha === 'sin-ficha') lista = lista.filter((p) => !p.id_class_group)
     else if (filtroFicha !== 'todos') lista = lista.filter((p) => String(p.id_class_group) === String(filtroFicha))
+    const q = norm(busqueda.trim())
+    if (q) {
+      lista = lista.filter((p) =>
+        norm(p.titulo).includes(q) ||
+        norm(nombreCompleto(p.creator)).includes(q) ||
+        norm(p.classGroup?.codigo).includes(q) ||
+        norm(p.classGroup?.numero).includes(q)
+      )
+    }
     return lista
-  }, [proyectosMios, filtroEstado, filtroFicha])
+  }, [proyectosMios, filtroEstado, filtroFicha, busqueda])
 
   const paginados = filtrados.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
@@ -192,6 +202,18 @@ export default function RevisionPropuestas() {
         )}
 
         <FilterBar title="Filtros de estado">
+          <label className={s.field}>
+            <span className={s.label}>Buscar</span>
+            <Input
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value)
+                setPagina(1)
+                setSelId(null)
+              }}
+              placeholder="Título, aprendiz o ficha…"
+            />
+          </label>
           <label className={s.field}>
             <span className={s.label}>Estado</span>
             <Select

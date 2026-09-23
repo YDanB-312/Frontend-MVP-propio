@@ -25,7 +25,7 @@ import { fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import formStyles from '../../../components/FormularioBase/FormularioBase.module.css'
 
-const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador', superadmin: 'Superadministrador' }
+const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }
 const PROYECTO_ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
 // Campos que acepta PUT /general-users (requiere los escalares obligatorios).
@@ -57,7 +57,6 @@ export default function DetalleUsuario() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user: sesion, sincronizarSesion } = useAuth()
-  const esSuperadmin = sesion?.rol === 'superadmin'
   const [modalEliminar, setModalEliminar] = useState(false)
   // Cambio del propio correo: exige la contraseña actual del admin.
   const [correoPendiente, setCorreoPendiente] = useState(null)
@@ -72,14 +71,16 @@ export default function DetalleUsuario() {
   const [guardado, setGuardado] = useState(false)
   const [accionMsg, setAccionMsg] = useState(null)
   const [claveTemporal, setClaveTemporal] = useState(null)
+  const [filtroProp, setFiltroProp] = useState('todos')
+  const [busquedaProp, setBusquedaProp] = useState('')
 
   // Fuente única: la API. Usuario + relaciones + propuestas/similitudes del aprendiz.
   const { data, cargando, error, recargar } = useApi(
     async () => {
       const [usuario, listaAprendices, listaFichas, listaProyectos, listaSimilitudes] = await Promise.all([
         usuarios.obtener(id),
-        aprendices.listar('generalUser,classGroup.program,classGroup.trainingCenter'),
-        fichas.listar('program,trainingCenter,instructor', {}),
+        aprendices.listar('generalUser,classGroup.program'),
+        fichas.listar('program,instructor', {}),
         proyectos.listar({ included: 'creator,classGroup.program,apprentices.generalUser' }),
         similitudes.listar(),
       ])
@@ -136,6 +137,13 @@ export default function DetalleUsuario() {
         || (p.apprentices || []).some((a) => Number(a.generalUser?.id) === Number(usuario.id))
       )
     : []
+
+  const proyectosFiltrados = proyectosDelUsuario.filter((p) => {
+    const q = busquedaProp.trim().toLowerCase()
+    const coincideQ = !q || (p.titulo || '').toLowerCase().includes(q)
+    const coincideEstado = filtroProp === 'todos' || p.estado === filtroProp
+    return coincideQ && coincideEstado
+  })
 
   // Fichas a cargo (instructores): bloquean el borrado, igual que el backend (409).
   const fichasACargo = usuario.rol === 'instructor' && usuario.instructor
@@ -439,8 +447,7 @@ export default function DetalleUsuario() {
                 <Select name="role" value={form.role} onChange={onChange} disabled={esMiCuenta}>
                   <option value="aprendiz">Aprendiz</option>
                   <option value="instructor">Instructor</option>
-                  {esSuperadmin && <option value="admin">Administrador</option>}
-                  {esSuperadmin && <option value="superadmin">Superadministrador</option>}
+                  <option value="admin">Administrador</option>
                 </Select>
               </FormField>
               {usuario.rol === 'aprendiz' && perfilAprendiz && (
@@ -452,7 +459,7 @@ export default function DetalleUsuario() {
                     <option value="">Sin ficha</option>
                     {fichasActivas.map((f) => (
                       <option key={f.id} value={String(f.id)}>
-                        {f.codigo} — {f.nombre}{f.trainingCenter ? ` (${f.trainingCenter.name})` : ''}
+                        {f.codigo} — {f.nombre}
                       </option>
                     ))}
                   </Select>
@@ -469,9 +476,6 @@ export default function DetalleUsuario() {
                 if ((destino.program?.nombre || null) !== (actual?.program?.nombre || null)) {
                   avisos.push(`cambia de programa (${actual?.program?.nombre || '—'} → ${destino.program?.nombre || '—'})`)
                 }
-                if ((destino.trainingCenter?.id || null) !== (actual?.trainingCenter?.id || null)) {
-                  avisos.push(`cambia de centro (${actual?.trainingCenter?.name || '—'} → ${destino.trainingCenter?.name || '—'})`)
-                }
                 if (avisos.length === 0) return null
                 return <Alert>Este traslado {avisos.join(' · ')}.</Alert>
               })()}
@@ -485,15 +489,40 @@ export default function DetalleUsuario() {
 
         {usuario.rol === 'aprendiz' && (
           <DataPanel title={`Propuestas del aprendiz (${proyectosDelUsuario.length})`} icon={<FolderOpen />}>
+            {proyectosDelUsuario.length > 0 && (
+              <div className={formStyles.grid2} style={{ marginBottom: '1rem' }}>
+                <FormField label="Buscar">
+                  <Input
+                    value={busquedaProp}
+                    onChange={(e) => setBusquedaProp(e.target.value)}
+                    placeholder="Título…"
+                  />
+                </FormField>
+                <FormField label="Estado">
+                  <Select value={filtroProp} onChange={(e) => setFiltroProp(e.target.value)}>
+                    <option value="todos">Todos</option>
+                    <option value="pendiente">{PROYECTO_ESTADO_LABEL.pendiente}</option>
+                    <option value="aprobado">{PROYECTO_ESTADO_LABEL.aprobado}</option>
+                    <option value="rechazado">{PROYECTO_ESTADO_LABEL.rechazado}</option>
+                  </Select>
+                </FormField>
+              </div>
+            )}
             {proyectosDelUsuario.length === 0 ? (
               <EmptyState
                 icon={<FolderOpen />}
                 title="Sin propuestas"
                 message="Este aprendiz aún no ha registrado ninguna propuesta."
               />
+            ) : proyectosFiltrados.length === 0 ? (
+              <EmptyState
+                icon={<FolderOpen />}
+                title="Sin resultados"
+                message="Ninguna propuesta coincide con el filtro aplicado."
+              />
             ) : (
               <ul className={s.list}>
-                {proyectosDelUsuario.map((p) => {
+                {proyectosFiltrados.map((p) => {
                   const info = similitudInfoDe(p.id)
                   return (
                     <li key={p.id}>

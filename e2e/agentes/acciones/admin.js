@@ -1,5 +1,5 @@
-// Playbook del agente ADMIN DE CENTRO: usuarios, fichas, motor del centro,
-// propuestas, reportes, alertas y bitácora. Todo dentro de su centro.
+// Playbook del agente ADMIN: usuarios, fichas, motor, propuestas, reportes,
+// alertas y bitácora.
 export async function admin(h) {
   const { page } = h
   const nombreFicha = `Ficha Admin Agente ${h.sufijo}`
@@ -25,8 +25,8 @@ export async function admin(h) {
     await h.esperar('Usuario creado correctamente.', 10000)
   })
 
-  await h.paso('editar un usuario de su centro (transferir de ficha)', async () => {
-    await h.ir('/admin/detalle-usuario/4') // Ana Martínez: ficha 1 (centro 1)
+  await h.paso('editar un usuario (transferir de ficha)', async () => {
+    await h.ir('/admin/detalle-usuario/4') // Ana Martínez: ficha 1
     h.usar('Editar')
     await page.getByRole('button', { name: /^Editar$/i }).click()
     await page.locator('select[name="fichaId"]').selectOption('2')
@@ -54,14 +54,13 @@ export async function admin(h) {
     await fila.getByText('Activo').waitFor({ timeout: 10000 })
   })
 
-  await h.paso('crear, archivar y borrar una ficha de su centro', async () => {
+  await h.paso('crear, archivar y borrar una ficha', async () => {
     await h.ir('/admin/fichas')
     h.usar('Crear Ficha')
     await page.getByRole('button', { name: /Crear Ficha/i }).click()
 
     await page.locator('form select[name="red"]').selectOption('Informática, Diseño y Desarrollo de Software')
     await page.locator('form select[name="programa"]').selectOption('ADSO')
-    await page.locator('form select[name="centroId"]').selectOption({ index: 1 })
     await page.locator('form select[name="instructorId"]').selectOption({ index: 1 })
     await page.getByPlaceholder('Ej. Análisis y Desarrollo 2718').fill(nombreFicha)
     await page.getByPlaceholder('Ej. 3142101').fill('8' + h.sufijo.slice(0, 4))
@@ -89,17 +88,13 @@ export async function admin(h) {
     await page.waitForURL('**/admin/fichas', { timeout: 15000 })
   })
 
-  await h.paso('ajustar el motor de su centro y restaurar el valor por defecto', async () => {
+  await h.paso('ajustar el motor de similitudes', async () => {
     await h.ir('/admin/config-similitud')
     await page.locator('input[type="number"]').first().fill('55')
     await page.locator('input[type="number"]').nth(1).fill('9')
     h.usar('Guardar parámetros')
     await page.getByRole('button', { name: /Guardar parámetros/i }).click()
     await page.getByText(/Motor actualizado/i).waitFor({ timeout: 10000 })
-
-    h.usar('Usar valor por defecto')
-    await page.getByRole('button', { name: /Usar valor por defecto/i }).click()
-    await page.getByText(/valor por defecto/i).last().waitFor({ timeout: 10000 })
   })
 
   await h.paso('moderar una propuesta (estado, contenido y observación)', async () => {
@@ -149,7 +144,7 @@ export async function admin(h) {
     if (await btn.isEnabled()) await btn.click()
   })
 
-  await h.paso('ver la bitácora del centro', async () => {
+  await h.paso('ver la bitácora', async () => {
     await h.ir('/admin/bitacora')
     await h.auditar()
     await page.locator('tbody tr').first().waitFor({ timeout: 10000 })

@@ -16,7 +16,7 @@ import { proyectos, similitudes as similitudesApi } from '../../../lib/recursos'
 import { formatearFecha } from '../../../utils/helpers'
 import s from './ResultadoAnalisis.module.css'
 
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 function nombreUsuario(u) {
   if (!u) return 'Usuario'

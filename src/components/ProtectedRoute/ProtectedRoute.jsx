@@ -7,11 +7,6 @@ import { haySesion } from '../../lib/api'
 export default function ProtectedRoute({ allowedRoles, children }) {
   const { user, isAuthenticated } = useAuth()
   if (!isAuthenticated || !haySesion()) return <Navigate to="/login" replace />
-  if (allowedRoles) {
-    // El superadmin es superset del admin: entra a cualquier ruta de admin.
-    const permitido = allowedRoles.includes(user.rol)
-      || (user.rol === 'superadmin' && allowedRoles.includes('admin'))
-    if (!permitido) return <Navigate to="/login" replace />
-  }
+  if (allowedRoles && !allowedRoles.includes(user.rol)) return <Navigate to="/login" replace />
   return children
 }

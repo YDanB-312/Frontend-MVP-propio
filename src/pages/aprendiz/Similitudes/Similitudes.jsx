@@ -6,13 +6,16 @@ import PageHeader from '../../../components/PageHeader/PageHeader'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
+import FilterBar from '../../../components/FilterBar/FilterBar'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import { Input } from '../../../components/Input/Input'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi } from '../../../lib/recursos'
+import { norm } from '../../../utils/helpers'
 import s from './Similitudes.module.css'
 
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 // Una propuesta es del aprendiz si la creó o si figura en su equipo.
 function esMia(proyecto, userId) {
@@ -25,6 +28,10 @@ function esMia(proyecto, userId) {
 
 export default function Similitudes() {
   const { user } = useAuth()
+
+  // Filtros de la vista.
+  const [busqueda, setBusqueda] = useState('')
+  const [minSim, setMinSim] = useState('')
 
   // Propuestas y similitudes: fuente única la API.
   const { data: todosProyectos, cargando, error, recargar } = useApi(
@@ -50,13 +57,20 @@ export default function Similitudes() {
     return mapa
   }, [todosProyectos, todasSimilitudesApi])
 
-  const sims = useMemo(
-    () =>
-      todasSimilitudesApi
-        .filter((x) => idsPropios.has(Number(x.id_proyecto_1)) || idsPropios.has(Number(x.id_proyecto_2)))
-        .sort((a, b) => Number(b.porcentaje) - Number(a.porcentaje)),
-    [todasSimilitudesApi, idsPropios]
-  )
+  const sims = useMemo(() => {
+    const q = norm(busqueda.trim())
+    return todasSimilitudesApi
+      .filter((x) => idsPropios.has(Number(x.id_proyecto_1)) || idsPropios.has(Number(x.id_proyecto_2)))
+      .filter((x) => {
+        if (minSim && Math.round(Number(x.porcentaje) || 0) < Number(minSim)) return false
+        if (!q) return true
+        const propioId = idsPropios.has(Number(x.id_proyecto_1)) ? Number(x.id_proyecto_1) : Number(x.id_proyecto_2)
+        const otroId = propioId === Number(x.id_proyecto_1) ? Number(x.id_proyecto_2) : Number(x.id_proyecto_1)
+        return norm(mapaProyectos.get(propioId)?.titulo).includes(q)
+          || norm(mapaProyectos.get(otroId)?.titulo).includes(q)
+      })
+      .sort((a, b) => Number(b.porcentaje) - Number(a.porcentaje))
+  }, [todasSimilitudesApi, idsPropios, minSim, busqueda, mapaProyectos])
 
   // Agrupa por propuesta propia: una propuesta puede coincidir con muchas.
   const grupos = useMemo(() => {
@@ -121,6 +135,27 @@ export default function Similitudes() {
             )
           ) : (
             <>
+              <FilterBar title="Filtros">
+                <label className={s.field}>
+                  <span className={s.label}>Buscar</span>
+                  <Input
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Título de la propuesta…"
+                  />
+                </label>
+                <label className={s.field}>
+                  <span className={s.label}>% mínimo</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={minSim}
+                    onChange={(e) => setMinSim(e.target.value)}
+                    placeholder="Ej. 40"
+                  />
+                </label>
+              </FilterBar>
               <SectionHeader title="Ranking de coincidencias" count={sims.length} hint="agrupadas por tu propuesta" />
               <div className={s.grupos}>
                 {grupos.map((g) => {

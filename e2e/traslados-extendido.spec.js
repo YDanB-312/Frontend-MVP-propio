@@ -12,8 +12,8 @@ test.describe('Traslados de ficha extendidos', () => {
   })
 
   test('quitar la ficha deja Sin ficha asignada', async ({ page }) => {
-    // Sacar a un aprendiz de toda ficha lo deja sin centro: es gobernanza.
-    await login(page, 'superadmin')
+    // Sacar a un aprendiz de toda ficha lo deja sin ficha asignada.
+    await login(page, 'admin')
     await page.goto('/admin/detalle-usuario/5')
     await page.getByRole('button', { name: /^Editar$/i }).click()
     await page.getByLabel('Ficha').selectOption('')
@@ -34,3 +34,4 @@ test.describe('Traslados de ficha extendidos', () => {
     await expect(page.getByText(/xkp-mqwr/i).first()).toBeVisible()
   })
 })
+

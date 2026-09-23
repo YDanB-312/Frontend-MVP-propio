@@ -92,7 +92,6 @@ test.describe('Crear ficha (instructor)', () => {
     await nombre.fill('Ficha de Prueba E2E')
     await numero.fill('9999')
     await programa.selectOption({ label: 'ADSO' })
-    await page.locator('form select[name="centroId"]').selectOption({ index: 1 })
     await submit.click()
 
     // El formulario se cierra (sin navegación), muestra confirmación y lista la ficha nueva

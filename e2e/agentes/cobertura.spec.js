@@ -13,8 +13,8 @@ test.setTimeout(600000)
 
 const RUTAS_COBERTURA = {
   ...RUTAS_POR_ROL,
-  superadmin: [
-    ...(RUTAS_POR_ROL.superadmin || []),
+  admin: [
+    ...(RUTAS_POR_ROL.admin || []),
     '/admin/bitacora',
     '/admin/reportes-fallas',
     '/admin/detalle-reporte/1',
@@ -27,7 +27,7 @@ const RUTAS_COBERTURA = {
   ],
 }
 
-const ROLES = ['aprendiz', 'instructor', 'admin', 'superadmin']
+const ROLES = ['aprendiz', 'instructor', 'admin']
 
 for (const rol of ROLES) {
   test(`cobertura ${rol}: todo control clasificado`, async ({ page }) => {

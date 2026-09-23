@@ -8,7 +8,7 @@ import Badge from '../../../components/Badge/Badge'
 import Alert from '../../../components/Alert/Alert'
 import Button from '../../../components/Button/Button'
 import Actions from '../../../components/Actions/Actions'
-import { Input } from '../../../components/Input/Input'
+import { Input, Select } from '../../../components/Input/Input'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import Pagination from '../../../components/Pagination/Pagination'
@@ -155,6 +155,7 @@ function ProgramasInput({ programas: lista, setProgramas, error }) {
 
 export default function RedesConocimiento() {
   const [busqueda, setBusqueda] = useState('')
+  const [filtroUso, setFiltroUso] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
   // Fuente única: la API. Redes + programas + fichas (para el conteo).
@@ -196,6 +197,10 @@ export default function RedesConocimiento() {
   const [editId, setEditId] = useState(null)
 
   const filtradas = redesConProgramas.filter((r) => {
+    const coincideUso =
+      filtroUso === 'todos' ||
+      (filtroUso === 'con' ? redEnUso(r.id) : !redEnUso(r.id))
+    if (!coincideUso) return false
     const q = norm(busqueda.trim())
     if (!q) return true
     return norm(r.nombre).includes(q) || r.programas.some((p) => norm(p.nombre).includes(q))
@@ -430,6 +435,14 @@ export default function RedesConocimiento() {
                     onChange={(e) => { setBusqueda(e.target.value); setPagina(1) }}
                     placeholder="Nombre de red o programa…"
                   />
+                </label>
+                <label className={s.field}>
+                  <span className={s.label}>Uso</span>
+                  <Select value={filtroUso} onChange={(e) => { setFiltroUso(e.target.value); setPagina(1) }}>
+                    <option value="todos">Todas</option>
+                    <option value="con">En uso (con fichas)</option>
+                    <option value="sin">Sin uso</option>
+                  </Select>
                 </label>
                 <p className={s.info}>{filtradas.length} red{filtradas.length !== 1 ? 'es' : ''}</p>
               </FilterBar>

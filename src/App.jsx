@@ -46,12 +46,10 @@ const DirectorioFichaInstructor = lazy(() => import('./pages/instructor/Director
 const DashboardAdmin = lazy(() => import('./pages/admin/DashboardAdmin'))
 const Usuarios = lazy(() => import('./pages/admin/Usuarios'))
 const RedesConocimiento = lazy(() => import('./pages/admin/RedesConocimiento'))
-const TrainingCentersAdmin = lazy(() => import('./pages/admin/TrainingCentersAdmin'))
 const ConfigSimilitud = lazy(() => import('./pages/admin/ConfigSimilitud'))
 const FichasAdmin = lazy(() => import('./pages/admin/FichasAdmin'))
 const DetalleFichaAdmin = lazy(() => import('./pages/admin/DetalleFichaAdmin'))
 const Bitacora = lazy(() => import('./pages/admin/Bitacora'))
-const Configuracion = lazy(() => import('./pages/admin/Configuracion'))
 const ProyectosAdmin = lazy(() => import('./pages/admin/ProyectosAdmin'))
 const DetalleProyectoAdmin = lazy(() => import('./pages/admin/DetalleProyectoAdmin'))
 const SimilitudesAdmin = lazy(() => import('./pages/admin/SimilitudesAdmin'))
@@ -61,7 +59,6 @@ const ReportesFallas = lazy(() => import('./pages/admin/ReportesFallas'))
 const DetalleReporte = lazy(() => import('./pages/admin/DetalleReporte'))
 const NotificacionesAdmin = lazy(() => import('./pages/admin/NotificacionesAdmin'))
 const PerfilAdmin = lazy(() => import('./pages/admin/PerfilAdmin'))
-const AdministradoresAdmin = lazy(() => import('./pages/admin/AdministradoresAdmin'))
 
 const PageLoader = <PageFallback />
 
@@ -113,11 +110,8 @@ export default function App() {
         <Route path="/admin/gestion-usuarios" element={<Navigate to="/admin/usuarios" replace />} />
         <Route path="/admin/nuevo-usuario" element={<Navigate to="/admin/usuarios?crear=1" replace />} />
         <Route path="/admin/usuarios" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><Usuarios /></SafeRoute></ProtectedRoute>} />
-        <Route path="/admin/redes-conocimiento" element={<ProtectedRoute allowedRoles={['superadmin']}><SafeRoute><RedesConocimiento /></SafeRoute></ProtectedRoute>} />
-        <Route path="/admin/training-centers" element={<ProtectedRoute allowedRoles={['superadmin']}><SafeRoute><TrainingCentersAdmin /></SafeRoute></ProtectedRoute>} />
+        <Route path="/admin/redes-conocimiento" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><RedesConocimiento /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/config-similitud" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><ConfigSimilitud /></SafeRoute></ProtectedRoute>} />
-        <Route path="/admin/configuracion" element={<ProtectedRoute allowedRoles={['superadmin']}><SafeRoute><Configuracion /></SafeRoute></ProtectedRoute>} />
-        <Route path="/admin/administradores" element={<ProtectedRoute allowedRoles={['superadmin']}><SafeRoute><AdministradoresAdmin /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/fichas" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><FichasAdmin /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/bitacora" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><Bitacora /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/detalle-ficha/:id" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><DetalleFichaAdmin /></SafeRoute></ProtectedRoute>} />

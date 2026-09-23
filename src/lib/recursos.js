@@ -20,22 +20,7 @@ export const usuarios = {
   eliminar: (id) => apiFetch(`/general-users/${id}`, { method: 'DELETE' }),
 }
 
-// ---------------------------------------------------------------- Admins
-// Perfiles de administración (coordinadores): solo superadmin.
-export const admins = {
-  listar: (included = 'generalUser,trainingCenter') => apiFetch(`/admins${qs({ included })}`).then(lista),
-  asignarCentro: (id, trainingCenterId) =>
-    apiFetch(`/admins/${id}`, { method: 'PUT', body: { training_center_id: trainingCenterId } }),
-}
-
 // ---------------------------------------------------------------- Catálogos
-export const centros = {
-  listar: () => apiFetch('/training-centers').then(lista),
-  crear: (body) => apiFetch('/training-centers', { method: 'POST', body }),
-  actualizar: (id, body) => apiFetch(`/training-centers/${id}`, { method: 'PUT', body }),
-  eliminar: (id) => apiFetch(`/training-centers/${id}`, { method: 'DELETE' }),
-}
-
 export const redes = {
   listar: () => apiFetch('/knowledge-networks').then(lista),
   crear: (body) => apiFetch('/knowledge-networks', { method: 'POST', body }),
@@ -70,9 +55,9 @@ export const aprendices = {
 
 // ---------------------------------------------------------------- Fichas
 export const fichas = {
-  listar: (included = 'program,trainingCenter,instructor.generalUser', filtros = {}) =>
+  listar: (included = 'program,instructor.generalUser', filtros = {}) =>
     apiFetch(`/class-groups${qs({ included, ...filtros })}`).then(lista),
-  obtener: (id, included = 'program,trainingCenter,instructor.generalUser,apprentices.generalUser') =>
+  obtener: (id, included = 'program,instructor.generalUser,apprentices.generalUser') =>
     apiFetch(`/class-groups/${id}${qs({ included })}`),
   crear: (body) => apiFetch('/class-groups', { method: 'POST', body }),
   actualizar: (id, body) => apiFetch(`/class-groups/${id}`, { method: 'PUT', body }),
@@ -82,9 +67,9 @@ export const fichas = {
 // ---------------------------------------------------------------- Propuestas
 export const proyectos = {
   listar: (filtros = {}) =>
-    apiFetch(`/projects${qs({ included: 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter', ...filtros })}`).then(lista),
+    apiFetch(`/projects${qs({ included: 'creator,instructor.generalUser,classGroup.program', ...filtros })}`).then(lista),
   obtener: (id) =>
-    apiFetch(`/projects/${id}${qs({ included: 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser' })}`),
+    apiFetch(`/projects/${id}${qs({ included: 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser' })}`),
   crear: (body) => apiFetch('/projects', { method: 'POST', body }),
   actualizar: (id, body) => apiFetch(`/projects/${id}`, { method: 'PUT', body }),
   eliminar: (id) => apiFetch(`/projects/${id}`, { method: 'DELETE' }),
@@ -111,13 +96,9 @@ export const similitudes = {
 
 // ---------------------------------------------------------------- Motor
 export const motor = {
-  // Lectura pública global (landing y barra de gobierno, sin sesión).
+  // Lectura pública de la configuración global (landing, barra de gobierno y admin).
   obtener: () => apiFetch('/config-similitud'),
-  // Config vigente según el rol (el admin de centro ve la de su centro).
-  actual: () => apiFetch('/config-similitud/actual'),
   actualizar: (umbral, meses) => apiFetch('/config-similitud', { method: 'PUT', body: { umbral, meses } }),
-  // Restaura el valor por defecto del centro (solo admin de centro).
-  restablecer: () => apiFetch('/config-similitud', { method: 'DELETE' }),
 }
 
 // ---------------------------------------------------------------- Demo pública

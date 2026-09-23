@@ -5,7 +5,7 @@ import { notificaciones as apiNotificaciones } from '../../lib/recursos'
 import {
   House, FolderOpen, Bell, Bug, UserCircle,
   ClipboardText, BookOpen, BookBookmark, UsersThree, MagnifyingGlass, GraduationCap, GearSix,
-  ClockCounterClockwise, Buildings, TreeStructure
+  ClockCounterClockwise, TreeStructure
 } from 'phosphor-react'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import TopNav from '../../components/TopNav/TopNav'
@@ -32,7 +32,6 @@ const LINKS = {
     { to: '/instructor/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
     { to: '/instructor/reportar-falla', icon: <Bug size={20} weight="regular" />, label: 'Reportar Falla' },
   ],
-  // Admin de centro: administra todo lo de SU centro (sin catálogos ni centros).
   admin: [
     { to: '/admin/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
     { to: '/admin/proyectos', icon: <FolderOpen size={20} weight="regular" />, label: 'Propuestas', activeFor: ['/admin/detalle-proyecto'] },
@@ -42,24 +41,8 @@ const LINKS = {
     { to: '/admin/usuarios', icon: <UsersThree size={20} weight="regular" />, label: 'Usuarios', activeFor: ['/admin/detalle-usuario'] },
     { to: '/admin/fichas', icon: <BookBookmark size={20} weight="regular" />, label: 'Fichas', activeFor: ['/admin/detalle-ficha'] },
     { to: '/admin/bitacora', icon: <ClockCounterClockwise size={20} weight="regular" />, label: 'Bitácora' },
+    { to: '/admin/redes-conocimiento', icon: <TreeStructure size={20} weight="regular" />, label: 'Redes y programas', activeFor: ['/admin/redes-conocimiento'] },
     { to: '/admin/config-similitud', icon: <GearSix size={20} weight="regular" />, label: 'Motor de similitud' },
-    { to: '/admin/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
-  ],
-  // Superadmin: lo del admin + gobernanza global (centros, admins, catálogos,
-  // motor por defecto). Comparte el área /admin y ve todo sin filtrar.
-  superadmin: [
-    { to: '/admin/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
-    { to: '/admin/proyectos', icon: <FolderOpen size={20} weight="regular" />, label: 'Propuestas', activeFor: ['/admin/detalle-proyecto'] },
-    { to: '/admin/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes', activeFor: ['/admin/detalle-similitud'] },
-    { to: '/admin/reportes-fallas', icon: <Bug size={20} weight="regular" />, label: 'Reportes de Fallas', activeFor: ['/admin/detalle-reporte'] },
-    { to: '/admin/notificaciones', icon: <Bell size={20} weight="regular" />, label: 'Alertas' },
-    { to: '/admin/usuarios', icon: <UsersThree size={20} weight="regular" />, label: 'Usuarios', activeFor: ['/admin/detalle-usuario'] },
-    { to: '/admin/fichas', icon: <BookBookmark size={20} weight="regular" />, label: 'Fichas', activeFor: ['/admin/detalle-ficha'] },
-    { to: '/admin/bitacora', icon: <ClockCounterClockwise size={20} weight="regular" />, label: 'Bitácora' },
-    { to: '/admin/training-centers', icon: <Buildings size={20} weight="regular" />, label: 'Centros' },
-    { to: '/admin/administradores', icon: <UsersThree size={20} weight="regular" />, label: 'Administradores' },
-    { to: '/admin/redes-conocimiento', icon: <TreeStructure size={20} weight="regular" />, label: 'Redes y programas' },
-    { to: '/admin/config-similitud', icon: <GearSix size={20} weight="regular" />, label: 'Motor (por defecto)' },
     { to: '/admin/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
   ],
 }
@@ -77,10 +60,7 @@ export default function DashboardLayout({ role = 'aprendiz', titulo = '', childr
   const sinLeer = user
     ? (data || []).filter((n) => Number(n.id_usuario) === Number(user.id) && !n.leida).length
     : 0
-  // El rol efectivo manda: el superadmin comparte el área /admin con más
-  // permisos, así que la navegación se decide por la sesión, no por el prop.
-  const rolEfectivo = user?.rol || role
-  const links = LINKS[rolEfectivo] || LINKS.aprendiz
+  const links = LINKS[role] || LINKS.aprendiz
 
   return (
     <div className={s.layout}>
@@ -88,19 +68,19 @@ export default function DashboardLayout({ role = 'aprendiz', titulo = '', childr
       <TopNav
         titulo={titulo}
         usuario={user}
-        role={rolEfectivo}
+        role={role}
         notificaciones={sinLeer}
         onToggleSidebar={() => setSidebarOpen(o => !o)}
       />
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        role={rolEfectivo}
+        role={role}
         links={links}
       />
       <div className={s.body}>
         <main className={s.main}>{children}</main>
-        <Footer role={rolEfectivo} />
+        <Footer role={role} />
       </div>
     </div>
   )

@@ -125,9 +125,11 @@ export default function DetalleProyectoAdmin() {
   }
 
   const estudiante = proyecto.creator || null
-  const similitudesProyecto = (data.listaSimilitudes || []).filter(
-    (sim) => Number(sim.id_proyecto_1) === Number(proyecto.id) || Number(sim.id_proyecto_2) === Number(proyecto.id)
-  )
+  const similitudesProyecto = (data.listaSimilitudes || [])
+    .filter(
+      (sim) => Number(sim.id_proyecto_1) === Number(proyecto.id) || Number(sim.id_proyecto_2) === Number(proyecto.id)
+    )
+    .sort((a, b) => Number(b.porcentaje) - Number(a.porcentaje))
 
   // Observaciones de la API -> shape que espera ObservacionHilo.
   const observacionesMapeadas = (data.listaObservaciones || []).map((o) => ({

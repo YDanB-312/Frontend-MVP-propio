@@ -15,7 +15,7 @@ import { formatearFecha } from '../../../utils/helpers'
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import { CalendarBlank, FolderOpen, Info, MagnifyingGlass } from 'phosphor-react'
 
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }

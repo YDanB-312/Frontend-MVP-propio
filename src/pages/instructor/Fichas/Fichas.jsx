@@ -19,7 +19,7 @@ import { ArrowClockwise, Books, ChartBar, CheckCircle, Copy, Eye, Plus, Trash, W
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { toFieldErrors } from '../../../lib/api'
-import { fichas, instructores, aprendices, proyectos, redes, programas, centros } from '../../../lib/recursos'
+import { fichas, instructores, aprendices, proyectos, redes, programas } from '../../../lib/recursos'
 import { FICHA_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import { generarCodigoFicha } from '../../../utils/helpers'
 import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
@@ -57,6 +57,7 @@ export default function Fichas() {
   /* ---------- Lista ---------- */
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [filtroRed, setFiltroRed] = useState('todos')
   const [pagina, setPagina] = useState(1)
   const [aEliminar, setAEliminar] = useState(null)
   const [copiado, setCopiado] = useState(null)
@@ -66,6 +67,7 @@ export default function Fichas() {
   const { data: aprendicesApi } = useApi(() => aprendices.listar(), [], { inicial: [] })
   const { data: todosProyectos } = useApi(() => proyectos.listar(), [], { inicial: [] })
   const { data: fichasApi, cargando, error, recargar } = useApi(() => fichas.listar(), [], { inicial: [] })
+  const { data: redesApi } = useApi(() => redes.listar(), [], { inicial: [] })
 
   // Fila de perfil del instructor (instructors) del usuario autenticado.
   const miFila = useMemo(
@@ -88,7 +90,8 @@ export default function Fichas() {
       String(f.numero || '').toLowerCase().includes(q) ||
       (f.program?.nombre || '').toLowerCase().includes(q)
     const coincideEstado = filtroEstado === 'todos' || f.estado === filtroEstado
-    return coincideQ && coincideEstado
+    const coincideRed = filtroRed === 'todos' || String(f.program?.knowledge_network_id || '') === String(filtroRed)
+    return coincideQ && coincideEstado && coincideRed
   })
 
   const paginadas = filtradas.slice(
@@ -122,12 +125,10 @@ export default function Fichas() {
   }
 
   /* ---------- Creación ---------- */
-  const { data: redesApi } = useApi(() => redes.listar(), [], { inicial: [] })
   const { data: programasApi } = useApi(() => programas.listar(), [], { inicial: [] })
-  const { data: centrosApi } = useApi(() => centros.listar(), [], { inicial: [] })
 
   const [codigo, setCodigo] = useState(() => generarCodigoFicha([]))
-  const [form, setForm] = useState({ red: '', programaId: '', nombre: '', numero: '', centroId: '' })
+  const [form, setForm] = useState({ red: '', programaId: '', nombre: '', numero: '' })
   const [errores, setErrores] = useState({})
   const [guardando, setGuardando] = useState(false)
 
@@ -177,7 +178,6 @@ export default function Fichas() {
     const err = {}
     if (!form.red) err.red = 'Selecciona la red de conocimiento.'
     if (!form.programaId) err.programaId = 'Selecciona el programa de formación.'
-    if (!form.centroId) err.centroId = 'Selecciona el centro de formación.'
     if (!form.nombre.trim()) err.nombre = 'El nombre de la ficha es obligatorio.'
     const numero = form.numero.trim()
     if (!numero) {
@@ -195,7 +195,6 @@ export default function Fichas() {
     estado: 'activo',
     id_programa: Number(form.programaId),
     id_instructor: Number(miFila.id),
-    training_center_id: Number(form.centroId),
   })
 
   const onSubmit = async (e) => {
@@ -224,9 +223,6 @@ export default function Fichas() {
         } else if (campos.id_programa || campos.programa) {
           setErrores({ programaId: 'El programa no existe en el servidor.' })
           return
-        } else if (campos.training_center_id || campos.centro_id) {
-          setErrores({ centroId: 'El centro no existe en el servidor.' })
-          return
         } else if (campos.numero) {
           setErrores({ numero: campos.numero })
           return
@@ -235,7 +231,7 @@ export default function Fichas() {
           return
         }
       }
-      setForm({ red: '', programaId: '', nombre: '', numero: '', centroId: '' })
+      setForm({ red: '', programaId: '', nombre: '', numero: '' })
       setErrores({})
       setCodigo(generarCodigoFicha(fichasApi))
       setCreando(false)
@@ -302,17 +298,6 @@ export default function Fichas() {
                   </Select>
                 </FormField>
               </div>
-
-              <FormField label="Centro de formación" required error={errores.centroId}>
-                <Select name="centroId" value={form.centroId} onChange={onChange}>
-                  <option value="">Selecciona un centro…</option>
-                  {centrosApi.map((ct) => (
-                    <option key={ct.id} value={String(ct.id)}>
-                      {ct.name}{ct.city ? ` · ${ct.city}` : ''}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
 
               <FormField label="Nombre de la ficha" required error={errores.nombre}>
                 <Input
@@ -397,6 +382,21 @@ export default function Fichas() {
                   <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
                   <option value="archivado">Archivado</option>
+                </Select>
+              </label>
+              <label className={s.field}>
+                <span className={s.label}>Red</span>
+                <Select
+                  value={filtroRed}
+                  onChange={(e) => {
+                    setFiltroRed(e.target.value)
+                    setPagina(1)
+                  }}
+                >
+                  <option value="todos">Todas</option>
+                  {redesApi.map((r) => (
+                    <option key={r.id} value={String(r.id)}>{r.nombre}</option>
+                  ))}
                 </Select>
               </label>
               <p className={s.info}>

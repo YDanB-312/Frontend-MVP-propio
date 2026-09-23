@@ -6,8 +6,7 @@ test.describe('Paginación de listas', () => {
     await page.goto('/admin/usuarios')
 
     const nav = page.getByRole('navigation', { name: /Paginación/i })
-    // El admin de centro solo lista la gente de su centro; se valida la
-    // paginación sin fijar el conteo exacto (robusto ante el seed).
+    // Se valida la paginación sin fijar el conteo exacto (robusto ante el seed).
     await expect(nav.getByText(/Mostrando 1–8 de \d+ usuarios/)).toBeVisible()
     await nav.getByRole('button', { name: /Página siguiente/i }).click()
     await expect(nav.getByText(/Mostrando 9–\d+ de \d+ usuarios/)).toBeVisible()

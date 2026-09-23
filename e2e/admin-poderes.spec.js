@@ -27,7 +27,7 @@ test.describe('Admin: suspender y reactivar', () => {
 
 test.describe('Admin: rol y contraseña', () => {
   test('cambiar rol y restablecer clave temporal', async ({ page }) => {
-    await login(page, 'superadmin')
+    await login(page, 'admin')
     await page.goto('/admin/detalle-usuario/9')
     await page.getByRole('button', { name: /^Editar$/i }).click()
     // Idempotente: si ya es instructor (reintento con la misma DB) no se guarda.
@@ -77,3 +77,4 @@ test.describe('Admin: editar propuesta y moderar hilo', () => {
     await expect(page.getByText(texto)).toHaveCount(0)
   })
 })
+

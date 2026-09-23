@@ -6,7 +6,7 @@ import FilterBar from '../../../components/FilterBar/FilterBar'
 import StatusMark from '../../../components/StatusMark/StatusMark'
 import { PROPUESTA_STATUS } from '../../../constants/estadoStatus'
 import Button from '../../../components/Button/Button'
-import { Select } from '../../../components/Input/Input'
+import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
@@ -18,12 +18,12 @@ import { proyectos, similitudes as similitudesApi, fichas, instructores } from '
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesInstructor.module.css'
 import { PAGINA_TABLA } from '../../../constants/pagination'
-import { fechaDesdeApi } from '../../../utils/helpers'
+import { fechaDesdeApi, norm } from '../../../utils/helpers'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 // Relaciones necesarias para mostrar creador y ficha de cada propuesta del par.
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
@@ -34,7 +34,10 @@ function nombreCompleto(usuario) {
 
 export default function SimilitudesInstructor() {
   const { user } = useAuth()
+  const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [filtroFicha, setFiltroFicha] = useState('todos')
+  const [minSim, setMinSim] = useState('')
   const [pagina, setPagina] = useState(1)
 
   // Fuente única: la API. Propuestas, similitudes y catálogos del instructor.
@@ -80,16 +83,26 @@ export default function SimilitudesInstructor() {
     [todasSimilitudes, proyectoPorId, proyectoEnAlcance]
   )
 
-  const filtradas = useMemo(
-    () => (filtroEstado === 'todos'
-      ? similitudes
-      : similitudes.filter((x) => {
-          const p1 = proyectoPorId.get(Number(x.id_proyecto_1))
-          const p2 = proyectoPorId.get(Number(x.id_proyecto_2))
-          return p1?.estado === filtroEstado || p2?.estado === filtroEstado
-        })),
-    [similitudes, filtroEstado, proyectoPorId]
-  )
+  const filtradas = useMemo(() => {
+    const q = norm(busqueda.trim())
+    return similitudes.filter((x) => {
+      const p1 = proyectoPorId.get(Number(x.id_proyecto_1))
+      const p2 = proyectoPorId.get(Number(x.id_proyecto_2))
+      const coincideEstado = filtroEstado === 'todos' || p1?.estado === filtroEstado || p2?.estado === filtroEstado
+      const coincideFicha =
+        filtroFicha === 'todos' ||
+        String(p1?.id_class_group || '') === String(filtroFicha) ||
+        String(p2?.id_class_group || '') === String(filtroFicha)
+      const coincideSim = !minSim || Math.round(Number(x.porcentaje) || 0) >= Number(minSim)
+      const coincideQ =
+        !q ||
+        norm(p1?.titulo || x.project1?.titulo).includes(q) ||
+        norm(p2?.titulo || x.project2?.titulo).includes(q) ||
+        norm(nombreCompleto(p1?.creator)).includes(q) ||
+        norm(nombreCompleto(p2?.creator)).includes(q)
+      return coincideEstado && coincideFicha && coincideSim && coincideQ
+    })
+  }, [similitudes, filtroEstado, filtroFicha, minSim, busqueda, proyectoPorId])
 
   const paginadas = filtradas.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
@@ -211,6 +224,14 @@ export default function SimilitudesInstructor() {
 
         <FilterBar title="Filtrar por estado de la propuesta">
           <label className={s.field}>
+            <span className={s.label}>Buscar</span>
+            <Input
+              value={busqueda}
+              onChange={(e) => { setBusqueda(e.target.value); setPagina(1) }}
+              placeholder="Título o aprendiz…"
+            />
+          </label>
+          <label className={s.field}>
             <span className={s.label}>Estado de la propuesta</span>
             <Select
               value={filtroEstado}
@@ -225,6 +246,29 @@ export default function SimilitudesInstructor() {
               <option value="aprobado">{ESTADO_LABEL.aprobado}</option>
               <option value="rechazado">{ESTADO_LABEL.rechazado}</option>
             </Select>
+          </label>
+          <label className={s.field}>
+            <span className={s.label}>Ficha</span>
+            <Select
+              value={filtroFicha}
+              onChange={(e) => { setFiltroFicha(e.target.value); setPagina(1) }}
+            >
+              <option value="todos">Todas</option>
+              {misFichas.map((f) => (
+                <option key={f.id} value={String(f.id)}>{f.codigo} · {f.nombre}</option>
+              ))}
+            </Select>
+          </label>
+          <label className={s.field}>
+            <span className={s.label}>% mínimo</span>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={minSim}
+              onChange={(e) => { setMinSim(e.target.value); setPagina(1) }}
+              placeholder="Ej. 40"
+            />
           </label>
           <p className={s.info}>
             {filtradas.length} similitud{filtradas.length !== 1 ? 'es' : ''}

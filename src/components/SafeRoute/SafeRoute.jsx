@@ -8,7 +8,6 @@ const HOME_POR_ROL = {
   aprendiz: '/aprendiz/dashboard',
   instructor: '/instructor/dashboard',
   admin: '/admin/dashboard',
-  superadmin: '/admin/dashboard',
 }
 
 // El admin no tiene formulario propio: va al listado de reportes
@@ -16,7 +15,6 @@ const REPORTE_POR_ROL = {
   aprendiz: '/aprendiz/reportar-falla',
   instructor: '/instructor/reportar-falla',
   admin: '/admin/reportes-fallas',
-  superadmin: '/admin/reportes-fallas',
 }
 
 function derivarRol(pathname) {

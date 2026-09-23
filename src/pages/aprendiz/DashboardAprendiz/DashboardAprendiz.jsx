@@ -20,7 +20,7 @@ import { RECIENTES } from '../../../constants/pagination'
 import s from './DashboardAprendiz.module.css'
 
 // Relaciones que la lista debe incluir para poder detectar al equipo (pivote).
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 // Etiquetas de estado de propuesta (el backend solo devuelve el código).
 const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }

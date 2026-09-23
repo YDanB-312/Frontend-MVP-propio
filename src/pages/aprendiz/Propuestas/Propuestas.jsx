@@ -19,7 +19,7 @@ import { useApi } from '../../../lib/useApi'
 import { toFieldErrors } from '../../../lib/api'
 import { proyectos, aprendices, fichas, similitudes as similitudesApi } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { fechaDesdeApi } from '../../../utils/helpers'
+import { fechaDesdeApi, norm } from '../../../utils/helpers'
 import { PAGINA_TARJETAS } from '../../../constants/pagination'
 import { MAX_TITULO, MAX_DESCRIPCION, MAX_DESCRIPCION_CORTA } from '../../../utils/validation'
 // Estilos reutilizados de las páginas originales (lista + formulario)
@@ -29,7 +29,7 @@ import n from '../../../components/FormularioBase/FormularioBase.module.css'
 const ITEMS_POR_PAGINA = PAGINA_TARJETAS
 
 // Relaciones necesarias para detectar al equipo (pivote) en la lista.
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 const AREAS = [
   'Desarrollo Web',
@@ -91,6 +91,7 @@ export default function Propuestas() {
   }, [searchParams])
 
   /* ---------- Lista ---------- */
+  const [busqueda, setBusqueda] = useState('')
   const [filtro, setFiltro] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
@@ -105,10 +106,18 @@ export default function Propuestas() {
     [todosProyectos, user.id]
   )
 
-  const filtrados = useMemo(
-    () => (filtro === 'todos' ? proyectosMios : proyectosMios.filter((p) => p.estado === filtro)),
-    [proyectosMios, filtro]
-  )
+  const filtrados = useMemo(() => {
+    let lista = filtro === 'todos' ? proyectosMios : proyectosMios.filter((p) => p.estado === filtro)
+    const q = norm(busqueda.trim())
+    if (q) {
+      lista = lista.filter((p) =>
+        norm(p.titulo).includes(q) ||
+        norm(p.resumen).includes(q) ||
+        norm(p.palabras_clave).includes(q)
+      )
+    }
+    return lista
+  }, [proyectosMios, filtro, busqueda])
 
   const inicio = (pagina - 1) * ITEMS_POR_PAGINA
   const visibles = filtrados.slice(inicio, inicio + ITEMS_POR_PAGINA)
@@ -449,6 +458,14 @@ export default function Propuestas() {
         ) : (
           <>
             <FilterBar title="Filtros">
+              <label className={s.field}>
+                <span className={s.label}>Buscar</span>
+                <Input
+                  value={busqueda}
+                  onChange={(e) => { setBusqueda(e.target.value); setPagina(1) }}
+                  placeholder="Título, resumen o palabras clave…"
+                />
+              </label>
               <label className={s.field}>
                 <span className={s.label}>Estado</span>
                 <Select

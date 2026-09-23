@@ -13,7 +13,7 @@ import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import StatChip from '../../../components/StatChip/StatChip'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useApi } from '../../../lib/useApi'
-import { similitudes, proyectos, centros, programas, fichas, motor } from '../../../lib/recursos'
+import { similitudes, proyectos, programas, fichas, motor } from '../../../lib/recursos'
 import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesAdmin.module.css'
@@ -32,23 +32,25 @@ function nombreCompleto(usuario) {
 export default function SimilitudesAdmin() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
-  const [filtroCentro, setFiltroCentro] = useState('todos')
   const [filtroFicha, setFiltroFicha] = useState('todos')
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
+  const [filtroInstructor, setFiltroInstructor] = useState('todos')
+  const [minSim, setMinSim] = useState('')
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
   const [pagina, setPagina] = useState(1)
 
   // Fuente única: la API. Similitudes + propuestas (autores/estado) + catálogos.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [listaSimilitudes, listaProyectos, listaCentros, listaProgramas, listaFichas, configMotor] = await Promise.all([
+      const [listaSimilitudes, listaProyectos, listaProgramas, listaFichas, configMotor] = await Promise.all([
         similitudes.listar(),
         proyectos.listar(),
-        centros.listar(),
         programas.listar(),
-        fichas.listar('program,trainingCenter'),
-        motor.actual(),
+        fichas.listar('program'),
+        motor.obtener(),
       ])
-      return { listaSimilitudes, listaProyectos, listaCentros, listaProgramas, listaFichas, configMotor }
+      return { listaSimilitudes, listaProyectos, listaProgramas, listaFichas, configMotor }
     },
     [],
     { inicial: null }
@@ -56,7 +58,6 @@ export default function SimilitudesAdmin() {
 
   const listaSimilitudes = data?.listaSimilitudes || []
   const listaProyectos = data?.listaProyectos || []
-  const listaCentros = data?.listaCentros || []
   const listaProgramas = data?.listaProgramas || []
   const listaFichas = data?.listaFichas || []
   const motorConfig = data?.configMotor || { umbral: 0.2, meses: 12 }
@@ -64,10 +65,13 @@ export default function SimilitudesAdmin() {
 
   const proyectosPorId = new Map(listaProyectos.map((p) => [Number(p.id), p]))
 
-  const fichasFiltro = filtroCentro === 'todos'
-    ? listaFichas
-    : listaFichas.filter((f) => String(f.training_center_id) === String(filtroCentro))
+  const fichasFiltro = listaFichas
   const programasFiltro = [...new Set(listaProgramas.map((p) => p.nombre))].sort()
+  const instructoresFiltro = [...new Map(
+    listaProyectos
+      .filter((p) => p.id_instructor_asignado && p.instructor?.generalUser)
+      .map((p) => [Number(p.id_instructor_asignado), nombreCompleto(p.instructor.generalUser)])
+  ).entries()]
 
   // Proyecto (con autor incluido) de cada lado del par.
   const proyectoDe = (sim, lado) => proyectosPorId.get(Number(lado === 1 ? sim.id_proyecto_1 : sim.id_proyecto_2)) || null
@@ -88,15 +92,19 @@ export default function SimilitudesAdmin() {
       filtroPrograma === 'todos' ||
       programaDeProyecto(p1) === filtroPrograma ||
       programaDeProyecto(p2) === filtroPrograma
-    const coincideCentro =
-      filtroCentro === 'todos' ||
-      String(p1?.classGroup?.training_center_id || '') === String(filtroCentro) ||
-      String(p2?.classGroup?.training_center_id || '') === String(filtroCentro)
     const coincideFicha =
       filtroFicha === 'todos' ||
       String(p1?.id_class_group || '') === String(filtroFicha) ||
       String(p2?.id_class_group || '') === String(filtroFicha)
-    return coincideQ && coincideEstado && coincidePrograma && coincideCentro && coincideFicha
+    const coincideInstructor =
+      filtroInstructor === 'todos' ||
+      String(p1?.id_instructor_asignado || '') === String(filtroInstructor) ||
+      String(p2?.id_instructor_asignado || '') === String(filtroInstructor)
+    const coincideSim = !minSim || Math.round(Number(sim.porcentaje) || 0) >= Number(minSim)
+    const fecha = String(sim.fecha || '').slice(0, 10)
+    const coincideFecha = (!desde || fecha >= desde) && (!hasta || fecha <= hasta)
+    return coincideQ && coincideEstado && coincidePrograma && coincideFicha
+      && coincideInstructor && coincideSim && coincideFecha
   })
 
   const paginadas = filtradas.slice(
@@ -107,9 +115,12 @@ export default function SimilitudesAdmin() {
   const limpiarFiltros = () => {
     setBusqueda('')
     setFiltroEstado('todos')
-    setFiltroCentro('todos')
     setFiltroFicha('todos')
     setFiltroPrograma('todos')
+    setFiltroInstructor('todos')
+    setMinSim('')
+    setDesde('')
+    setHasta('')
     setPagina(1)
   }
 
@@ -175,24 +186,6 @@ export default function SimilitudesAdmin() {
               </Select>
             </label>
             <label className={s.field}>
-              <span className={s.label}>Centro</span>
-              <Select
-                value={filtroCentro}
-                onChange={(e) => {
-                  setFiltroCentro(e.target.value)
-                  setFiltroFicha('todos')
-                  setPagina(1)
-                }}
-              >
-                <option value="todos">Todos</option>
-                {listaCentros.map((ct) => (
-                  <option key={ct.id} value={String(ct.id)}>
-                    {ct.name}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <label className={s.field}>
               <span className={s.label}>Ficha</span>
               <Select
                 value={filtroFicha}
@@ -225,6 +218,37 @@ export default function SimilitudesAdmin() {
                   </option>
                 ))}
               </Select>
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Instructor</span>
+              <Select
+                value={filtroInstructor}
+                onChange={(e) => { setFiltroInstructor(e.target.value); setPagina(1) }}
+              >
+                <option value="todos">Todos</option>
+                {instructoresFiltro.map(([id, nombre]) => (
+                  <option key={id} value={String(id)}>{nombre}</option>
+                ))}
+              </Select>
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>% mínimo</span>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={minSim}
+                onChange={(e) => { setMinSim(e.target.value); setPagina(1) }}
+                placeholder="Ej. 40"
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Desde</span>
+              <Input type="date" value={desde} onChange={(e) => { setDesde(e.target.value); setPagina(1) }} />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Hasta</span>
+              <Input type="date" value={hasta} onChange={(e) => { setHasta(e.target.value); setPagina(1) }} />
             </label>
             <p className={s.info}>
               {filtradas.length} similitud{filtradas.length !== 1 ? 'es' : ''}

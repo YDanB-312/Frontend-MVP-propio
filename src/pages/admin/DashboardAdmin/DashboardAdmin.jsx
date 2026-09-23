@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { UsersThree, FolderOpen, MagnifyingGlass, Bug, Bell, Sparkle, SlidersHorizontal, GearSix, Gauge, Database } from 'phosphor-react'
+import { UsersThree, FolderOpen, MagnifyingGlass, Bug, Bell, Sparkle, SlidersHorizontal, Gauge, Database } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DashboardHero from '../../../components/DashboardHero/DashboardHero'
 import DashboardGrid from '../../../components/DashboardGrid/DashboardGrid'
@@ -42,7 +42,7 @@ export default function DashboardAdmin() {
           similitudes.listar(),
           reportes.listar(),
           notificaciones.listar(),
-          motor.actual(),
+          motor.obtener(),
         ])
       return { listaUsuarios, listaProyectos, listaSimilitudes, listaReportes, listaNotificaciones, configMotor }
     },
@@ -80,15 +80,6 @@ export default function DashboardAdmin() {
     titulo: 'Motor de similitud',
     descripcion: 'Ajusta el umbral y recalibra la base',
   }]
-  // El hub de configuración (redes/centros) es gobernanza: solo superadmin.
-  if (user?.rol === 'superadmin') {
-    quick.push({
-      to: '/admin/configuracion',
-      icon: <GearSix size={24} weight="regular" />,
-      titulo: 'Configuración',
-      descripcion: 'Redes, centros y motor en un solo lugar',
-    })
-  }
 
   if (datos.reportesAbiertos > 0) {
     quick.unshift({

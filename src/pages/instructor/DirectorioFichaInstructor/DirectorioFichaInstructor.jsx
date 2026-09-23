@@ -7,11 +7,16 @@ import Badge from '../../../components/Badge/Badge'
 import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
+import Pagination from '../../../components/Pagination/Pagination'
+import { Select } from '../../../components/Input/Input'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { fichas, instructores } from '../../../lib/recursos'
+import { PAGINA_TARJETAS } from '../../../constants/pagination'
 import s from './DirectorioFichaInstructor.module.css'
 import { ArrowRight, Books, ChartBar, LockKey, MagnifyingGlass, Users } from 'phosphor-react'
+
+const ITEMS_POR_PAGINA = PAGINA_TARJETAS
 
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
@@ -23,6 +28,8 @@ export default function DirectorioFichaInstructor() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [busqueda, setBusqueda] = useState('')
+  const [orden, setOrden] = useState('az')
+  const [pagina, setPagina] = useState(1)
 
   // Ficha con aprendices incluidos y catálogo de instructores para autorizar.
   const { data: ficha, cargando, error, recargar } = useApi(
@@ -91,12 +98,23 @@ export default function DirectorioFichaInstructor() {
   }
 
   const q = busqueda.trim().toLowerCase()
-  const filtrados = estudiantes.filter((est) => {
-    const g = est.generalUser || {}
-    const nombre = nombreCompleto(g).toLowerCase()
-    const correo = (g.correo || '').toLowerCase()
-    return !q || nombre.includes(q) || correo.includes(q)
-  })
+  const filtrados = estudiantes
+    .filter((est) => {
+      const g = est.generalUser || {}
+      const nombre = nombreCompleto(g).toLowerCase()
+      const correo = (g.correo || '').toLowerCase()
+      return !q || nombre.includes(q) || correo.includes(q)
+    })
+    .sort((a, b) => {
+      const na = nombreCompleto(a.generalUser).toLowerCase()
+      const nb = nombreCompleto(b.generalUser).toLowerCase()
+      return orden === 'za' ? nb.localeCompare(na) : na.localeCompare(nb)
+    })
+
+  const paginados = filtrados.slice(
+    (pagina - 1) * ITEMS_POR_PAGINA,
+    pagina * ITEMS_POR_PAGINA
+  )
 
   return (
     <DashboardLayout role="instructor" titulo="Directorio de Ficha">
@@ -118,10 +136,18 @@ export default function DirectorioFichaInstructor() {
             <input
               className={s.search}
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => { setBusqueda(e.target.value); setPagina(1) }}
               placeholder="Buscar por nombre o correo…"
               aria-label="Buscar aprendiz"
             />
+            <Select
+              value={orden}
+              onChange={(e) => { setOrden(e.target.value); setPagina(1) }}
+              aria-label="Ordenar aprendices"
+            >
+              <option value="az">Nombre (A–Z)</option>
+              <option value="za">Nombre (Z–A)</option>
+            </Select>
           </div>
         )}
 
@@ -137,7 +163,7 @@ export default function DirectorioFichaInstructor() {
           />
         ) : (
           <ul className={s.grid}>
-            {filtrados.map((est) => {
+            {paginados.map((est) => {
               const g = est.generalUser || {}
               const programa = ficha.program?.nombre
               return (
@@ -163,6 +189,15 @@ export default function DirectorioFichaInstructor() {
             })}
           </ul>
         )}
+
+        <Pagination
+          totalItems={filtrados.length}
+          itemsPerPage={ITEMS_POR_PAGINA}
+          paginaActual={pagina}
+          setPaginaActual={setPagina}
+          itemName="aprendices"
+          filteredCount={filtrados.length}
+        />
       </div>
     </DashboardLayout>
   )

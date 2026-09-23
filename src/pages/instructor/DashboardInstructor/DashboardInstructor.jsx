@@ -21,7 +21,7 @@ import { RECIENTES } from '../../../constants/pagination'
 import s from './DashboardInstructor.module.css'
 
 // Relaciones que la lista de propuestas debe traer para mostrar creador y ficha.
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 

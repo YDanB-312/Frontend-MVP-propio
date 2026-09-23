@@ -8,7 +8,7 @@ import { test, expect, login } from '../helpers'
 test.setTimeout(180000)
 
 test('usuarios: paginación, filtro por rol y búsqueda con volumen', async ({ page }) => {
-  await login(page, 'superadmin')
+  await login(page, 'admin')
   await page.goto('/admin/usuarios')
 
   const nav = page.getByRole('navigation', { name: /Paginación/i })
@@ -26,7 +26,7 @@ test('usuarios: paginación, filtro por rol y búsqueda con volumen', async ({ p
 })
 
 test('propuestas y reportes: paginación con volumen', async ({ page }) => {
-  await login(page, 'superadmin')
+  await login(page, 'admin')
 
   // Propuestas: hay muchas páginas (base 8 + 80 de volumen).
   await page.goto('/admin/proyectos')
@@ -41,7 +41,7 @@ test('propuestas y reportes: paginación con volumen', async ({ page }) => {
 })
 
 test('fichas: aparecen las fichas de volumen', async ({ page }) => {
-  await login(page, 'superadmin')
+  await login(page, 'admin')
   await page.goto('/admin/fichas')
   await expect(page.getByText(/Ficha Volumen/).first()).toBeVisible({ timeout: 15000 })
 })

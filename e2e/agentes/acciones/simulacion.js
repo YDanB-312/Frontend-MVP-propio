@@ -1,35 +1,26 @@
-// Simulación cruzada multi-rol: un mismo escenario donde intervienen los 4
-// roles en cadena.
+// Simulación cruzada multi-rol: un mismo escenario donde intervienen los roles
+// en cadena.
 //
-//   Superadmin crea un centro + un instructor + una ficha (en ese centro).
+//   El admin crea un instructor y una ficha a su cargo.
 //   El instructor nuevo ve su ficha.
 //   Un aprendiz se une con el código y registra una propuesta.
 //   El instructor aprueba la propuesta.
 //   El aprendiz comprueba que quedó aprobada.
 //
-// Es de solo-acción y determinista (datos con sufijo). El runner restaura el
-// seed al terminar.
+// Es determinista (datos con sufijo). El runner restaura el seed al terminar.
 import { entrar, logout } from '../../helpers'
 
 export async function simulacion(h) {
   const { page } = h
-  const centro = `Centro Simulación ${h.sufijo}`
   const correoInstructor = `instructor.sim.${h.sufijo}@sena.edu.co`
   const nombreInstructor = `Instructor Sim ${h.sufijo}`
   const nombreFicha = `Ficha Simulación ${h.sufijo}`
   const tituloPropuesta = `Propuesta Simulación ${h.sufijo}`
   let codigoFicha = null
 
-  await h.paso('superadmin: crear centro, instructor y ficha', async () => {
-    await entrar(page, 'superadmin@sena.edu.co', 'super123', '/admin/dashboard')
+  await h.paso('admin: crear instructor y ficha', async () => {
+    await entrar(page, 'admin@sena.edu.co', 'admin123', '/admin/dashboard')
     await h.auditar()
-
-    // Centro nuevo (sin ciudad para que la etiqueta del select sea el nombre).
-    await h.ir('/admin/training-centers')
-    await page.getByRole('button', { name: /Crear Centro/i }).click()
-    await page.getByPlaceholder('Ej. Centro de Teleinformática y Producción Industrial').fill(centro)
-    await page.locator('form').getByRole('button', { name: /^Crear centro$/i }).click()
-    await h.esperar('Centro creado correctamente.', 10000)
 
     // Instructor nuevo.
     await h.ir('/admin/usuarios')
@@ -42,12 +33,11 @@ export async function simulacion(h) {
     await form.getByRole('button', { name: /Crear usuario/i }).click()
     await h.esperar('Usuario creado correctamente.', 10000)
 
-    // Ficha en el centro nuevo, a cargo del instructor nuevo.
+    // Ficha a cargo del instructor nuevo.
     await h.ir('/admin/fichas')
     await page.getByRole('button', { name: /Crear Ficha/i }).click()
     await page.locator('form select[name="red"]').selectOption('Informática, Diseño y Desarrollo de Software')
     await page.locator('form select[name="programa"]').selectOption('ADSO')
-    await page.locator('form select[name="centroId"]').selectOption({ label: centro })
     await page.locator('form select[name="instructorId"]').selectOption({ label: nombreInstructor })
     await page.getByPlaceholder('Ej. Análisis y Desarrollo 2718').fill(nombreFicha)
     await page.getByPlaceholder('Ej. 3142101').fill('7' + h.sufijo.slice(0, 4))
@@ -93,8 +83,8 @@ export async function simulacion(h) {
     await page.getByRole('main').getByRole('button', { name: /Nueva propuesta/i }).click()
     await page.getByPlaceholder(/Sistema de monitoreo ambiental/i).fill(tituloPropuesta)
     await page.locator('textarea').nth(0).fill('Propuesta creada en la simulación cruzada para validar el flujo multi-rol completo de la plataforma.')
-    await page.locator('textarea').nth(1).fill('Validar el ciclo centro, instructor, ficha, aprendiz y propuesta.')
-    await page.locator('textarea').nth(2).fill('Crear la ficha desde gobernanza.\nUnir al aprendiz por código.\nAprobar la propuesta registrada.')
+    await page.locator('textarea').nth(1).fill('Validar el ciclo instructor, ficha, aprendiz y propuesta.')
+    await page.locator('textarea').nth(2).fill('Crear la ficha desde el panel.\nUnir al aprendiz por código.\nAprobar la propuesta registrada.')
     await page.locator('select').nth(0).selectOption({ index: 1 })
     await page.getByRole('button', { name: /Enviar propuesta/i }).click()
     await page.waitForURL('**/aprendiz/analizando-proyecto', { timeout: 15000 })

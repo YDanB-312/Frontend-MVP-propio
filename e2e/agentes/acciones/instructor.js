@@ -12,7 +12,6 @@ export async function instructor(h) {
     await h.auditar()
     await page.locator('form select[name="red"]').selectOption('Informática, Diseño y Desarrollo de Software')
     await page.locator('form select[name="programaId"]').selectOption({ label: 'ADSO' })
-    await page.locator('form select[name="centroId"]').selectOption({ index: 1 })
     await page.getByPlaceholder('Ej. Análisis y Desarrollo 2718').fill(nombreFicha)
     await page.getByPlaceholder('Ej. 3142101').fill('9' + h.sufijo.slice(0, 4))
 

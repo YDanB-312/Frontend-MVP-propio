@@ -25,14 +25,12 @@ const SUBTITULOS = {
   aprendiz: 'Consulta y administra tu información personal',
   instructor: 'Consulta y actualiza tu información personal como instructor.',
   admin: 'Consulta y actualiza tu información personal como administrador.',
-  superadmin: 'Consulta y actualiza tu información personal como superadministrador.',
 }
 
 const ROL_LABEL = {
   aprendiz: 'Aprendiz',
   instructor: 'Instructor',
   admin: 'Administrador',
-  superadmin: 'Superadministrador',
 }
 
 // Campos escalares que exige PUT /general-users.

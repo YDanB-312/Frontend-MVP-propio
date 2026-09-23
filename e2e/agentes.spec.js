@@ -10,7 +10,7 @@ test.describe.configure({ mode: 'parallel' })
 // El recorrido es largo: navega y valida decenas de páginas por agente.
 test.setTimeout(240000)
 
-const ROLES = ['aprendiz', 'instructor', 'admin', 'superadmin']
+const ROLES = ['aprendiz', 'instructor', 'admin']
 
 for (const rol of ROLES) {
   test(`agente ${rol}: navega por sí solo sin errores`, async ({ page }) => {

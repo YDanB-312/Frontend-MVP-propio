@@ -18,7 +18,7 @@ import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash, Warning } from 'phosphor-react'
 import { useApi } from '../../../lib/useApi'
-import { fichas, centros, programas, redes, instructores, proyectos } from '../../../lib/recursos'
+import { fichas, programas, redes, instructores, proyectos } from '../../../lib/recursos'
 import { toFieldErrors } from '../../../lib/api'
 import { norm, generarCodigoFicha, fechaDesdeApi } from '../../../utils/helpers'
 import { FICHA_ESTADO_VARIANT as ESTADO_VARIANT } from '../../../constants/badgeVariants'
@@ -51,30 +51,31 @@ export default function FichasAdmin() {
   /* ---------- Lista ---------- */
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
-  const [filtroCentro, setFiltroCentro] = useState('todos')
   const [filtroInstructor, setFiltroInstructor] = useState('todos')
+  const [filtroPrograma, setFiltroPrograma] = useState('todos')
+  const [filtroRed, setFiltroRed] = useState('todos')
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
   const [pagina, setPagina] = useState(1)
   const [aEliminar, setAEliminar] = useState(null)
 
   // Fuente única: la API. Fichas + catálogos + propuestas (conteo).
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [listaFichas, listaCentros, listaProgramas, listaRedes, listaInstructores, listaProyectos] = await Promise.all([
-        fichas.listar('program,trainingCenter,instructor.generalUser,apprentices.generalUser'),
-        centros.listar(),
+      const [listaFichas, listaProgramas, listaRedes, listaInstructores, listaProyectos] = await Promise.all([
+        fichas.listar('program,instructor.generalUser,apprentices.generalUser'),
         programas.listar(),
         redes.listar(),
         instructores.listar('generalUser'),
         proyectos.listar(),
       ])
-      return { listaFichas, listaCentros, listaProgramas, listaRedes, listaInstructores, listaProyectos }
+      return { listaFichas, listaProgramas, listaRedes, listaInstructores, listaProyectos }
     },
     [],
     { inicial: null }
   )
 
   const listaFichas = data?.listaFichas || []
-  const listaCentros = data?.listaCentros || []
   const listaProgramas = data?.listaProgramas || []
   const listaRedes = data?.listaRedes || []
   const listaInstructores = data?.listaInstructores || []
@@ -87,8 +88,6 @@ export default function FichasAdmin() {
     propuestasPorFicha.set(key, (propuestasPorFicha.get(key) || 0) + 1)
   }
 
-  const centrosPorId = new Map(listaCentros.map((ct) => [Number(ct.id), ct]))
-
   const filtradas = listaFichas.filter((f) => {
     const q = norm(busqueda.trim())
     const instructorNombre = nombreCompleto(f.instructor?.generalUser)
@@ -100,9 +99,12 @@ export default function FichasAdmin() {
       norm(f.program?.nombre).includes(q) ||
       norm(instructorNombre).includes(q)
     const coincideEstado = filtroEstado === 'todos' || f.estado === filtroEstado
-    const coincideCentro = filtroCentro === 'todos' || String(f.training_center_id || '') === String(filtroCentro)
     const coincideInstructor = filtroInstructor === 'todos' || String(f.id_instructor || '') === String(filtroInstructor)
-    return coincideQ && coincideEstado && coincideCentro && coincideInstructor
+    const coincidePrograma = filtroPrograma === 'todos' || String(f.id_programa || '') === String(filtroPrograma)
+    const coincideRed = filtroRed === 'todos' || String(f.program?.knowledge_network_id || '') === String(filtroRed)
+    const fecha = String(f.created_at || '').slice(0, 10)
+    const coincideFecha = (!desde || fecha >= desde) && (!hasta || fecha <= hasta)
+    return coincideQ && coincideEstado && coincideInstructor && coincidePrograma && coincideRed && coincideFecha
   })
 
   const paginadas = filtradas.slice(
@@ -113,8 +115,11 @@ export default function FichasAdmin() {
   const limpiarFiltros = () => {
     setBusqueda('')
     setFiltroEstado('todos')
-    setFiltroCentro('todos')
     setFiltroInstructor('todos')
+    setFiltroPrograma('todos')
+    setFiltroRed('todos')
+    setDesde('')
+    setHasta('')
     setPagina(1)
   }
 
@@ -155,7 +160,7 @@ export default function FichasAdmin() {
 
   /* ---------- Creación ---------- */
   const [codigo, setCodigo] = useState(() => generarCodigoFicha())
-  const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', centroId: '', instructorId: '' })
+  const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', instructorId: '' })
   const [errores, setErrores] = useState({})
   const [guardando, setGuardando] = useState(false)
 
@@ -177,7 +182,6 @@ export default function FichasAdmin() {
     const err = {}
     if (!form.red) err.red = 'Selecciona la red de conocimiento.'
     if (!form.programa) err.programa = 'Selecciona el programa de formación.'
-    if (!form.centroId) err.centroId = 'Selecciona el centro de formación.'
     if (!form.instructorId) err.instructorId = 'Asigna un instructor a cargo.'
     if (!form.nombre.trim()) err.nombre = 'El nombre de la ficha es obligatorio.'
     const numero = form.numero.trim()
@@ -207,7 +211,6 @@ export default function FichasAdmin() {
       estado: 'activo',
       id_programa: Number(form.programa),
       id_instructor: form.instructorId === '' ? null : Number(form.instructorId),
-      training_center_id: form.centroId === '' ? null : Number(form.centroId),
     }
     setGuardando(true)
     try {
@@ -227,16 +230,13 @@ export default function FichasAdmin() {
         } else if (campos.id_programa) {
           setErrores({ programa: 'El programa no existe en el servidor.' })
           return
-        } else if (campos.training_center_id) {
-          setErrores({ centroId: 'El centro no existe en el servidor.' })
-          return
         } else {
           setErrores({ numero: error?.data?.message || 'No se pudo crear la ficha en el servidor.' })
           return
         }
       }
       await recargar()
-      setForm({ red: '', programa: '', nombre: '', numero: '', centroId: '', instructorId: '' })
+      setForm({ red: '', programa: '', nombre: '', numero: '', instructorId: '' })
       setErrores({})
       setCodigo(generarCodigoFicha())
       setCreando(false)
@@ -255,7 +255,7 @@ export default function FichasAdmin() {
           title={creando ? 'Crear Ficha' : 'Fichas de formación'}
           subtitle={
             creando
-              ? 'Registra una ficha y asigna su centro e instructor a cargo.'
+              ? 'Registra una ficha y asigna su instructor a cargo.'
               : 'Consulta todas las fichas de la plataforma y administra su información.'
           }
           icon={creando ? <Plus /> : <Books />}
@@ -308,29 +308,16 @@ export default function FichasAdmin() {
                 </FormField>
               </div>
 
-              <div className={c.grid2}>
-                <FormField label="Centro de formación" required error={errores.centroId}>
-                  <Select name="centroId" value={form.centroId} onChange={onChange}>
-                    <option value="">Selecciona un centro…</option>
-                    {listaCentros.map((ct) => (
-                      <option key={ct.id} value={String(ct.id)}>
-                        {ct.name}{ct.city ? ` · ${ct.city}` : ''}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-
-                <FormField label="Instructor a cargo" required error={errores.instructorId}>
-                  <Select name="instructorId" value={form.instructorId} onChange={onChange}>
-                    <option value="">Selecciona un instructor…</option>
-                    {instructoresActivos.map((i) => (
-                      <option key={i.id} value={String(i.id)}>
-                        {nombreCompleto(i.generalUser)}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-              </div>
+              <FormField label="Instructor a cargo" required error={errores.instructorId}>
+                <Select name="instructorId" value={form.instructorId} onChange={onChange}>
+                  <option value="">Selecciona un instructor…</option>
+                  {instructoresActivos.map((i) => (
+                    <option key={i.id} value={String(i.id)}>
+                      {nombreCompleto(i.generalUser)}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
 
               <FormField label="Nombre de la ficha" required error={errores.nombre}>
                 <Input
@@ -400,23 +387,6 @@ export default function FichasAdmin() {
                 />
               </label>
               <label className={s.field}>
-                <span className={s.label}>Centro</span>
-                <Select
-                  value={filtroCentro}
-                  onChange={(e) => {
-                    setFiltroCentro(e.target.value)
-                    setPagina(1)
-                  }}
-                >
-                  <option value="todos">Todos</option>
-                  {listaCentros.map((ct) => (
-                    <option key={ct.id} value={String(ct.id)}>
-                      {ct.name}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-              <label className={s.field}>
                 <span className={s.label}>Estado</span>
                 <Select
                   value={filtroEstado}
@@ -448,6 +418,56 @@ export default function FichasAdmin() {
                     </option>
                   ))}
                 </Select>
+              </label>
+              <label className={s.field}>
+                <span className={s.label}>Programa</span>
+                <Select
+                  value={filtroPrograma}
+                  onChange={(e) => {
+                    setFiltroPrograma(e.target.value)
+                    setPagina(1)
+                  }}
+                >
+                  <option value="todos">Todos</option>
+                  {listaProgramas.map((p) => (
+                    <option key={p.id} value={String(p.id)}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <label className={s.field}>
+                <span className={s.label}>Red</span>
+                <Select
+                  value={filtroRed}
+                  onChange={(e) => {
+                    setFiltroRed(e.target.value)
+                    setPagina(1)
+                  }}
+                >
+                  <option value="todos">Todas</option>
+                  {listaRedes.map((r) => (
+                    <option key={r.id} value={String(r.id)}>
+                      {r.nombre}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <label className={s.field}>
+                <span className={s.label}>Desde</span>
+                <Input
+                  type="date"
+                  value={desde}
+                  onChange={(e) => { setDesde(e.target.value); setPagina(1) }}
+                />
+              </label>
+              <label className={s.field}>
+                <span className={s.label}>Hasta</span>
+                <Input
+                  type="date"
+                  value={hasta}
+                  onChange={(e) => { setHasta(e.target.value); setPagina(1) }}
+                />
               </label>
               <p className={s.info}>
                 {filtradas.length} ficha{filtradas.length !== 1 ? 's' : ''}
@@ -486,14 +506,6 @@ export default function FichasAdmin() {
                           <span className={s.subText}>N° {f.numero} · {f.program?.nombre || 'Sin programa'}</span>
                         </>
                       ),
-                    },
-                    {
-                      key: 'centro',
-                      header: 'Centro',
-                      render: (f) => {
-                        const centro = f.trainingCenter || centrosPorId.get(Number(f.training_center_id))
-                        return centro?.name || <span className={s.muted}>—</span>
-                      },
                     },
                     {
                       key: 'instructor',

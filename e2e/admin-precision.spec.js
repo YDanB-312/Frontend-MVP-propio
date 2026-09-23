@@ -1,7 +1,7 @@
 import { test, expect, login } from './helpers'
 
 test.describe('Admin: precisión y botones', () => {
-  test('dashboard lleva al motor de similitud del centro', async ({ page }) => {
+  test('dashboard lleva al motor de similitud', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/dashboard')
     await page.getByRole('link', { name: /Motor de similitud/i }).first().click()
@@ -41,7 +41,7 @@ test.describe('Admin: precisión y botones', () => {
   })
 
   test('eliminar red en uso está bloqueado con motivo', async ({ page }) => {
-    await login(page, 'superadmin')
+    await login(page, 'admin')
     await page.goto('/admin/redes-conocimiento')
     const fila = page.locator('tr', { hasText: 'Informática, Diseño y Desarrollo de Software' })
     const btn = fila.getByRole('button', { name: /Eliminar/i })
@@ -49,3 +49,4 @@ test.describe('Admin: precisión y botones', () => {
     await expect(btn).toHaveAttribute('title', /en uso/i)
   })
 })
+

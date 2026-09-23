@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const raiz = path.resolve(here, '..')
 const backend = path.resolve(raiz, '..', 'backend')
-const ROLES = ['aprendiz', 'instructor', 'admin', 'superadmin']
+const ROLES = ['aprendiz', 'instructor', 'admin']
 
 function reseed() {
   const r = spawnSync('php', ['artisan', 'migrate:fresh', '--seed'], {
@@ -43,11 +43,8 @@ for (const rol of ROLES) {
 // Escenarios de simulación cruzada (varios roles encadenados).
 const SIMULACIONES = [
   { nombre: 'simulación cruzada', spec: 'e2e/agentes/simulacion-cruzada.spec.js' },
-  { nombre: 'simulación coordinador', spec: 'e2e/agentes/simulacion-centro.spec.js' },
   { nombre: 'simulación similitud', spec: 'e2e/agentes/simulacion-similitud.spec.js' },
   { nombre: 'simulación reporte', spec: 'e2e/agentes/simulacion-reporte.spec.js' },
-  { nombre: 'simulación reasignación', spec: 'e2e/agentes/simulacion-reasignacion.spec.js' },
-  { nombre: 'simulación motor', spec: 'e2e/agentes/simulacion-motor.spec.js' },
 ]
 
 for (const sim of SIMULACIONES) {

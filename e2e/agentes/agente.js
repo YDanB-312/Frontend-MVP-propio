@@ -11,19 +11,17 @@ import { fileURLToPath } from 'node:url'
 import { login } from '../helpers'
 import { RUTAS_POR_ROL } from '../rutas'
 
-// Prefijo de las rutas propias de cada rol (el superadmin comparte /admin).
+// Prefijo de las rutas propias de cada rol.
 const PREFIJO = {
   aprendiz: '/aprendiz',
   instructor: '/instructor',
   admin: '/admin',
-  superadmin: '/admin',
 }
 
 const HOME = {
   aprendiz: '/aprendiz/dashboard',
   instructor: '/instructor/dashboard',
   admin: '/admin/dashboard',
-  superadmin: '/admin/dashboard',
 }
 
 const MAX_PAGINAS = 25

@@ -16,7 +16,7 @@ import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
 import { useApi } from '../../../lib/useApi'
-import { fichas, programas, redes, instructores, centros, proyectos } from '../../../lib/recursos'
+import { fichas, programas, redes, instructores, proyectos } from '../../../lib/recursos'
 import { toFieldErrors } from '../../../lib/api'
 import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
@@ -41,7 +41,6 @@ function formDesde(ficha) {
     estado: ficha.estado || 'activo',
     red: ficha.program?.knowledge_network_id ? String(ficha.program.knowledge_network_id) : '',
     programa: ficha.id_programa ? String(ficha.id_programa) : '',
-    centroId: ficha.training_center_id ? String(ficha.training_center_id) : '',
     instructorId: ficha.id_instructor ? String(ficha.id_instructor) : '',
   }
 }
@@ -55,19 +54,20 @@ export default function DetalleFichaAdmin() {
   const [guardado, setGuardado] = useState(false)
   const [accionMsg, setAccionMsg] = useState(null)
   const [modalEliminar, setModalEliminar] = useState(false)
+  const [busquedaAprendiz, setBusquedaAprendiz] = useState('')
+  const [filtroPropFicha, setFiltroPropFicha] = useState('todos')
 
   // Fuente única: la API. Ficha con relaciones + catálogos + propuestas.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [ficha, listaProgramas, listaRedes, listaInstructores, listaCentros, listaProyectos] = await Promise.all([
+      const [ficha, listaProgramas, listaRedes, listaInstructores, listaProyectos] = await Promise.all([
         fichas.obtener(id),
         programas.listar(),
         redes.listar(),
         instructores.listar('generalUser'),
-        centros.listar(),
         proyectos.listar(),
       ])
-      return { ficha, listaProgramas, listaRedes, listaInstructores, listaCentros, listaProyectos }
+      return { ficha, listaProgramas, listaRedes, listaInstructores, listaProyectos }
     },
     [id],
     { inicial: null }
@@ -116,10 +116,19 @@ export default function DetalleFichaAdmin() {
   const listaProgramas = data.listaProgramas || []
   const listaRedes = data.listaRedes || []
   const listaInstructores = data.listaInstructores || []
-  const listacentros = data.listaCentros || []
 
   const estudiantes = ficha.apprentices || []
   const proyectosDeLaFicha = (data.listaProyectos || []).filter((p) => Number(p.id_class_group) === Number(ficha.id))
+
+  const estudiantesFiltrados = estudiantes.filter((est) => {
+    const q = busquedaAprendiz.trim().toLowerCase()
+    if (!q) return true
+    const g = est.generalUser || {}
+    return nombreCompleto(g).toLowerCase().includes(q) || (g.correo || '').toLowerCase().includes(q)
+  })
+  const proyectosFiltradosFicha = proyectosDeLaFicha.filter(
+    (p) => filtroPropFicha === 'todos' || p.estado === filtroPropFicha
+  )
   const instructoresActivos = listaInstructores.filter((i) => i.generalUser?.estado !== false)
 
   const onChange = (e) => {
@@ -164,7 +173,6 @@ export default function DetalleFichaAdmin() {
         estado: form.estado,
         id_programa: Number(form.programa),
         id_instructor: form.instructorId === '' ? null : Number(form.instructorId),
-        training_center_id: form.centroId === '' ? null : Number(form.centroId),
       })
       await recargar()
       setEditando(false)
@@ -296,16 +304,6 @@ export default function DetalleFichaAdmin() {
                   ))}
                 </Select>
               </FormField>
-              <FormField label="Centro de formación">
-                <Select name="centroId" value={form.centroId} onChange={onChange}>
-                  <option value="">Sin centro</option>
-                  {listacentros.map((ct) => (
-                    <option key={ct.id} value={String(ct.id)}>
-                      {ct.name}{ct.city ? ` · ${ct.city}` : ''}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
               <FormField label="Instructor a cargo">
                 <Select name="instructorId" value={form.instructorId} onChange={onChange}>
                   <option value="">Sin asignar</option>
@@ -338,11 +336,22 @@ export default function DetalleFichaAdmin() {
         </DataPanel>
 
         <DataPanel title={`Aprendices (${estudiantes.length})`} icon={<GraduationCap />}>
+          {estudiantes.length > 0 && (
+            <FormField label="Buscar aprendiz">
+              <Input
+                value={busquedaAprendiz}
+                onChange={(e) => setBusquedaAprendiz(e.target.value)}
+                placeholder="Nombre o correo…"
+              />
+            </FormField>
+          )}
           {estudiantes.length === 0 ? (
             <p className={s.muted}>Aún no hay aprendices en esta ficha.</p>
+          ) : estudiantesFiltrados.length === 0 ? (
+            <p className={s.muted}>Ningún aprendiz coincide con la búsqueda.</p>
           ) : (
             <ul className={s.studentList}>
-              {estudiantes.map((est) => {
+              {estudiantesFiltrados.map((est) => {
                 const perfil = est.generalUser || {}
                 return (
                   <li key={est.id}>
@@ -362,11 +371,23 @@ export default function DetalleFichaAdmin() {
         </DataPanel>
 
         <DataPanel title={`Propuestas (${proyectosDeLaFicha.length})`} icon={<FolderOpen />}>
+          {proyectosDeLaFicha.length > 0 && (
+            <FormField label="Filtrar por estado">
+              <Select value={filtroPropFicha} onChange={(e) => setFiltroPropFicha(e.target.value)}>
+                <option value="todos">Todas</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="rechazado">Rechazado</option>
+              </Select>
+            </FormField>
+          )}
           {proyectosDeLaFicha.length === 0 ? (
             <p className={s.muted}>Esta ficha aún no tiene propuestas asociadas.</p>
+          ) : proyectosFiltradosFicha.length === 0 ? (
+            <p className={s.muted}>Ninguna propuesta coincide con el estado seleccionado.</p>
           ) : (
             <ul className={s.studentList}>
-              {proyectosDeLaFicha.map((p) => (
+              {proyectosFiltradosFicha.map((p) => (
                 <li key={p.id}>
                   <Link to={`/admin/detalle-proyecto/${p.id}`} viewTransition className={s.studentRow}>
                     <span className={s.studentInfo}>

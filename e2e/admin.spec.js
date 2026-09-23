@@ -2,11 +2,9 @@ import { test, expect, login } from './helpers'
 
 const RED_INFO = 'Informática, Diseño y Desarrollo de Software'
 
-test.describe('Administración de usuarios (superadmin)', () => {
+test.describe('Administración de usuarios (admin)', () => {
   test('crear instructor básico y verificarlo en listado y detalle', async ({ page }) => {
-    // El listado del admin de centro solo muestra gente adscrita a su centro;
-    // un instructor recién creado (sin ficha) se ve en la vista global.
-    await login(page, 'superadmin')
+    await login(page, 'admin')
 
     // 1. Crear instructor: solo datos de cuenta — la taxonomía vive en la ficha
     await page.goto('/admin/usuarios')
@@ -43,7 +41,6 @@ test.describe('Administración de usuarios (superadmin)', () => {
 
     await page.getByPlaceholder('Ej. Análisis y Desarrollo 2718').fill('Ficha Redes E2E')
     await page.getByPlaceholder('Ej. 3142101').fill('8888')
-    await page.locator('form select[name="centroId"]').selectOption({ index: 1 })
     await page.locator('form').getByRole('button', { name: /^Crear ficha$/i }).click()
 
     // La ficha queda creada bajo el programa elegido (no heredado)
@@ -52,3 +49,4 @@ test.describe('Administración de usuarios (superadmin)', () => {
     await expect(page.getByText('N° 8888 · Infraestructura Redes')).toBeVisible()
   })
 })
+

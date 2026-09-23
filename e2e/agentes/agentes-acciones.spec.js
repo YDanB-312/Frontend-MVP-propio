@@ -14,7 +14,7 @@ import { PLAYBOOKS } from './acciones'
 test.setTimeout(240000)
 
 const ROL_ENV = globalThis.process?.env?.AGENTE_ROL
-const ROLES = ROL_ENV ? [ROL_ENV] : ['aprendiz', 'instructor', 'admin', 'superadmin']
+const ROLES = ROL_ENV ? [ROL_ENV] : ['aprendiz', 'instructor', 'admin']
 
 const backend = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'backend')
 function reseed() {

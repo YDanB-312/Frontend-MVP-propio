@@ -31,7 +31,7 @@ test('instructor: ficha inválida y borrado bloqueado', async ({ page }) => {
   await expect(page.getByText(/No se puede eliminar/i).first()).toBeVisible()
 })
 
-test('admin de centro: validaciones y conflictos', async ({ page }) => {
+test('admin: validaciones y conflictos', async ({ page }) => {
   await login(page, 'admin')
 
   // Editar a un correo ya existente → error.
@@ -52,19 +52,14 @@ test('admin de centro: validaciones y conflictos', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Eliminar ficha/i })).toBeDisabled()
 })
 
-test('superadmin: centro inválido y centro ya ocupado', async ({ page }) => {
-  await login(page, 'superadmin')
+test('admin: crear ficha vacía muestra validaciones', async ({ page }) => {
+  await login(page, 'admin')
+  await page.goto('/admin/fichas')
+  await page.getByRole('button', { name: /Crear Ficha/i }).click()
+  await page.locator('form').getByRole('button', { name: /^Crear ficha$/i }).click()
 
-  // Nombre de centro demasiado corto.
-  await page.goto('/admin/training-centers')
-  await page.getByRole('button', { name: /Crear Centro/i }).click()
-  await page.getByPlaceholder('Ej. Centro de Teleinformática y Producción Industrial').fill('Abc')
-  await page.locator('form').getByRole('button', { name: /^Crear centro$/i }).click()
-  await expect(page.getByText(/al menos 5 caracteres/i)).toBeVisible()
-
-  // Asignar un centro que ya tiene administrador → conflicto.
-  await page.goto('/admin/administradores')
-  const fila = page.locator('tr', { hasText: 'maria.torres@sena.edu.co' })
-  await fila.getByRole('combobox').selectOption({ label: 'Centro de Teleinformática y Producción Industrial' })
-  await expect(page.getByText(/ya tiene un administrador/i)).toBeVisible()
+  await expect(page.getByText(/Selecciona la red de conocimiento/i)).toBeVisible()
+  await expect(page.getByText(/Selecciona el programa de formación/i)).toBeVisible()
+  await expect(page.getByText(/Asigna un instructor a cargo/i)).toBeVisible()
+  await expect(page.getByText(/El nombre de la ficha es obligatorio/i)).toBeVisible()
 })

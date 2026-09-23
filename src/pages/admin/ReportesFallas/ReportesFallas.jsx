@@ -96,6 +96,7 @@ export default function ReportesFallas() {
       !q ||
       norm(r.titulo).includes(q) ||
       norm(`#${r.id}`).includes(q) ||
+      norm(r.descripcion).includes(q) ||
       norm(reporterDe(r)).includes(q)
     const coincideEstado = filtroEstado === 'todos' || r.estado === filtroEstado
     const coincideTipo = filtroTipo === 'todos' || r.tipo === filtroTipo

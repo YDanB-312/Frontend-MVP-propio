@@ -14,7 +14,7 @@ import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import ApiState from '../../../components/ApiState/ApiState'
 import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes, centros, programas, fichas } from '../../../lib/recursos'
+import { proyectos, similitudes, programas, fichas } from '../../../lib/recursos'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
@@ -30,22 +30,25 @@ function nombreCompleto(usuario) {
 export default function ProyectosAdmin() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
-  const [filtroCentro, setFiltroCentro] = useState('todos')
   const [filtroFicha, setFiltroFicha] = useState('todos')
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
+  const [filtroInstructor, setFiltroInstructor] = useState('todos')
+  const [filtroArea, setFiltroArea] = useState('todos')
+  const [minSim, setMinSim] = useState('')
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
   const [pagina, setPagina] = useState(1)
 
   // Fuente única: la API. Propuestas + similitudes + catálogos de filtro.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [listaProyectos, listaSimilitudes, listaCentros, listaProgramas, listaFichas] = await Promise.all([
+      const [listaProyectos, listaSimilitudes, listaProgramas, listaFichas] = await Promise.all([
         proyectos.listar(),
         similitudes.listar(),
-        centros.listar(),
         programas.listar(),
-        fichas.listar('program,trainingCenter'),
+        fichas.listar('program'),
       ])
-      return { listaProyectos, listaSimilitudes, listaCentros, listaProgramas, listaFichas }
+      return { listaProyectos, listaSimilitudes, listaProgramas, listaFichas }
     },
     [],
     { inicial: null }
@@ -53,14 +56,17 @@ export default function ProyectosAdmin() {
 
   const listaProyectos = data?.listaProyectos || []
   const listaSimilitudes = data?.listaSimilitudes || []
-  const listaCentros = data?.listaCentros || []
   const listaProgramas = data?.listaProgramas || []
   const listaFichas = data?.listaFichas || []
 
-  const fichasFiltro = filtroCentro === 'todos'
-    ? listaFichas
-    : listaFichas.filter((f) => String(f.training_center_id) === String(filtroCentro))
+  const fichasFiltro = listaFichas
   const programasFiltro = [...new Set(listaProgramas.map((p) => p.nombre))].sort()
+  const instructoresFiltro = [...new Map(
+    listaProyectos
+      .filter((p) => p.id_instructor_asignado && p.instructor?.generalUser)
+      .map((p) => [Number(p.id_instructor_asignado), nombreCompleto(p.instructor.generalUser)])
+  ).entries()]
+  const areasFiltro = [...new Set(listaProyectos.map((p) => p.area_aplicacion).filter(Boolean))].sort()
 
   // Máximo porcentaje y conteo de coincidencias por propuesta.
   const simInfo = {}
@@ -78,10 +84,19 @@ export default function ProyectosAdmin() {
     const coincideQ = !q || norm(p.titulo).includes(q) || norm(nombreCompleto(p.creator)).includes(q)
     const coincideEstado = filtroEstado === 'todos' || p.estado === filtroEstado
     const fichaP = p.classGroup || null
-    const coincideCentro = filtroCentro === 'todos' || (fichaP && String(fichaP.training_center_id) === String(filtroCentro))
-    const coincideFicha = filtroFicha === 'todos' || String(p.id_class_group || '') === String(filtroFicha)
+    const coincideFicha =
+      filtroFicha === 'todos' ||
+      (filtroFicha === 'sin'
+        ? !p.id_class_group
+        : String(p.id_class_group || '') === String(filtroFicha))
     const coincidePrograma = filtroPrograma === 'todos' || (fichaP && fichaP.program?.nombre === filtroPrograma)
-    return coincideQ && coincideEstado && coincideCentro && coincideFicha && coincidePrograma
+    const coincideInstructor = filtroInstructor === 'todos' || String(p.id_instructor_asignado || '') === String(filtroInstructor)
+    const coincideArea = filtroArea === 'todos' || p.area_aplicacion === filtroArea
+    const coincideSim = !minSim || (simInfo[p.id]?.pct || 0) >= Number(minSim)
+    const fecha = String(p.created_at || '').slice(0, 10)
+    const coincideFecha = (!desde || fecha >= desde) && (!hasta || fecha <= hasta)
+    return coincideQ && coincideEstado && coincideFicha && coincidePrograma
+      && coincideInstructor && coincideArea && coincideSim && coincideFecha
   })
 
   const paginados = filtrados.slice(
@@ -92,9 +107,13 @@ export default function ProyectosAdmin() {
   const limpiarFiltros = () => {
     setBusqueda('')
     setFiltroEstado('todos')
-    setFiltroCentro('todos')
     setFiltroFicha('todos')
     setFiltroPrograma('todos')
+    setFiltroInstructor('todos')
+    setFiltroArea('todos')
+    setMinSim('')
+    setDesde('')
+    setHasta('')
     setPagina(1)
   }
 
@@ -140,25 +159,6 @@ export default function ProyectosAdmin() {
               </Select>
             </label>
             <label className={s.field}>
-              <span className={s.label}>Centro</span>
-                <Select
-                  value={filtroCentro}
-                  onChange={(e) => {
-                    setFiltroCentro(e.target.value)
-                    setFiltroFicha('todos')
-                    setFiltroPrograma('todos')
-                    setPagina(1)
-                  }}
-                >
-                <option value="todos">Todos</option>
-                {listaCentros.map((ct) => (
-                  <option key={ct.id} value={String(ct.id)}>
-                    {ct.name}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <label className={s.field}>
               <span className={s.label}>Programa</span>
               <Select
                 value={filtroPrograma}
@@ -185,12 +185,56 @@ export default function ProyectosAdmin() {
                 }}
               >
                 <option value="todos">Todas</option>
+                <option value="sin">Sin ficha</option>
                 {fichasFiltro.map((f) => (
                   <option key={f.id} value={String(f.id)}>
                     {f.codigo} · {f.nombre}
                   </option>
                 ))}
               </Select>
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Instructor</span>
+              <Select
+                value={filtroInstructor}
+                onChange={(e) => { setFiltroInstructor(e.target.value); setPagina(1) }}
+              >
+                <option value="todos">Todos</option>
+                {instructoresFiltro.map(([id, nombre]) => (
+                  <option key={id} value={String(id)}>{nombre}</option>
+                ))}
+              </Select>
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Área</span>
+              <Select
+                value={filtroArea}
+                onChange={(e) => { setFiltroArea(e.target.value); setPagina(1) }}
+              >
+                <option value="todos">Todas</option>
+                {areasFiltro.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </Select>
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>% mínimo</span>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={minSim}
+                onChange={(e) => { setMinSim(e.target.value); setPagina(1) }}
+                placeholder="Ej. 40"
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Desde</span>
+              <Input type="date" value={desde} onChange={(e) => { setDesde(e.target.value); setPagina(1) }} />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Hasta</span>
+              <Input type="date" value={hasta} onChange={(e) => { setHasta(e.target.value); setPagina(1) }} />
             </label>
             <p className={s.info}>
               {filtrados.length} proyecto{filtrados.length !== 1 ? 's' : ''}
@@ -239,11 +283,6 @@ export default function ProyectosAdmin() {
                         </span>
                       )
                     },
-                  },
-                  {
-                    key: 'centro',
-                    header: 'Centro',
-                    render: (p) => p.classGroup?.trainingCenter?.name || <span className={s.muted}>—</span>,
                   },
                   {
                     key: 'programa',

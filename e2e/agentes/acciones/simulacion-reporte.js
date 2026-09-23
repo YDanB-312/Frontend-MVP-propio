@@ -1,5 +1,5 @@
 // Simulación cruzada "reporte de falla → coordinador → notificación":
-//   la aprendiz reporta; el coordinador del centro cambia el estado del reporte
+//   la aprendiz reporta; el admin cambia el estado del reporte
 //   (lo que notifica al reportante) y la aprendiz ve la alerta.
 import { entrar, logout } from '../../helpers'
 
@@ -19,7 +19,7 @@ export async function simulacionReporte(h) {
     await h.esperar('Gracias por reportar', 10000)
   })
 
-  await h.paso('coordinador: atender el reporte y notificar', async () => {
+  await h.paso('admin: atender el reporte y notificar', async () => {
     await logout(page)
     await entrar(page, 'admin@sena.edu.co', 'admin123', '/admin/dashboard')
     await h.ir('/admin/reportes-fallas')

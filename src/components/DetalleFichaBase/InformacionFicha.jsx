@@ -37,7 +37,6 @@ export default function InformacionFicha({
   const { data: listaRedes } = useApi(() => redes.listar(), [], { inicial: [] })
 
   const programa = ficha.program || null
-  const centro = ficha.trainingCenter || null
   const instructor = ficha.instructor?.generalUser
 
   // Red de conocimiento: relación anidada si viene incluida, o catálogo.
@@ -68,10 +67,6 @@ export default function InformacionFicha({
         <div className={s.infoCell}>
           <dt>Programa</dt>
           <dd>{programa?.nombre || '—'}</dd>
-        </div>
-        <div className={s.infoCell}>
-          <dt>Centro de formación</dt>
-          <dd>{centro ? `${centro.name}${centro.city ? ` · ${centro.city}` : ''}` : '—'}</dd>
         </div>
         <div className={s.infoCell}>
           <dt>Instructor</dt>

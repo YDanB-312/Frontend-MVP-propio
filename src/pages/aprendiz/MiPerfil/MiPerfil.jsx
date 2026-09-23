@@ -6,7 +6,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { usuarios, aprendices, fichas, proyectos, notificaciones } from '../../../lib/recursos'
 
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 // Una propuesta es del aprendiz si la creó o si figura en su equipo.
 function esMia(proyecto, userId) {

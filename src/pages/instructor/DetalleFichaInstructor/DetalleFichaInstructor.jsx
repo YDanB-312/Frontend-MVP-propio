@@ -151,7 +151,6 @@ export default function DetalleFichaInstructor() {
         estado: form.estado,
         id_programa: ficha.id_programa,
         id_instructor: ficha.id_instructor,
-        training_center_id: ficha.training_center_id,
       })
       await recargar()
       setEditando(false)

@@ -1,5 +1,5 @@
 // Simulación cruzada "similitud entre dos aprendices":
-//   María y Ana (misma ficha, programa y centro) registran propuestas casi
+//   María y Ana (misma ficha y programa) registran propuestas casi
 //   idénticas; el instructor aprueba ambas y el motor detecta la coincidencia;
 //   María la ve en su sección de similitudes.
 import { expect } from '@playwright/test'

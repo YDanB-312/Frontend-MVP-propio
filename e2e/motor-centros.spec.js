@@ -7,7 +7,7 @@ test.describe('Admin: motor de similitudes', () => {
     await expect(page.getByText(/Umbral 20% · corpus de 12 meses/i)).toBeVisible()
 
     await page.goto('/admin/config-similitud')
-    await expect(page.getByText(/Umbral: 20% · Ventana: 12 meses/i)).toBeVisible()
+    await expect(page.getByText(/Umbral vigente: 20% · Ventana: 12 meses/i)).toBeVisible()
 
     await page.locator('input[type="number"]').first().fill('80')
     await page.locator('input[type="number"]').nth(1).fill('6')
@@ -17,6 +17,6 @@ test.describe('Admin: motor de similitudes', () => {
     await page.getByRole('button', { name: /Recalcular base existente/i }).click()
     await page.getByRole('button', { name: /Sí, recalcular/i }).click()
     await expect(page.getByText(/Recalibración lista/i)).toBeVisible()
-    await expect(page.getByText(/Umbral: 80% · Ventana: 6 meses/i)).toBeVisible()
+    await expect(page.getByText(/Umbral vigente: 80% · Ventana: 6 meses/i)).toBeVisible()
   })
 })
