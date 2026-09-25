@@ -8,7 +8,5 @@ export const PROJECT_ESTADO_VARIANT = {
 
 export const FICHA_ESTADO_VARIANT = {
   activo: 'success',
-  inactivo: 'warning',
   finalizado: 'info',
-  archivado: 'neutral',
 }

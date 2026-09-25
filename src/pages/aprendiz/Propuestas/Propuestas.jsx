@@ -203,6 +203,11 @@ export default function Propuestas() {
   }
 
   function empezar() {
+    // Crear una propuesta exige ficha: si no la tiene, se le guía a unirse.
+    if (!miFicha) {
+      navigate('/aprendiz/ficha')
+      return
+    }
     setCreando(true)
   }
 
@@ -215,7 +220,11 @@ export default function Propuestas() {
     const errs = validar()
     setErrors(errs)
     setErrorGeneral('')
-    if (Object.keys(errs).length > 0 || !miFicha || !miAprendiz) return
+    if (Object.keys(errs).length > 0) return
+    if (!miFicha || !miAprendiz) {
+      setErrorGeneral('Únete a una ficha para registrar propuestas.')
+      return
+    }
 
     setGuardando(true)
     try {
@@ -233,23 +242,23 @@ export default function Propuestas() {
         id_class_group: Number(miFicha.id),
       })
 
-      // 2) Vincular a los compañeros seleccionados al equipo (pivote).
+      // 2) Vincular a los compañeros seleccionados al equipo (pivote). Los que
+      // fallen se reportan: no se finge que quedaron vinculados.
+      const equipoFallidos = []
       for (const idAprendiz of seleccionados) {
         try {
           await proyectos.agregarAlEquipo(Number(idAprendiz), Number(nueva.id))
         } catch {
-          // El pivote pudo existir ya; se ignora para no bloquear la creación.
+          equipoFallidos.push(Number(idAprendiz))
         }
       }
 
-      // 3) Disparar el motor de similitud del backend.
-      try {
-        await similitudesApi.detectar(nueva.id)
-      } catch {
-        // El análisis puede recalcularse después; no impide continuar.
-      }
-
-      navigate('/aprendiz/analizando-proyecto', { state: { projectId: nueva.id }, replace: true })
+      // 3) El motor de similitud se ejecuta (y se espera) en la pantalla de
+      // análisis, que muestra el progreso real y permite reintentar.
+      navigate('/aprendiz/analizando-proyecto', {
+        state: { projectId: nueva.id, equipoFallidos },
+        replace: true,
+      })
     } catch (err) {
       const campos = toFieldErrors(err?.data)
       const traducidos = {}
@@ -284,7 +293,9 @@ export default function Propuestas() {
     )
   }
 
-  if (!miFicha || !miAprendiz) {
+  // El estado "sin ficha" solo bloquea cuando NO hay historial (usuario nuevo).
+  // Si tiene propuestas propias, se muestran igual (trazabilidad).
+  if (!miAprendiz && proyectosMios.length === 0) {
     return (
       <DashboardLayout role="aprendiz" titulo="Mis Propuestas">
         <div className={s.page}>
@@ -300,19 +311,23 @@ export default function Propuestas() {
     )
   }
 
+  // El formulario de creación solo se muestra con ficha; si no la hay, se ve
+  // la lista (con aviso) y el botón lleva a unirse a una ficha.
+  const enForm = creando && !!miFicha
+
   return (
-    <DashboardLayout role="aprendiz" titulo={creando ? 'Nueva Propuesta' : 'Mis Propuestas'}>
+    <DashboardLayout role="aprendiz" titulo={enForm ? 'Nueva Propuesta' : 'Mis Propuestas'}>
       <div className={s.page}>
         <PageHeader
-          title={creando ? 'Nueva Propuesta' : 'Mis Propuestas'}
+          title={enForm ? 'Nueva Propuesta' : 'Mis Propuestas'}
           subtitle={
-            creando
+            enForm
               ? 'Registra tu idea: una solución de software para un problema concreto. No necesitas definir tecnologías ni entregables todavía.'
               : 'Administra y revisa el estado de tus propuestas académicas'
           }
-          icon={creando ? <Plus /> : <FolderOpen />}
+          icon={enForm ? <Plus /> : <FolderOpen />}
           breadcrumb={
-            creando
+            enForm
               ? [
                   { label: 'Dashboard', to: '/aprendiz/dashboard', icon: <ChartBar size={14} /> },
                   { label: 'Mis Propuestas', icon: <FolderOpen size={14} />, onClick: volverALista },
@@ -320,9 +335,9 @@ export default function Propuestas() {
                 ]
               : []
           }
-          onBack={creando ? volverALista : undefined}
+          onBack={enForm ? volverALista : undefined}
           actions={
-            !creando ? (
+            !enForm ? (
               <Button type="button" onClick={empezar}>
                 <Plus size={14} /> Nueva propuesta
               </Button>
@@ -330,7 +345,7 @@ export default function Propuestas() {
           }
         />
 
-        {creando ? (
+        {enForm ? (
           <form className={n.form} onSubmit={handleSubmit} noValidate>
                 <FormField label="Nombre de la propuesta" error={errors.title} required>
                   <Input
@@ -500,6 +515,18 @@ export default function Propuestas() {
                 />
               ) : (
                 <>
+                  {!miFicha && (
+                    <Alert variant="warning">
+                      No perteneces a ninguna ficha. Únete con el código de tu instructor para
+                      <strong> crear nuevas</strong>; tus propuestas anteriores se conservan.
+                    </Alert>
+                  )}
+                  {miFicha && filtrados.some((p) => Number(p.id_class_group) !== Number(miFicha?.id)) && (
+                    <Alert variant="info">
+                      Algunas propuestas son de una <strong>ficha anterior</strong>: se conservan en la
+                      ficha donde las creaste y no se mueven al cambiarte de ficha.
+                    </Alert>
+                  )}
                   <div className={s.cardGrid}>
                     {visibles.map((p) => {
                       const info = infoSimilitud(todasSimilitudes, p.id)
@@ -514,6 +541,11 @@ export default function Propuestas() {
                           <p className={s.cardDesc}>{p.resumen}</p>
                           <footer className={s.cardFooter}>
                             <span className={s.cardMeta}><CalendarBlank size={14} /> {fechaDesdeApi(p.created_at)}</span>
+                            <span className={s.cardMeta}>
+                              <GraduationCap size={14} /> {p.classGroup?.codigo || 'Sin ficha'}
+                              {p.classGroup?.program?.nombre ? ` · ${p.classGroup.program.nombre}` : ''}
+                              {Number(p.id_class_group) !== Number(miFicha?.id) ? ' · ficha anterior' : ''}
+                            </span>
                             {info && (
                               <span title={`${info.pct}% · ${info.count} coincidencia${info.count !== 1 ? 's' : ''}`}>
                                 <GradeBadge score={info.pct} size="sm" />

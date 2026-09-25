@@ -24,11 +24,10 @@ test('instructor: ficha inválida y borrado bloqueado', async ({ page }) => {
   await expect(page.getByText(/Selecciona la red de conocimiento/i)).toBeVisible()
   await expect(page.getByText(/El nombre de la ficha es obligatorio/i)).toBeVisible()
 
-  // Ficha con aprendices/propuestas → borrado bloqueado con motivo.
+  // Ficha con aprendices/propuestas → el instructor puede eliminarla (cascada)
+  // con confirmación reforzada.
   await page.goto('/instructor/detalle-ficha/1')
-  const eliminar = page.getByRole('button', { name: /Eliminar ficha/i })
-  await expect(eliminar).toBeDisabled()
-  await expect(page.getByText(/No se puede eliminar/i).first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /Eliminar ficha/i })).toBeEnabled()
 })
 
 test('admin: validaciones y conflictos', async ({ page }) => {
@@ -47,9 +46,9 @@ test('admin: validaciones y conflictos', async ({ page }) => {
   await page.getByRole('button', { name: /Guardar parámetros/i }).click()
   await expect(page.getByText(/entre 5 y 95/i)).toBeVisible()
 
-  // Borrar ficha con datos → bloqueado.
+  // Borrar ficha con datos: ya no se bloquea (cascada con confirmación).
   await page.goto('/admin/detalle-ficha/1')
-  await expect(page.getByRole('button', { name: /Eliminar ficha/i })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /Eliminar ficha/i })).toBeEnabled()
 })
 
 test('admin: crear ficha vacía muestra validaciones', async ({ page }) => {

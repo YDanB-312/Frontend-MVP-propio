@@ -6,6 +6,7 @@ import DetalleSimilitudBase from '../../../components/DetalleSimilitudBase/Detal
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import ApiState from '../../../components/ApiState/ApiState'
 import Button from '../../../components/Button/Button'
+import Alert from '../../../components/Alert/Alert'
 import { Select, Textarea } from '../../../components/Input/Input'
 import Tag from '../../../components/Tag/Tag'
 import { useAuth } from '../../../contexts/AuthContext'
@@ -36,6 +37,7 @@ export default function DetalleSimilitudAdmin() {
   const { user } = useAuth()
   const [proyectoObs, setProyectoObs] = useState('1')
   const [textoObs, setTextoObs] = useState('')
+  const [obsError, setObsError] = useState('')
 
   // Fuente única: la API. Similitud + observaciones de ambas propuestas del par.
   const { data, cargando, error, recargar } = useApi(
@@ -88,6 +90,7 @@ export default function DetalleSimilitudAdmin() {
     const texto = textoObs.trim()
     if (!texto) return
     const idProyecto = Number(proyectoObs) === 1 ? similitud.id_proyecto_1 : similitud.id_proyecto_2
+    setObsError('')
     try {
       await observaciones.crear({
         texto,
@@ -97,13 +100,15 @@ export default function DetalleSimilitudAdmin() {
       })
       await recargar()
       setTextoObs('')
-    } catch {
-      // Error silencioso: el formulario conserva el texto para reintentar.
+    } catch (err) {
+      // El formulario conserva el texto para reintentar, ahora con feedback.
+      setObsError(err?.data?.message || 'No se pudo publicar la observación.')
     }
   }
 
   const observacionesPanel = (
     <DataPanel title={`Observaciones (${observacionesLista.length})`} icon={<ChatCircle />}>
+      {obsError && <Alert variant="danger">{obsError}</Alert>}
       <form className={s.obsForm} onSubmit={agregarObservacion}>
         <div className={s.obsControls}>
           <Select

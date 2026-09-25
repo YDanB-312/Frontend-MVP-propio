@@ -13,7 +13,6 @@ import Avatar from '../../../components/Avatar/Avatar'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
 import { useApi } from '../../../lib/useApi'
 import { fichas, programas, redes, instructores, proyectos } from '../../../lib/recursos'
@@ -24,8 +23,8 @@ import { fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 import { Books, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, MagnifyingGlass, PencilLine, Trash, Warning } from 'phosphor-react'
 
-const ESTADOS_FICHA = ['activo', 'inactivo', 'finalizado', 'archivado']
-const ESTADO_LABEL = { activo: 'Activo', inactivo: 'Inactivo', finalizado: 'Finalizado', archivado: 'Archivado' }
+const ESTADOS_FICHA = ['activo', 'finalizado']
+const ESTADO_LABEL = { activo: 'Activo', finalizado: 'Finalizado' }
 const PROYECTO_ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
 // Concatena nombre + apellido de un general_user.
@@ -203,7 +202,6 @@ export default function DetalleFichaAdmin() {
     }
   }
 
-  const tieneDatos = estudiantes.length > 0 || proyectosDeLaFicha.length > 0
 
   return (
     <DashboardLayout role="admin" titulo="Detalle de Ficha">
@@ -227,12 +225,6 @@ export default function DetalleFichaAdmin() {
           <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
         )}
 
-        {tieneDatos && (
-          <MotivoBloqueo id="motivo-eliminar-ficha-admin">
-            No se puede eliminar: tiene aprendices o propuestas asociadas ({estudiantes.length} aprendices · {proyectosDeLaFicha.length} propuestas).
-          </MotivoBloqueo>
-        )}
-
         <DataPanel
           title="Información de la ficha"
           icon={<IdentificationCard />}
@@ -248,9 +240,6 @@ export default function DetalleFichaAdmin() {
               <Button
                 type="button"
                 variant="danger"
-                disabled={tieneDatos}
-                aria-describedby={tieneDatos ? 'motivo-eliminar-ficha-admin' : undefined}
-                title={tieneDatos ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
                 onClick={() => setModalEliminar(true)}
               >
                 <Trash size={14} /> Eliminar ficha
@@ -409,9 +398,11 @@ export default function DetalleFichaAdmin() {
       <ConfirmModal
         open={modalEliminar}
         titulo="Eliminar ficha"
-        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Se eliminarán también sus aprendices y propuestas (con sus similitudes y observaciones). Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
         textoCancelar="Cancelar"
+        responsabilidad
+        verificacion="ELIMINAR"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}
       />

@@ -5,5 +5,13 @@
 .message{font-size:var(--text-sm);color:var(--c-text-2);margin:0 0 var(--sp-6);line-height:var(--leading-relaxed)}
 /* Campos opcionales dentro del modal (p. ej. nueva contraseña) */
 .content{display:flex;flex-direction:column;gap:var(--sp-3);margin:calc(-1 * var(--sp-3)) 0 var(--sp-6)}
+/* Verificación reforzada de acciones destructivas */
+.verify{display:flex;flex-direction:column;gap:var(--sp-3);margin:calc(-1 * var(--sp-3)) 0 var(--sp-6)}
+.checkRow{display:flex;gap:var(--sp-2_5);align-items:flex-start;font-size:var(--text-sm);color:var(--c-text-2);line-height:var(--leading-relaxed);cursor:pointer}
+.checkInput{margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--c-danger)}
+.verifyField{display:flex;flex-direction:column;gap:var(--sp-1_5)}
+.verifyLabel{font-size:var(--text-xs);color:var(--c-text-2)}
+.verifyInput{width:100%;padding:var(--sp-2) var(--sp-3);border:1px solid var(--c-border-h);border-radius:var(--r-md);background:var(--c-surface-sunken);color:var(--c-text);font-family:var(--mono);font-size:var(--text-sm)}
+.verifyInput:focus{outline:none;border-color:var(--c-danger)}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideUp{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}

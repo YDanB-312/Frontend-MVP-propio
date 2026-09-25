@@ -1,4 +1,4 @@
-import { test, expect, login } from './helpers'
+import { test, expect, login, confirmarBorrado } from './helpers'
 
 test.describe('Admin: redes de conocimiento CRUD', () => {
   test('valida nombre y programas al crear', async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe('Admin: redes de conocimiento CRUD', () => {
     const fila2 = page.locator('tr', { hasText: 'Red E2E Temporal Editada' })
     await fila2.getByRole('button', { name: /Eliminar/i }).click()
     await expect(page.getByText('Eliminar red')).toBeVisible()
-    await page.getByRole('button', { name: /Sí, eliminar/i }).click()
+    await confirmarBorrado(page, 'ELIMINAR')
     await expect(page.getByText('Red eliminada correctamente.')).toBeVisible()
     await expect(page.getByText('Red E2E Temporal Editada')).toHaveCount(0)
   })

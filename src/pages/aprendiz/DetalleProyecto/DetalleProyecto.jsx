@@ -9,18 +9,20 @@ import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import { Input, Textarea } from '../../../components/Input/Input'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import Alert from '../../../components/Alert/Alert'
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import ApiState from '../../../components/ApiState/ApiState'
 import ObservacionHilo from
 '../../../components/ObservacionHilo/ObservacionHilo'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi, observaciones as observacionesApi } from '../../../lib/recursos'
+import { proyectos, similitudes as similitudesApi, observaciones as observacionesApi, aprendices } from '../../../lib/recursos'
 import { agruparObservaciones, fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import n from '../../../components/FormularioBase/FormularioBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
-import { ChatCircle, CheckCircle, FileText, FolderOpen, MagnifyingGlass, PencilSimple, Plus, Warning, X } from 'phosphor-react'
+import { ChatCircle, CheckCircle, FileText, FolderOpen, MagnifyingGlass, PencilSimple, Plus, Trash, UsersThree, Warning, X } from 'phosphor-react'
 
 const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admin' }
 
@@ -55,10 +57,23 @@ export default function DetalleProyecto() {
     [id],
     { inicial: [] }
   )
+  // Equipo de la propuesta (pivote) y compañeros de la ficha (para agregar).
+  const { data: equipoApi, recargar: recargarEquipo } = useApi(
+    () => proyectos.equipo(id),
+    [id],
+    { inicial: [] }
+  )
+  const { data: rosterApi } = useApi(() => aprendices.listar(), [], { inicial: [] })
 
   const [texto, setTexto] = useState('')
   const [respondiendoA, setRespondiendoA] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const [obsError, setObsError] = useState('')
+  const [modalEliminar, setModalEliminar] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
+  const [eliminarError, setEliminarError] = useState('')
+  const [equipoError, setEquipoError] = useState('')
+  const [equipoOcupado, setEquipoOcupado] = useState(false)
 
   /* ---------- Edición de la propuesta (mientras no esté aprobada) ---------- */
   const [editando, setEditando] = useState(false)
@@ -86,6 +101,30 @@ export default function DetalleProyecto() {
         )
       : []),
     [project, todasSimilitudes]
+  )
+
+  // Equipo real (con el aprendiz y su usuario incluidos) y compañeros
+  // candidatos. Solo se puede agregar si el usuario pertenece a la ficha de la
+  // propuesta; si salió de la ficha, el equipo se ve en solo lectura.
+  const equipo = equipoApi || []
+  const equipoIds = useMemo(
+    () => new Set((equipoApi || []).map((e) => Number(e.id_aprendiz))),
+    [equipoApi]
+  )
+  const miAprendiz = useMemo(
+    () => (rosterApi || []).find((a) => Number(a.id_usuario) === Number(user.id)) || null,
+    [rosterApi, user.id]
+  )
+  // Regla Classroom: la ficha debe estar activa y el usuario pertenecer a ella.
+  const fichaActiva = project?.classGroup?.estado === 'activo'
+  const perteneceAFicha = !!miAprendiz
+    && Number(miAprendiz.id_class_group) === Number(project?.id_class_group)
+  // El equipo lo gestiona el CREADOR, dentro de su ficha activa.
+  const gestionaEquipo = Number(project?.id_creador) === Number(user.id)
+    && fichaActiva && perteneceAFicha
+  const disponibles = useMemo(
+    () => (gestionaEquipo ? (rosterApi || []).filter((a) => !equipoIds.has(Number(a.id))) : []),
+    [gestionaEquipo, rosterApi, equipoIds]
   )
 
   if (cargando) {
@@ -120,11 +159,19 @@ export default function DetalleProyecto() {
     )
   }
 
-  // Creador o integrante del equipo → derechos plenos sobre la propuesta
+  // Creador o integrante del equipo → la propuesta es suya (historial visible).
   const esPropio = esMia(project, user.id)
+  // Solo el creador puede eliminar la propuesta (el equipo no la borra).
+  const esCreador = Number(project.id_creador) === Number(user.id)
   const ficha = project.classGroup || null
+  // Participar (comentar/editar/equipo) exige estar DENTRO de la ficha activa.
+  const puedeEscribir = esPropio && fichaActiva && perteneceAFicha
+  const soloLectura = esPropio && !puedeEscribir
+  const motivoSoloLectura = ficha && ficha.estado !== 'activo'
+    ? 'La ficha está finalizada: la propuesta queda en solo lectura.'
+    : 'Solo lectura: ya no perteneces a esta ficha.'
   // Se puede editar mientras la propuesta no haya sido aprobada por el instructor.
-  const puedeEditar = esPropio && project.estado !== 'aprobado'
+  const puedeEditar = puedeEscribir && project.estado !== 'aprobado'
 
   function iniciarEdicion() {
     setForm({
@@ -191,6 +238,7 @@ export default function DetalleProyecto() {
     const t = texto.trim()
     if (!t) return
     setEnviando(true)
+    setObsError('')
     try {
       await observacionesApi.crear({
         texto: t,
@@ -201,10 +249,56 @@ export default function DetalleProyecto() {
       await recargarObs()
       setTexto('')
       setRespondiendoA(null)
-    } catch {
+    } catch (err) {
       // Se conserva el texto para que el usuario pueda reintentar.
+      setObsError(err?.data?.message || 'No se pudo publicar la observación.')
     } finally {
       setEnviando(false)
+    }
+  }
+
+  async function eliminarPropuesta() {
+    setEliminando(true)
+    setEliminarError('')
+    try {
+      await proyectos.eliminar(project.id)
+      navigate('/aprendiz/propuestas', { replace: true })
+    } catch (err) {
+      setEliminarError(err?.data?.message || 'No se pudo eliminar la propuesta.')
+      setModalEliminar(false)
+    } finally {
+      setEliminando(false)
+    }
+  }
+
+  async function agregarMiembro(idAprendiz) {
+    if (equipoOcupado) return
+    setEquipoOcupado(true)
+    setEquipoError('')
+    try {
+      await proyectos.agregarAlEquipo(Number(idAprendiz), Number(project.id))
+    } catch (err) {
+      setEquipoError(err?.data?.message || 'No se pudo agregar al integrante.')
+    } finally {
+      await recargarEquipo()
+      setEquipoOcupado(false)
+    }
+  }
+
+  async function quitarMiembro(pivotId) {
+    if (equipoOcupado) return
+    setEquipoOcupado(true)
+    setEquipoError('')
+    try {
+      await proyectos.quitarDelEquipo(pivotId)
+    } catch (err) {
+      // 404 = la fila ya no existía (recarga/otra pestaña): no es un error real.
+      if (err?.status !== 404) {
+        setEquipoError(err?.data?.message || 'No se pudo quitar al integrante.')
+      }
+    } finally {
+      await recargarEquipo()
+      setEquipoOcupado(false)
     }
   }
 
@@ -213,7 +307,7 @@ export default function DetalleProyecto() {
       <div className={s.page}>
         <PageHeader
           title={project.titulo}
-          subtitle={`Enviado el ${fechaDesdeApi(project.created_at)} por ${nombreUsuario(project.creator)}`}
+          subtitle={`Enviado el ${fechaDesdeApi(project.created_at)} por ${nombreUsuario(project.creator)} · Ficha ${project.classGroup?.codigo || '—'}${project.classGroup?.program?.nombre ? ` (${project.classGroup.program.nombre})` : ''}`}
           icon={<FolderOpen />}
           breadcrumb={[
             { label: 'Dashboard', to: '/aprendiz/dashboard' },
@@ -221,10 +315,19 @@ export default function DetalleProyecto() {
             { label: project.titulo },
           ]}
           actions={
-            puedeEditar && !editando ? (
-              <Button type="button" variant="secondary" onClick={iniciarEdicion}>
-                <PencilSimple size={14} /> Editar
-              </Button>
+            !editando ? (
+              <>
+                {puedeEditar && (
+                  <Button type="button" variant="secondary" onClick={iniciarEdicion}>
+                    <PencilSimple size={14} /> Editar
+                  </Button>
+                )}
+                {esCreador && puedeEscribir && (
+                  <Button type="button" variant="dangerGhost" onClick={() => setModalEliminar(true)}>
+                    <Trash size={14} /> Eliminar
+                  </Button>
+                )}
+              </>
             ) : undefined
           }
         />
@@ -232,6 +335,10 @@ export default function DetalleProyecto() {
         {aviso && (
           <p className={s.muted} role="status"><CheckCircle size={14} /> {aviso}</p>
         )}
+
+        {eliminarError && <Alert variant="danger">{eliminarError}</Alert>}
+
+        {soloLectura && <Alert variant="info">{motivoSoloLectura}</Alert>}
 
         <div className={esPropio ? s.dossier : s.dossierSolo}>
           <div className={s.colPrincipal}>
@@ -339,29 +446,94 @@ export default function DetalleProyecto() {
                 ) : (
                   <ObservacionHilo
                     grupos={agruparObservaciones(observaciones)}
-                    permitirResponder
+                    permitirResponder={puedeEscribir}
                     onRespuesta={(o) => setRespondiendoA(o)}
                     className={s.hilosScroll}
                   />
                 )}
 
-                <form className={s.obsForm} onSubmit={agregarObservacion}>
-                  <Textarea
-                    rows={3}
-                    value={texto}
-                    onChange={(e) => setTexto(e.target.value)}
-                    aria-label="Escribe un comentario sobre la propuesta"
-                    placeholder={respondiendoA ? 'Escribe tu respuesta al instructor…' : 'Escribe tu comentario sobre la propuesta...'}
-                  />
-                  <Button type="submit" disabled={!texto.trim() || enviando}>
-                    <Plus size={14} /> Agregar observación
-                  </Button>
-                </form>
+                {obsError && <Alert variant="danger">{obsError}</Alert>}
+
+                {puedeEscribir ? (
+                  <form className={s.obsForm} onSubmit={agregarObservacion}>
+                    <Textarea
+                      rows={3}
+                      value={texto}
+                      onChange={(e) => setTexto(e.target.value)}
+                      aria-label="Escribe un comentario sobre la propuesta"
+                      placeholder={respondiendoA ? 'Escribe tu respuesta al instructor…' : 'Escribe tu comentario sobre la propuesta...'}
+                    />
+                    <Button type="submit" disabled={!texto.trim() || enviando}>
+                      <Plus size={14} /> Agregar observación
+                    </Button>
+                  </form>
+                ) : (
+                  <p className={s.muted}>Solo lectura: no puedes agregar observaciones.</p>
+                )}
+              </DataPanel>
+
+              <DataPanel title="Equipo" icon={<UsersThree />}>
+                {equipoError && <Alert variant="danger">{equipoError}</Alert>}
+
+                <ul className={s.simList}>
+                  {equipo.map((e) => {
+                    const esCreadorFila = Number(e.apprentice?.id_usuario) === Number(project.id_creador)
+                    return (
+                      <li key={e.id} className={s.simRow}>
+                        <span className={s.simPair}>
+                          {nombreUsuario(e.apprentice?.generalUser)}{esCreadorFila ? ' (creador)' : ''}
+                        </span>
+                        {gestionaEquipo && !esCreadorFila && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={equipoOcupado}
+                            onClick={() => quitarMiembro(e.id)}
+                          >
+                            Quitar
+                          </Button>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+
+                {gestionaEquipo && disponibles.length > 0 && (
+                  <>
+                    <p className={s.muted}>Agregar compañero de la ficha:</p>
+                    <ul className={s.simList}>
+                      {disponibles.map((a) => (
+                        <li key={a.id} className={s.simRow}>
+                          <span className={s.simPair}>{nombreUsuario(a.generalUser)}</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            disabled={equipoOcupado}
+                            onClick={() => agregarMiembro(a.id)}
+                          >
+                            <Plus size={12} /> Agregar
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </DataPanel>
             </aside>
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={modalEliminar}
+        titulo="Eliminar propuesta"
+        mensaje={`¿Eliminar "${project.titulo}"? Se borrarán también sus similitudes y observaciones. Esta acción no se puede deshacer.`}
+        textoConfirmar={eliminando ? 'Eliminando…' : 'Sí, eliminar'}
+        onCancelar={() => setModalEliminar(false)}
+        onConfirmar={eliminarPropuesta}
+      />
     </DashboardLayout>
   )
 }

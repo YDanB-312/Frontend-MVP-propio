@@ -119,7 +119,7 @@ export default function RecuperarContrasena() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu.correo@ejemplo.com"
+              placeholder="Correo electrónico"
               autoComplete="email"
               autoFocus
             />

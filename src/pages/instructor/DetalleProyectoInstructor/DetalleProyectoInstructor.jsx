@@ -9,6 +9,7 @@ import { Textarea } from '../../../components/Input/Input'
 import Avatar from '../../../components/Avatar/Avatar'
 import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
+import Alert from '../../../components/Alert/Alert'
 import ApiState from '../../../components/ApiState/ApiState'
 import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
@@ -60,6 +61,7 @@ export default function DetalleProyectoInstructor() {
   const [modal, setModal] = useState(null)
   const [fotoViendo, setFotoViendo] = useState(null)
   const [enviandoObs, setEnviandoObs] = useState(false)
+  const [obsError, setObsError] = useState('')
 
   // Propuesta, similitudes del par y observaciones: fuente única la API.
   const { data: proyecto, cargando, error, recargar: recargarProyecto } = useApi(
@@ -68,7 +70,7 @@ export default function DetalleProyectoInstructor() {
     { inicial: null }
   )
   // Similitudes de ESTA propuesta (la contraparte debe estar aprobada).
-  const { data: todasSimilitudes } = useApi(
+  const { data: todasSimilitudes, recargar: recargarSims } = useApi(
     () => similitudesApi.listar({ proyecto_id: id }),
     [id],
     { inicial: [] }
@@ -175,7 +177,8 @@ export default function DetalleProyectoInstructor() {
           // El análisis puede recalcularse después.
         }
       }
-      await recargarProyecto()
+      // Refresca propuesta Y similitudes: el motor ya pudo crear coincidencias.
+      await Promise.all([recargarProyecto(), recargarSims()])
     } catch {
       // El error se refleja al recargar la propuesta; se cierra el modal.
     }
@@ -187,6 +190,7 @@ export default function DetalleProyectoInstructor() {
     const texto = textoObs.trim()
     if (!texto) return
     setEnviandoObs(true)
+    setObsError('')
     try {
       await observacionesApi.crear({
         texto,
@@ -197,8 +201,9 @@ export default function DetalleProyectoInstructor() {
       await recargarObs()
       setTextoObs('')
       setRespondiendoA(null)
-    } catch {
+    } catch (err) {
       // Se conserva el texto para que el usuario pueda reintentar.
+      setObsError(err?.data?.message || 'No se pudo publicar la observación.')
     } finally {
       setEnviandoObs(false)
     }
@@ -322,6 +327,8 @@ export default function DetalleProyectoInstructor() {
               className={s.hilosScroll}
             />
           )}
+          {obsError && <Alert variant="danger">{obsError}</Alert>}
+
           <form className={s.obsForm} onSubmit={agregarObservacion}>
             <Textarea
               rows={3}

@@ -13,7 +13,7 @@ test.describe('Administración de usuarios (admin)', () => {
     const email = `instructor.e2e.${Date.now()}@sena.edu.co`
     const formulario = page.locator('form')
     await formulario.getByPlaceholder('Ej. María González').fill('Instructor E2E Programa')
-    await formulario.getByPlaceholder('usuario@ejemplo.com').fill(email)
+    await formulario.getByPlaceholder(/Correo electr/i).fill(email)
     await formulario.locator('input[name="password"]').fill('123456')
     await formulario.locator('select[name="role"]').selectOption('instructor')
 

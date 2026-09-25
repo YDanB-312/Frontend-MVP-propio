@@ -27,7 +27,7 @@ export async function simulacion(h) {
     await page.getByRole('button', { name: /Nuevo Usuario/i }).click()
     const form = page.locator('form')
     await form.getByPlaceholder('Ej. María González').fill(nombreInstructor)
-    await form.getByPlaceholder('usuario@ejemplo.com').fill(correoInstructor)
+    await form.getByPlaceholder(/Correo electr/i).fill(correoInstructor)
     await form.locator('input[name="password"]').fill('123456')
     await form.locator('select[name="role"]').selectOption('instructor')
     await form.getByRole('button', { name: /Crear usuario/i }).click()

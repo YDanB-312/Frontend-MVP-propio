@@ -11,7 +11,7 @@ test.describe('Autenticación por rol', () => {
 
   test('credenciales inválidas muestran error y no ingresan', async ({ page }) => {
     await page.goto('/login')
-    await page.getByPlaceholder('tu.correo@ejemplo.com').fill('maria.gonzalez@soy.sena.edu.co')
+    await page.getByPlaceholder(/Correo electr/i).fill('maria.gonzalez@soy.sena.edu.co')
     await page.locator('input[type="password"]').fill('incorrecta')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await expect(page.locator('[role="alert"], .error')).toBeVisible()
@@ -84,7 +84,7 @@ test.describe('Seguridad de la cuenta', () => {
 
     // La nueva contraseña queda activa; la vieja ya no sirve
     await logout(page)
-    await page.getByPlaceholder('tu.correo@ejemplo.com').fill('maria.gonzalez@soy.sena.edu.co')
+    await page.getByPlaceholder(/Correo electr/i).fill('maria.gonzalez@soy.sena.edu.co')
     await page.locator('input[type="password"]').fill('123456')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await expect(page.locator('[role="alert"], .error')).toBeVisible()
@@ -100,14 +100,14 @@ test.describe('Seguridad de la cuenta', () => {
     await page.goto('/register')
     await page.getByPlaceholder(/Mar.a Jos/i).fill('Correo E2E')
     await page.getByPlaceholder(/Gonz.lez Ruiz/i).fill('Prueba')
-    await page.getByPlaceholder('tu.correo@ejemplo.com').fill(email)
+    await page.getByPlaceholder(/Correo electr/i).fill(email)
     await page.locator('input[type="password"]').first().fill('clave123')
     await page.locator('input[type="password"]').nth(1).fill('clave123')
     await page.getByRole('button', { name: /Crear Cuenta/i }).click()
     await page.waitForURL('**/confirmacion')
 
     await page.goto('/login')
-    await page.getByPlaceholder('tu.correo@ejemplo.com').fill(email)
+    await page.getByPlaceholder(/Correo electr/i).fill(email)
     await page.locator('input[type="password"]').fill('clave123')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await page.waitForURL('**/aprendiz/dashboard')

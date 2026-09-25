@@ -226,7 +226,11 @@ export default function ResultadoAnalisis() {
             {propias.map((sim, i) => {
               const pct = Math.round(Number(sim.porcentaje) || 0)
               const otroId = Number(sim.id_proyecto_1) === Number(base.id) ? sim.id_proyecto_2 : sim.id_proyecto_1
-              const otro = proyectosApi.find((p) => Number(p.id) === Number(otroId))
+              // La contraparte viene incluida en el par (project1/project2); se usa
+              // esa fuente y solo se cae al listado si no estuviera.
+              const incluido = Number(sim.project1?.id) === Number(otroId) ? sim.project1
+                : (Number(sim.project2?.id) === Number(otroId) ? sim.project2 : null)
+              const otro = incluido || proyectosApi.find((p) => Number(p.id) === Number(otroId))
               const esMaxima = sim.id === maxima.id
               return (
                 <li key={sim.id} className="fx-rise" style={{ '--fx-i': i }}>

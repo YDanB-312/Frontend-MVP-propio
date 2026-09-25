@@ -10,7 +10,7 @@ async function registrarAprendiz(page) {
   await page.goto('/register')
   await page.getByPlaceholder(/Mar.a Jos/i).fill('Test E2E')
   await page.getByPlaceholder(/Gonz.lez Ruiz/i).fill('Automatizado')
-  await page.getByPlaceholder('tu.correo@ejemplo.com').fill(email)
+  await page.getByPlaceholder(/Correo electr/i).fill(email)
   await page.locator('input[type="password"]').first().fill('clave123')
   await page.locator('input[type="password"]').nth(1).fill('clave123')
   await page.getByRole('button', { name: /Crear Cuenta/i }).click()
@@ -20,7 +20,7 @@ async function registrarAprendiz(page) {
 
 async function entrar(page, email, password) {
   await page.goto('/login')
-  await page.getByPlaceholder('tu.correo@ejemplo.com').fill(email)
+  await page.getByPlaceholder(/Correo electr/i).fill(email)
   await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /Iniciar Sesi/i }).click()
   await page.waitForURL('**/aprendiz/dashboard')

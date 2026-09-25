@@ -524,7 +524,7 @@ export default function PerfilBase({
             type="email"
             value={correoForm.correo}
             onChange={(e) => setCorreo('correo', e.target.value)}
-            placeholder="nuevo.correo@ejemplo.com"
+            placeholder="Nuevo correo electrónico"
             autoComplete="email"
           />
         </FormField>

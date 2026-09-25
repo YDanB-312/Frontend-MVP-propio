@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { CaretDown, CaretRight, Eye, MagnifyingGlass } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -65,6 +65,15 @@ export default function SimilitudesInstructor() {
     [todosProyectos]
   )
 
+  // Resuelve un lado del par: prefiere el proyecto del listado (datos completos)
+  // y cae al proyecto incluido en la similitud (la contraparte puede ser de otra
+  // ficha, fuera del listado acotado del instructor).
+  const proyectoDe = useCallback(
+    (sim, lado) =>
+      proyectoPorId.get(Number(sim[`id_proyecto_${lado}`])) || sim[`project${lado}`] || null,
+    [proyectoPorId]
+  )
+
   // Regla de negocio: el instructor ve la similitud si toca una propuesta suya.
   const proyectoEnAlcance = useMemo(
     () => (p) =>
@@ -86,8 +95,8 @@ export default function SimilitudesInstructor() {
   const filtradas = useMemo(() => {
     const q = norm(busqueda.trim())
     return similitudes.filter((x) => {
-      const p1 = proyectoPorId.get(Number(x.id_proyecto_1))
-      const p2 = proyectoPorId.get(Number(x.id_proyecto_2))
+      const p1 = proyectoDe(x, 1)
+      const p2 = proyectoDe(x, 2)
       const coincideEstado = filtroEstado === 'todos' || p1?.estado === filtroEstado || p2?.estado === filtroEstado
       const coincideFicha =
         filtroFicha === 'todos' ||
@@ -96,13 +105,13 @@ export default function SimilitudesInstructor() {
       const coincideSim = !minSim || Math.round(Number(x.porcentaje) || 0) >= Number(minSim)
       const coincideQ =
         !q ||
-        norm(p1?.titulo || x.project1?.titulo).includes(q) ||
-        norm(p2?.titulo || x.project2?.titulo).includes(q) ||
+        norm(p1?.titulo).includes(q) ||
+        norm(p2?.titulo).includes(q) ||
         norm(nombreCompleto(p1?.creator)).includes(q) ||
         norm(nombreCompleto(p2?.creator)).includes(q)
       return coincideEstado && coincideFicha && coincideSim && coincideQ
     })
-  }, [similitudes, filtroEstado, filtroFicha, minSim, busqueda, proyectoPorId])
+  }, [similitudes, filtroEstado, filtroFicha, minSim, busqueda, proyectoDe])
 
   const paginadas = filtradas.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
@@ -113,8 +122,8 @@ export default function SimilitudesInstructor() {
   const grupos = useMemo(() => {
     const mapa = new Map()
     for (const x of paginadas) {
-      const f1 = proyectoPorId.get(Number(x.id_proyecto_1))?.id_class_group
-      const f2 = proyectoPorId.get(Number(x.id_proyecto_2))?.id_class_group
+      const f1 = proyectoDe(x, 1)?.id_class_group
+      const f2 = proyectoDe(x, 2)?.id_class_group
       const fid = misFichasIds.has(Number(f1)) ? Number(f1) : misFichasIds.has(Number(f2)) ? Number(f2) : 0
       if (!mapa.has(fid)) mapa.set(fid, { fid, pares: [] })
       mapa.get(fid).pares.push(x)
@@ -126,7 +135,7 @@ export default function SimilitudesInstructor() {
         max: Math.max(...g.pares.map((y) => Math.round(Number(y.porcentaje) || 0))),
       }))
       .sort((a, b) => (a.fid === 0) - (b.fid === 0) || b.max - a.max)
-  }, [paginadas, misFichasIds, proyectoPorId, fichasApi])
+  }, [paginadas, misFichasIds, proyectoDe, fichasApi])
 
   const [abiertos, setAbiertos] = useState(null)
   const abiertosEfectivos = abiertos ?? (grupos.length > 0 ? new Set([grupos[0].fid]) : new Set())
@@ -146,7 +155,7 @@ export default function SimilitudesInstructor() {
       key: 'a',
       header: 'Propuesta A',
       render: (sim) => {
-        const p = proyectoPorId.get(Number(sim.id_proyecto_1))
+        const p = proyectoDe(sim, 1)
         return (
           <>
             <span className={s.title}>{p?.titulo || 'Proyecto no disponible'}</span>
@@ -160,7 +169,7 @@ export default function SimilitudesInstructor() {
       key: 'b',
       header: 'Propuesta B',
       render: (sim) => {
-        const p = proyectoPorId.get(Number(sim.id_proyecto_2))
+        const p = proyectoDe(sim, 2)
         return (
           <>
             <span className={s.title}>{p?.titulo || 'Proyecto no disponible'}</span>
@@ -179,8 +188,8 @@ export default function SimilitudesInstructor() {
       key: 'estados',
       header: 'Estado',
       render: (sim) => {
-        const estadoA = proyectoPorId.get(Number(sim.id_proyecto_1))?.estado || '—'
-        const estadoB = proyectoPorId.get(Number(sim.id_proyecto_2))?.estado || '—'
+        const estadoA = proyectoDe(sim, 1)?.estado || '—'
+        const estadoB = proyectoDe(sim, 2)?.estado || '—'
         return (
           <span className={local.estadoPair}>
             <StatusMark status={PROPUESTA_STATUS[estadoA] || 'pending'} label={`A: ${ESTADO_LABEL[estadoA] || estadoA}`} />

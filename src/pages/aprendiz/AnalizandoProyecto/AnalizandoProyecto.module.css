@@ -19,3 +19,5 @@
 .current .stepIcon{color:var(--c-primary)}
 .tipBox{display:flex;align-items:center;gap:var(--sp-2_5);text-align:left;font-size:var(--text-sm);color:var(--c-text-2);background:var(--c-surface-sunken);border:1px solid var(--c-border);border-radius:var(--r-lg);padding:var(--sp-3_5) var(--sp-4)}
 .tipBox svg{color:var(--c-primary);flex-shrink:0}
+.errorIcon{display:inline-flex;color:var(--c-danger,var(--c-primary));margin-bottom:var(--sp-3)}
+.acciones{display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap;margin-top:var(--sp-5)}

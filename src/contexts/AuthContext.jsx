@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { RUTA_POR_ROL } from '../constants/routes'
 import {
-  apiFetch, apiLogin, apiLogout, apiMe, setAuthToken, haySesion,
+  apiFetch, apiLogin, apiLogout, apiMe, apiChangePassword, setAuthToken, haySesion,
   EVENTO_SESION_EXPIRADA,
 } from '../lib/api'
 
@@ -86,19 +86,10 @@ export function AuthProvider({ children }) {
   // ---------------------------------------------------------------- Contraseñas
   // Cambio autenticado: verifica la actual y actualiza el propio perfil.
   const cambiarMiContrasena = useCallback(async (actual, nueva) => {
-    if (!user?.correo) return { exito: false, mensaje: 'Sesión no válida. Inicia sesión de nuevo.' }
+    if (!user?.id) return { exito: false, mensaje: 'Sesión no válida. Inicia sesión de nuevo.' }
     try {
-      // Validar la contraseña actual con un login de prueba (no altera el token guardado).
-      await apiLogin(user.correo, actual, false)
-    } catch {
-      return { exito: false, mensaje: 'La contraseña actual no es correcta.' }
-    }
-    try {
-      const cuenta = await apiFetch(`/general-users/${user.id}`)
-      await apiFetch(`/general-users/${user.id}`, {
-        method: 'PUT',
-        body: { ...cuenta, password: nueva },
-      })
+      // El backend valida la actual y actualiza sin emitir token nuevo.
+      await apiChangePassword(actual, nueva)
       return { exito: true }
     } catch (err) {
       return { exito: false, mensaje: err?.data?.message || 'No se pudo actualizar la contraseña.' }
@@ -107,10 +98,13 @@ export function AuthProvider({ children }) {
 
   // ---------------------------------------------------------------- Logout
   const logout = useCallback(() => {
+    // apiLogout captura el token actual para revocarlo en el servidor; acto
+    // seguido se limpia el local para no dejar un token viejo que provoque un
+    // 401 en la siguiente navegación.
+    apiLogout()
     setAuthToken(null)
     limpiarUsuario()
     setUser(null)
-    apiLogout()
   }, [])
 
   // Refresca nombre/correo tras editar el perfil (estado + almacenamiento), para

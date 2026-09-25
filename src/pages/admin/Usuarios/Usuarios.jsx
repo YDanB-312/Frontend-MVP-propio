@@ -10,6 +10,7 @@ import Badge from '../../../components/Badge/Badge'
 import Avatar from '../../../components/Avatar/Avatar'
 import Alert from '../../../components/Alert/Alert'
 import Button from '../../../components/Button/Button'
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import Actions from '../../../components/Actions/Actions'
 import { Input, PasswordInput, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
@@ -67,6 +68,7 @@ export default function Usuarios() {
   }, [searchParams])
   const [creadoMsg, setCreadoMsg] = useState(false)
   const [accionMsg, setAccionMsg] = useState(null)
+  const [suspender, setSuspender] = useState(null)
   const msgTimer = useRef(null)
 
   /* ---------- Lista ---------- */
@@ -277,7 +279,7 @@ export default function Usuarios() {
                     type="email"
                     value={form.email}
                     onChange={onChange}
-                    placeholder="usuario@ejemplo.com"
+                    placeholder="Correo electrónico"
                   />
                 </FormField>
               </div>
@@ -519,7 +521,7 @@ export default function Usuarios() {
                               variant="dangerGhost"
                               title={Number(user?.id) === Number(usr.id) ? 'No puedes suspender tu propia cuenta' : 'Suspender cuenta'}
                               disabled={Number(user?.id) === Number(usr.id)}
-                              onClick={() => cambiarEstado(usr, false)}
+                              onClick={() => setSuspender(usr)}
                             >
                               <Prohibit size={14} /> Suspender
                             </Button>
@@ -545,6 +547,20 @@ export default function Usuarios() {
           </ApiState>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!suspender}
+        titulo="Suspender cuenta"
+        mensaje={suspender
+          ? `¿Suspender la cuenta de ${suspender.nombre} ${suspender.apellido}? No podrá iniciar sesión hasta que la reactives.`
+          : ''}
+        textoConfirmar="Sí, suspender"
+        onCancelar={() => setSuspender(null)}
+        onConfirmar={async () => {
+          await cambiarEstado(suspender, false)
+          setSuspender(null)
+        }}
+      />
     </DashboardLayout>
   )
 }

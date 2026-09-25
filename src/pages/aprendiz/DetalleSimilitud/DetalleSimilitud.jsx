@@ -45,9 +45,10 @@ export default function DetalleSimilitud() {
     else if (esMia(p2)) { miPid = p2.id; contraparte = p1 }
   }
 
-  // Regla: la coincidencia (el lado ajeno) debe estar aprobada. Una propuesta
-  // pendiente puede ver sus matches con aprobadas, pero nunca al revés.
-  const autorizada = !!miPid && (!contraparte || contraparte.estado === 'aprobado')
+  // Regla (misma que el backend): la contraparte AJENA debe estar aprobada; si
+  // ambas propuestas del par son mías, se muestra aunque una esté pendiente.
+  const ambasMias = esMia(similitud?.project1) && esMia(similitud?.project2)
+  const autorizada = !!miPid && (ambasMias || !contraparte || contraparte.estado === 'aprobado')
 
   const { data: comentariosApi } = useApi(
     () => (miPid ? observacionesApi.listar('user', { id_proyecto: miPid }) : Promise.resolve([])),

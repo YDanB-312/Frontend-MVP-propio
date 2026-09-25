@@ -40,13 +40,15 @@ test.describe('Admin: precisión y botones', () => {
     await expect(page.locator('table tbody tr').first()).toBeVisible()
   })
 
-  test('eliminar red en uso está bloqueado con motivo', async ({ page }) => {
+  test('eliminar red en uso exige confirmación reforzada', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/redes-conocimiento')
     const fila = page.locator('tr', { hasText: 'Informática, Diseño y Desarrollo de Software' })
-    const btn = fila.getByRole('button', { name: /Eliminar/i })
-    await expect(btn).toBeDisabled()
-    await expect(btn).toHaveAttribute('title', /en uso/i)
+    await fila.getByRole('button', { name: /Eliminar/i }).click()
+
+    const dialog = page.getByRole('alertdialog')
+    await expect(dialog.getByRole('button', { name: /Sí, eliminar/i })).toBeDisabled()
+    await dialog.getByRole('button', { name: /Cancelar/i }).click()
   })
 })
 

@@ -12,12 +12,13 @@ import DataTable from '../../../components/DataTable/DataTable'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import StatChip from '../../../components/StatChip/StatChip'
 import ApiState from '../../../components/ApiState/ApiState'
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { useApi } from '../../../lib/useApi'
 import { similitudes, proyectos, programas, fichas, motor } from '../../../lib/recursos'
 import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesAdmin.module.css'
-import { Eye, MagnifyingGlass } from 'phosphor-react'
+import { Eye, MagnifyingGlass, Trash } from 'phosphor-react'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
@@ -39,6 +40,7 @@ export default function SimilitudesAdmin() {
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
   const [pagina, setPagina] = useState(1)
+  const [aEliminar, setAEliminar] = useState(null)
 
   // Fuente única: la API. Similitudes + propuestas (autores/estado) + catálogos.
   const { data, cargando, error, recargar } = useApi(
@@ -55,6 +57,17 @@ export default function SimilitudesAdmin() {
     [],
     { inicial: null }
   )
+
+  async function confirmarEliminar() {
+    if (!aEliminar) return
+    try {
+      await similitudes.eliminar(aEliminar.id)
+      setAEliminar(null)
+      await recargar()
+    } catch {
+      setAEliminar(null)
+    }
+  }
 
   const listaSimilitudes = data?.listaSimilitudes || []
   const listaProyectos = data?.listaProyectos || []
@@ -329,15 +342,25 @@ export default function SimilitudesAdmin() {
                     header: 'Acciones',
                     align: 'end',
                     render: (sim) => (
-                      <Button
-                        as="link"
-                        to={`/admin/detalle-similitud/${sim.id}`}
-                        viewTransition
-                        size="sm"
-                        variant="secondary"
-                      >
-                        <Eye size={14} /> Ver
-                      </Button>
+                      <span className={s.actions}>
+                        <Button
+                          as="link"
+                          to={`/admin/detalle-similitud/${sim.id}`}
+                          viewTransition
+                          size="sm"
+                          variant="secondary"
+                        >
+                          <Eye size={14} /> Ver
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="danger"
+                          onClick={() => setAEliminar(sim)}
+                        >
+                          <Trash size={14} /> Eliminar
+                        </Button>
+                      </span>
                     ),
                   },
                 ]}
@@ -357,6 +380,16 @@ export default function SimilitudesAdmin() {
           )}
         </ApiState>
       </div>
+
+      <ConfirmModal
+        open={!!aEliminar}
+        titulo="Eliminar similitud"
+        mensaje="¿Seguro que deseas eliminar esta coincidencia? El motor puede volver a detectarla al recalcular. Esta acción no se puede deshacer."
+        textoConfirmar="Sí, eliminar"
+        responsabilidad
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setAEliminar(null)}
+      />
     </DashboardLayout>
   )
 }

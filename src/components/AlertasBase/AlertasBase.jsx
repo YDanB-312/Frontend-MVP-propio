@@ -1,11 +1,12 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, MagnifyingGlass, CheckCircle, ChatCircle, GearSix } from 'phosphor-react'
+import { Bell, MagnifyingGlass, CheckCircle, ChatCircle, GearSix, Trash } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
 import Badge from '../Badge/Badge'
 import Button from '../Button/Button'
 import EmptyState from '../EmptyState/EmptyState'
 import ApiState from '../ApiState/ApiState'
+import ConfirmModal from '../ConfirmModal/ConfirmModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../lib/useApi'
 import { notificaciones as apiNotificaciones } from '../../lib/recursos'
@@ -29,9 +30,10 @@ function decodificarEnlace(enlace) {
   return {}
 }
 
-export default function AlertasBase({ titulo, subtitle, detallePath, emptyActionLabel, emptyActionTo }) {
+export default function AlertasBase({ titulo, subtitle, detallePath, emptyActionLabel, emptyActionTo, puedeEliminar = false }) {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [aEliminar, setAEliminar] = useState(null)
 
   // Notificaciones del usuario autenticado (fuente única: la API).
   const { data, cargando, error, recargar } = useApi(
@@ -70,6 +72,17 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
     else if (reporteId && detallePath === '/admin') navigate(`${detallePath}/detalle-reporte/${reporteId}`)
   }
 
+  async function confirmarEliminar() {
+    if (!aEliminar) return
+    try {
+      await apiNotificaciones.eliminar(aEliminar.id)
+      setAEliminar(null)
+      await recargar()
+    } catch {
+      setAEliminar(null)
+    }
+  }
+
   return (
     <div className={s.wrapper}>
       <PageHeader
@@ -105,10 +118,10 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
               const { projectId, reporteId } = decodificarEnlace(n.enlace)
               const puedeAbrir = Boolean(projectId) || Boolean(reporteId && detallePath === '/admin')
               return (
-                <li key={n.id}>
+                <li key={n.id} className={s.row}>
                   <button
                     type="button"
-                    className={`${s.item} ${s[`tipo-${n.tipo}`] || ''} ${!n.leida ? s.unread : ''}`}
+                    className={`${s.item} ${puedeEliminar ? s.itemDeletable : ''} ${s[`tipo-${n.tipo}`] || ''} ${!n.leida ? s.unread : ''}`}
                     onClick={() => handleClick(n)}
                     title={puedeAbrir ? 'Abrir detalle' : 'Marcar como leída'}
                   >
@@ -123,12 +136,32 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
                       <span className={s.message}>{n.titulo}</span>
                     </span>
                   </button>
+                  {puedeEliminar && (
+                    <button
+                      type="button"
+                      className={s.deleteBtn}
+                      onClick={() => setAEliminar(n)}
+                      title="Eliminar notificación"
+                    >
+                      <Trash size={12} /> Eliminar
+                    </button>
+                  )}
                 </li>
               )
             })}
           </ul>
         )}
       </ApiState>
+
+      <ConfirmModal
+        open={!!aEliminar}
+        titulo="Eliminar notificación"
+        mensaje="¿Seguro que deseas eliminar esta notificación? Esta acción no se puede deshacer."
+        textoConfirmar="Sí, eliminar"
+        responsabilidad
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setAEliminar(null)}
+      />
     </div>
   )
 }

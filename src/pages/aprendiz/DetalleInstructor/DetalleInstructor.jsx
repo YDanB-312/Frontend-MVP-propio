@@ -111,8 +111,8 @@ export default function DetalleInstructor() {
                     </span>
                     <span className={s.rowSide}>
                       <Badge variant="info">{f.program?.nombre || '—'}</Badge>
-                      <Badge variant={f.estado === 'activo' ? 'success' : 'danger'}>
-                        {f.estado === 'activo' ? 'Activa' : 'Inactiva'}
+                      <Badge variant={f.estado === 'activo' ? 'success' : 'info'}>
+                        {f.estado === 'activo' ? 'Activa' : 'Finalizada'}
                       </Badge>
                       <span className={s.chevron} aria-hidden="true"><CaretRight size={22} /></span>
                     </span>

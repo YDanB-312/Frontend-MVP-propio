@@ -95,7 +95,7 @@ export default function Register() {
               type="email"
               value={form.correo}
               onChange={(e) => set('correo', e.target.value)}
-              placeholder="tu.correo@ejemplo.com"
+              placeholder="Correo electrónico"
               autoComplete="email"
             />
           </FormField>

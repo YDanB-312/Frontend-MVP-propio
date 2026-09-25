@@ -1,31 +1,33 @@
-import { test, expect, login } from './helpers'
+import { test, expect, login, confirmarBorrado } from './helpers'
 
 test.describe('Admin: eliminar usuarios', () => {
-  test('con propuestas el botón está bloqueado con motivo', async ({ page }) => {
+  test('un usuario con propuestas exige confirmación reforzada', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/detalle-usuario/1')
-    const btn = page.getByRole('button', { name: /^Eliminar$/i })
-    await expect(btn).toBeDisabled()
-    await expect(btn).toHaveAttribute('title', /propuesta/i)
-    // El motivo también se muestra en pantalla, no solo en el tooltip.
-    await expect(page.getByText(/No se puede eliminar/i)).toBeVisible()
+    await page.getByRole('button', { name: /^Eliminar$/i }).click()
+
+    // El botón de confirmar está bloqueado hasta aceptar y escribir ELIMINAR.
+    const dialog = page.getByRole('alertdialog')
+    await expect(dialog.getByRole('button', { name: /Sí, eliminar/i })).toBeDisabled()
+    await dialog.getByRole('button', { name: /Cancelar/i }).click()
   })
 
-  test('un instructor con fichas a cargo tampoco se puede eliminar', async ({ page }) => {
+  test('un instructor con fichas a cargo exige confirmación reforzada', async ({ page }) => {
     await login(page, 'admin')
-    await page.goto('/admin/detalle-usuario/8') // Andrés: instructor con ficha y sin propuestas asignadas
-    const btn = page.getByRole('button', { name: /^Eliminar$/i })
-    await expect(btn).toBeDisabled()
-    await expect(btn).toHaveAttribute('title', /ficha/i)
-    await expect(page.getByText(/No se puede eliminar/i)).toBeVisible()
+    await page.goto('/admin/detalle-usuario/8') // Andrés: instructor con ficha
+    await page.getByRole('button', { name: /^Eliminar$/i }).click()
+
+    const dialog = page.getByRole('alertdialog')
+    await expect(dialog.getByRole('button', { name: /Sí, eliminar/i })).toBeDisabled()
+    await dialog.getByRole('button', { name: /Cancelar/i }).click()
   })
 
-  test('sin propuestas elimina con confirmación y vuelve al listado', async ({ page }) => {
+  test('elimina con confirmación reforzada y vuelve al listado', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/detalle-usuario/12')
     await page.getByRole('button', { name: /^Eliminar$/i }).click()
     await expect(page.getByText(/Eliminar usuario/i)).toBeVisible()
-    await page.getByRole('button', { name: /Sí, eliminar/i }).click()
+    await confirmarBorrado(page, 'ELIMINAR')
     await page.waitForURL('**/admin/usuarios')
     await page.getByPlaceholder('Nombre o correo…').fill('maria.torres@sena.edu.co')
     await expect(page.locator('tbody tr')).toHaveCount(0)
@@ -40,4 +42,3 @@ test.describe('Admin: eliminar usuarios', () => {
     await expect(page.getByText(/Ya existe un usuario/i)).toBeVisible()
   })
 })
-

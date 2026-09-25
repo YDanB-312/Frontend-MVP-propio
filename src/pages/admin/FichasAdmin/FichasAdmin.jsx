@@ -15,7 +15,6 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash, Warning } from 'phosphor-react'
 import { useApi } from '../../../lib/useApi'
 import { fichas, programas, redes, instructores, proyectos } from '../../../lib/recursos'
@@ -31,9 +30,7 @@ const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 const ESTADO_LABEL = {
   activo: 'Activo',
-  inactivo: 'Inactivo',
   finalizado: 'Finalizado',
-  archivado: 'Archivado',
 }
 
 // Concatena nombre + apellido de un general_user.
@@ -397,9 +394,7 @@ export default function FichasAdmin() {
                 >
                   <option value="todos">Todos</option>
                   <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
-                  <option value="archivado">Archivado</option>
                 </Select>
               </label>
               <label className={s.field}>
@@ -536,42 +531,27 @@ export default function FichasAdmin() {
                       key: 'acciones',
                       header: 'Acciones',
                       align: 'end',
-                      render: (f) => {
-                        const aprendices = (f.apprentices || []).length
-                        const propuestas = propuestasPorFicha.get(Number(f.id)) || 0
-                        const conDatos = aprendices > 0 || propuestas > 0
-                        return (
-                          <div className={s.actions}>
-                            <Button
-                              as="link"
-                              to={`/admin/detalle-ficha/${f.id}`}
-                              viewTransition
-                              size="sm"
-                              variant="secondary"
-                            >
-                              <Eye size={14} /> Ver
-                            </Button>
-                            <span className={s.accionCol}>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="danger"
-                                disabled={conDatos}
-                                aria-describedby={conDatos ? `motivo-ficha-${f.id}` : undefined}
-                                title={conDatos ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
-                                onClick={() => setAEliminar(f)}
-                              >
-                                <Trash size={14} /> Eliminar
-                              </Button>
-                              {conDatos && (
-                                <MotivoBloqueo compact id={`motivo-ficha-${f.id}`}>
-                                  Con datos · {aprendices} aprendices · {propuestas} propuestas
-                                </MotivoBloqueo>
-                              )}
-                            </span>
-                          </div>
-                        )
-                      },
+                      render: (f) => (
+                        <div className={s.actions}>
+                          <Button
+                            as="link"
+                            to={`/admin/detalle-ficha/${f.id}`}
+                            viewTransition
+                            size="sm"
+                            variant="secondary"
+                          >
+                            <Eye size={14} /> Ver
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="danger"
+                            onClick={() => setAEliminar(f)}
+                          >
+                            <Trash size={14} /> Eliminar
+                          </Button>
+                        </div>
+                      ),
                     },
                   ]}
                   rows={paginadas}
@@ -597,11 +577,13 @@ export default function FichasAdmin() {
         titulo="Eliminar ficha"
         mensaje={
           aEliminar
-                ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`
+            ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Se eliminarán también sus aprendices y propuestas (con sus similitudes y observaciones). Esta acción no se puede deshacer.`
             : ''
         }
         textoConfirmar="Sí, eliminar"
         textoCancelar="Cancelar"
+        responsabilidad
+        verificacion="ELIMINAR"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setAEliminar(null)}
       />

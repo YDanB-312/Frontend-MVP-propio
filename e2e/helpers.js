@@ -11,7 +11,7 @@ const CUENTAS = {
 // tiempo de ejecución, p. ej. la simulación cruzada).
 export async function entrar(page, email, password, home) {
   await page.goto('/login')
-  await page.getByPlaceholder('tu.correo@ejemplo.com').fill(email)
+  await page.getByPlaceholder(/Correo electr/i).fill(email)
   await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
   await page.waitForURL(`**${home}`, { timeout: 15000 })
@@ -30,6 +30,15 @@ export async function logout(page) {
 
 export async function esperarDashboard(page, role) {
   await page.waitForURL(`**/${role}/dashboard`)
+}
+
+// Confirma un borrado en el modal reforzado: marca la responsabilidad y, si el
+// modal exige verificación, escribe el texto (por defecto "ELIMINAR").
+export async function confirmarBorrado(page, verificacion = null) {
+  const dialog = page.getByRole('alertdialog')
+  await dialog.getByRole('checkbox').check()
+  if (verificacion) await dialog.getByRole('textbox').fill(verificacion)
+  await dialog.getByRole('button', { name: /Sí, eliminar/i }).click()
 }
 
 export { CUENTAS, expect, test }

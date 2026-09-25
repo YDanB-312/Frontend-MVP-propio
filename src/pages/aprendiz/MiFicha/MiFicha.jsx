@@ -256,8 +256,8 @@ export default function MiFicha() {
               <h2 className={sd.infoTitle}>{ficha.nombre}</h2>
               <span className={`${sd.infoCodigo} ${sd.mono}`}>{ficha.codigo}</span>
             </div>
-            <Badge variant={ficha.estado === 'activo' ? 'success' : 'danger'}>
-              {ficha.estado === 'activo' ? 'Activa' : 'Inactiva'}
+            <Badge variant={ficha.estado === 'activo' ? 'success' : 'info'}>
+              {ficha.estado === 'activo' ? 'Activa' : 'Finalizada'}
             </Badge>
           </header>
 

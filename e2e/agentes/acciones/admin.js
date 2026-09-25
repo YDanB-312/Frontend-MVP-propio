@@ -1,5 +1,7 @@
 // Playbook del agente ADMIN: usuarios, fichas, motor, propuestas, reportes,
 // alertas y bitácora.
+import { confirmarBorrado } from '../../helpers'
+
 export async function admin(h) {
   const { page } = h
   const nombreFicha = `Ficha Admin Agente ${h.sufijo}`
@@ -13,7 +15,7 @@ export async function admin(h) {
 
     const form = page.locator('form')
     await form.getByPlaceholder('Ej. María González').fill(`Instructor Agente ${h.sufijo}`)
-    await form.getByPlaceholder('usuario@ejemplo.com').fill(`agente.${h.sufijo}@sena.edu.co`)
+    await form.getByPlaceholder(/Correo electr/i).fill(`agente.${h.sufijo}@sena.edu.co`)
     await form.locator('input[name="password"]').fill('123456')
     await form.locator('select[name="role"]').selectOption('instructor')
 
@@ -39,6 +41,7 @@ export async function admin(h) {
     await h.ir('/admin/detalle-usuario/4')
     h.usar('Restablecer contraseña')
     await page.getByRole('button', { name: /Restablecer contraseña/i }).click()
+    await page.getByRole('button', { name: /Sí, restablecer/i }).click()
     await page.getByText(/sena-[a-z0-9]+/i).first().waitFor({ timeout: 10000 })
   })
 
@@ -48,6 +51,7 @@ export async function admin(h) {
     const fila = page.locator('tr', { hasText: 'juan.perez@soy.sena.edu.co' })
     h.usar('Suspender')
     await fila.getByRole('button', { name: /Suspender/i }).click()
+    await page.getByRole('button', { name: /Sí, suspender/i }).click()
     await fila.getByText('Suspendido').waitFor({ timeout: 10000 })
     h.usar('Activar')
     await fila.getByRole('button', { name: /Activar/i }).click()
@@ -77,14 +81,14 @@ export async function admin(h) {
 
     h.usar('Editar ficha')
     await page.getByRole('button', { name: /^Editar$/i }).first().click()
-    await page.locator('form select[name="estado"]').selectOption('archivado')
+    await page.locator('form select[name="estado"]').selectOption('finalizado')
     h.usar('Guardar cambios')
     await page.locator('form').getByRole('button', { name: /Guardar cambios/i }).click()
     await h.esperar('Ficha actualizada correctamente.', 10000)
 
     h.usar('Eliminar ficha')
     await page.getByRole('button', { name: /Eliminar ficha/i }).click()
-    await page.getByRole('button', { name: /Sí, eliminar/i }).click()
+    await confirmarBorrado(page, 'ELIMINAR')
     await page.waitForURL('**/admin/fichas', { timeout: 15000 })
   })
 
@@ -122,7 +126,7 @@ export async function admin(h) {
     const article = page.locator('article', { hasText: `Observación admin ${h.sufijo}` }).first()
     h.usar('Eliminar observación')
     await article.getByRole('button', { name: /Eliminar observación/i }).click()
-    await page.getByRole('button', { name: /Sí, eliminar/i }).click()
+    await confirmarBorrado(page)
   })
 
   await h.paso('cambiar el estado de un reporte', async () => {
@@ -154,7 +158,7 @@ export async function admin(h) {
     await h.ir('/admin/detalle-usuario/11') // Patricia Morales: sin propuestas ni equipo
     h.usar('Eliminar')
     await page.getByRole('button', { name: /^Eliminar$/i }).click()
-    await page.getByRole('button', { name: /Sí, eliminar/i }).click()
+    await confirmarBorrado(page, 'ELIMINAR')
     await page.waitForURL('**/admin/usuarios', { timeout: 15000 })
   })
 
@@ -162,7 +166,7 @@ export async function admin(h) {
     await h.ir('/admin/detalle-proyecto/8')
     h.usar('Eliminar')
     await page.getByRole('button', { name: /^Eliminar$/i }).first().click()
-    await page.getByRole('button', { name: /Sí, eliminar/i }).click()
+    await confirmarBorrado(page)
     await page.waitForURL('**/admin/proyectos', { timeout: 15000 })
   })
 }

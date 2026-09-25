@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Brain, FolderOpen, ChartBar, CheckCircle, MagnifyingGlass, Database, Gauge } from 'phosphor-react'
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
-import Button from '../../../components/Button/Button'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
 import StatChip from '../../../components/StatChip/StatChip'
@@ -112,15 +111,7 @@ export default function Home() {
               <StatChip icon={<Gauge size={14} />} label="Programas" value={resumen ? resumen.total_programas : '—'} />
               <StatChip icon={<MagnifyingGlass size={14} />} label="Umbral" value={umbralPct != null ? `${umbralPct}%` : '—'} />
             </div>
-            <div className={`${s.ctaRow} fx-rise`} style={{ '--fx-i': 4 }}>
-              <Button as="link" to="/login" variant="secondary" viewTransition>
-                Iniciar Sesión
-              </Button>
-              <Button as="link" to="/register" viewTransition>
-                Crear Cuenta
-              </Button>
-            </div>
-            <ul className={`${s.heroPoints} fx-rise`} style={{ '--fx-i': 5 }}>
+            <ul className={`${s.heroPoints} fx-rise`} style={{ '--fx-i': 4 }}>
               <li><CheckCircle size={16} weight="fill" /> Detección automática de similitud</li>
               <li><CheckCircle size={16} weight="fill" /> Propuestas organizadas por ficha</li>
               <li><CheckCircle size={16} weight="fill" /> Reportes claros para instructores</li>
@@ -249,16 +240,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={s.ctaSection} aria-labelledby="cta-title">
-          <ConsoleCard glow className={s.ctaCard}>
-            <h2 id="cta-title" className={s.ctaTitle}>
-              ¿Listo para proteger la originalidad?
-            </h2>
-            <Button as="link" to="/register" viewTransition>
-              Crear Cuenta
-            </Button>
-          </ConsoleCard>
-        </section>
       </div>
     </LandingLayout>
   )

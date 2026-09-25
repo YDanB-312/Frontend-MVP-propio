@@ -7,7 +7,6 @@ import Avatar from '../../../components/Avatar/Avatar'
 import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import Alert from '../../../components/Alert/Alert'
-import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import ApiState from '../../../components/ApiState/ApiState'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
@@ -61,7 +60,6 @@ export default function DetalleFichaInstructor() {
     () => (ficha ? (todosProyectos || []).filter((p) => Number(p.id_class_group) === Number(ficha.id)) : []),
     [todosProyectos, ficha]
   )
-  const tieneDatos = estudiantes.length > 0 || proyectosFicha.length > 0
 
   // Autorización: solo el instructor a cargo de la ficha.
   const autorizado = !!ficha && Number(ficha.instructor?.id) === Number(miFila?.id)
@@ -189,12 +187,6 @@ export default function DetalleFichaInstructor() {
           <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
         )}
 
-        {tieneDatos && (
-          <MotivoBloqueo id="motivo-eliminar-ficha-instructor">
-            No se puede eliminar: tiene aprendices o propuestas asociadas ({estudiantes.length} aprendices · {proyectosFicha.length} propuestas).
-          </MotivoBloqueo>
-        )}
-
         <DataPanel
           title="Información de la ficha"
           icon={<IdentificationCard />}
@@ -210,9 +202,6 @@ export default function DetalleFichaInstructor() {
               <Button
                 type="button"
                 variant="danger"
-                disabled={tieneDatos}
-                aria-describedby={tieneDatos ? 'motivo-eliminar-ficha-instructor' : undefined}
-                title={tieneDatos ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
                 onClick={() => setModalEliminar(true)}
               >
                 <Trash size={14} /> Eliminar ficha
@@ -254,9 +243,7 @@ export default function DetalleFichaInstructor() {
                   onChange={onChange}
                 >
                   <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
-                  <option value="archivado">Archivado</option>
                 </Select>
               </FormField>
               <Actions form>
@@ -337,8 +324,10 @@ export default function DetalleFichaInstructor() {
       <ConfirmModal
         open={modalEliminar}
         titulo="Eliminar ficha"
-        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Se eliminarán también sus aprendices y propuestas (con sus similitudes y observaciones). Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
+        responsabilidad
+        verificacion="ELIMINAR"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}
       />

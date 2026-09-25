@@ -15,7 +15,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useApi } from '../../../lib/useApi'
 import { reportes, notificaciones } from '../../../lib/recursos'
-import { fechaDesdeApi } from '../../../utils/helpers'
+import { fechaDesdeApi, fechaHoyLocal } from '../../../utils/helpers'
 import s from './DetalleReporte.module.css'
 
 const ESTADO_LABEL = {
@@ -130,13 +130,15 @@ export default function DetalleReporte() {
         fecha: reporte.fecha,
         id_usuario: reporte.id_usuario,
       })
-      // Aviso al reportante (best-effort): no bloquea la actualización.
+      // Aviso al reportante (best-effort): informativo, sin enlace (el rol
+      // aprendiz/instructor no tiene vista de detalle de reporte → evita un
+      // enlace sin destino). No bloquea la actualización.
       await notificaciones.crear({
         titulo: `Tu reporte '${reporte.titulo}' ha pasado a ${ESTADO_LABEL[nuevoEstado] || nuevoEstado}`,
         tipo: 'sistema',
-        enlace: `reporte:${reporte.id}`,
+        enlace: null,
         leida: false,
-        fecha: new Date().toISOString().slice(0, 10),
+        fecha: fechaHoyLocal(),
         id_usuario: reporte.id_usuario,
       }).catch(() => null)
       await recargar()

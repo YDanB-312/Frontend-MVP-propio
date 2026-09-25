@@ -32,9 +32,7 @@ const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 const ESTADO_LABEL = {
   activo: 'Activo',
-  inactivo: 'Inactivo',
   finalizado: 'Finalizado',
-  archivado: 'Archivado',
 }
 
 export default function Fichas() {
@@ -379,9 +377,7 @@ export default function Fichas() {
                 >
                   <option value="todos">Todos</option>
                   <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
-                  <option value="archivado">Archivado</option>
                 </Select>
               </label>
               <label className={s.field}>

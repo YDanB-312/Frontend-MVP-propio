@@ -14,7 +14,6 @@ import DataTable from '../../../components/DataTable/DataTable'
 import Pagination from '../../../components/Pagination/Pagination'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import Tooltip from '../../../components/Tooltip/Tooltip'
 import { norm } from '../../../utils/helpers'
 import { PAGINA_TABLA } from '../../../constants/pagination'
@@ -496,33 +495,21 @@ export default function RedesConocimiento() {
                       key: 'acciones',
                       header: 'Acciones',
                       align: 'end',
-                      render: (r) => {
-                        const enUso = redEnUso(r.id)
-                        return (
-                          <span className={s.actions}>
-                            <Button size="sm" variant="secondary" onClick={() => abrirEditar(r)}>
-                              <PencilSimple size={14} /> Editar
-                            </Button>
-                            <span className={s.accionCol}>
-                              <Button
-                                size="sm"
-                                variant="danger"
-                                disabled={enUso}
-                                aria-describedby={enUso ? `motivo-red-${r.id}` : undefined}
-                                onClick={() => setConfirmId(r.id)}
-                                title={enUso ? 'No se puede eliminar: la red está en uso por fichas' : 'Eliminar red'}
-                              >
-                                <Trash size={14} /> Eliminar
-                              </Button>
-                              {enUso && (
-                                <MotivoBloqueo compact id={`motivo-red-${r.id}`}>
-                                  En uso · quita sus programas
-                                </MotivoBloqueo>
-                              )}
-                            </span>
-                          </span>
-                        )
-                      },
+                      render: (r) => (
+                        <span className={s.actions}>
+                          <Button size="sm" variant="secondary" onClick={() => abrirEditar(r)}>
+                            <PencilSimple size={14} /> Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => setConfirmId(r.id)}
+                            title="Eliminar red"
+                          >
+                            <Trash size={14} /> Eliminar
+                          </Button>
+                        </span>
+                      ),
                     },
                   ]}
                     rows={paginadas}
@@ -552,6 +539,8 @@ export default function RedesConocimiento() {
           }
           textoConfirmar="Sí, eliminar"
           textoCancelar="Cancelar"
+          responsabilidad
+          verificacion="ELIMINAR"
           onConfirmar={confirmarEliminar}
           onCancelar={() => setConfirmId(null)}
         />

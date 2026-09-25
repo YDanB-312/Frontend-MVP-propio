@@ -15,7 +15,10 @@ test.describe('Admin: motor de similitudes', () => {
     await expect(page.getByText(/umbral 80% y ventana de 6 meses/i)).toBeVisible()
 
     await page.getByRole('button', { name: /Recalcular base existente/i }).click()
-    await page.getByRole('button', { name: /Sí, recalcular/i }).click()
+    // El recálculo exige aceptar la responsabilidad en el modal.
+    const dialog = page.getByRole('alertdialog')
+    await dialog.getByRole('checkbox').check()
+    await dialog.getByRole('button', { name: /Sí, recalcular/i }).click()
     await expect(page.getByText(/Recalibración lista/i)).toBeVisible()
     await expect(page.getByText(/Umbral vigente: 80% · Ventana: 6 meses/i)).toBeVisible()
   })

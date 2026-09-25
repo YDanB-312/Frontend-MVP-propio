@@ -169,6 +169,7 @@ export default function ConfigSimilitud() {
         titulo="Recalcular coincidencias"
         mensaje={`Se recalcularán las coincidencias con el umbral vigente de ${Math.round(vigente.umbral * 100)}% y ventana de ${vigente.meses} meses. Las que queden por debajo se eliminarán y se generarán las nuevas que superen el umbral. ¿Continuar?`}
         textoConfirmar="Sí, recalcular"
+        responsabilidad
         onConfirmar={ejecutarRecalcular}
         onCancelar={() => setConfirmRecalcular(false)}
       />

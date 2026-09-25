@@ -21,13 +21,17 @@ test.describe('Admin: gestión de fichas', () => {
     await expect(page.getByText('Instructor').first()).toBeVisible()
   })
 
-  test('eliminar ficha con datos está bloqueado y el detalle enlaza', async ({ page }) => {
+  test('eliminar ficha con datos exige confirmación reforzada y el detalle enlaza', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/fichas')
     const fila = page.locator('tr', { hasText: 'xkp-mqwr' })
-    const btn = fila.getByRole('button', { name: /Eliminar/i })
-    await expect(btn).toBeDisabled()
-    await expect(btn).toHaveAttribute('title', /aprendices o propuestas/i)
+    await fila.getByRole('button', { name: /Eliminar/i }).click()
+
+    // El botón de confirmar está deshabilitado hasta aceptar la responsabilidad
+    // y escribir ELIMINAR. Se cancela para no borrar la ficha del seed.
+    const dialog = page.getByRole('alertdialog')
+    await expect(dialog.getByRole('button', { name: /Sí, eliminar/i })).toBeDisabled()
+    await dialog.getByRole('button', { name: /Cancelar/i }).click()
 
     // Desde una propuesta se llega a su ficha
     await page.goto('/admin/detalle-proyecto/4')
@@ -35,13 +39,13 @@ test.describe('Admin: gestión de fichas', () => {
     await page.waitForURL('**/admin/detalle-ficha/**')
   })
 
-  test('archivar una ficha desde su detalle', async ({ page }) => {
+  test('finalizar una ficha desde su detalle', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/detalle-ficha/2')
     await page.getByRole('button', { name: /Editar/i }).first().click()
-    await page.locator('form select[name="estado"]').selectOption('archivado')
+    await page.locator('form select[name="estado"]').selectOption('finalizado')
     await page.locator('form').getByRole('button', { name: /Guardar cambios/i }).click()
     await expect(page.getByText('Ficha actualizada correctamente.')).toBeVisible()
-    await expect(page.getByText('Archivado').first()).toBeVisible()
+    await expect(page.getByText('Finalizado').first()).toBeVisible()
   })
 })

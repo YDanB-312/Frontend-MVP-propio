@@ -10,9 +10,7 @@ import { ArrowRight, Users } from 'phosphor-react'
 // Etiquetas legibles del estado de la ficha (columnas reales de la API).
 const ESTADO_LABEL = {
   activo: 'Activo',
-  inactivo: 'Inactivo',
   finalizado: 'Finalizado',
-  archivado: 'Archivado',
 }
 
 // Concatena nombre + apellido de un general_user.

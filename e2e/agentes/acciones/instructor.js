@@ -1,6 +1,7 @@
 // Playbook del agente INSTRUCTOR: fichas (crear/editar/archivar/borrar),
 // revisión (aprobar/rechazar), similitudes, alertas y reporte de fallas.
 import { expect } from '@playwright/test'
+import { confirmarBorrado } from '../../helpers'
 
 export async function instructor(h) {
   const { page } = h
@@ -29,7 +30,7 @@ export async function instructor(h) {
 
     h.usar('Editar')
     await page.getByRole('button', { name: /^Editar$/i }).first().click()
-    await page.locator('form select[name="estado"]').selectOption('archivado')
+    await page.locator('form select[name="estado"]').selectOption('finalizado')
     h.usar('Guardar cambios')
     await page.locator('form').getByRole('button', { name: /Guardar cambios/i }).click()
     // El detalle del instructor cierra el formulario al guardar (sin toast).
@@ -37,7 +38,7 @@ export async function instructor(h) {
 
     h.usar('Eliminar ficha')
     await page.getByRole('button', { name: /Eliminar ficha/i }).click()
-    await page.getByRole('button', { name: /Sí, eliminar/i }).click()
+    await confirmarBorrado(page, 'ELIMINAR')
     await page.waitForURL('**/instructor/fichas', { timeout: 15000 })
   })
 

@@ -19,7 +19,7 @@ import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes, observaciones, notificaciones } from '../../../lib/recursos'
-import { agruparObservaciones, fechaDesdeApi } from '../../../utils/helpers'
+import { agruparObservaciones, fechaDesdeApi, fechaHoyLocal } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 
@@ -152,7 +152,7 @@ export default function DetalleProyectoAdmin() {
         tipo: 'revision',
         enlace: `proyecto:${proyecto.id}`,
         leida: false,
-        fecha: new Date().toISOString().slice(0, 10),
+        fecha: fechaHoyLocal(),
         id_usuario: proyecto.id_creador,
       }).catch(() => null)
       await recargar()
@@ -421,6 +421,7 @@ export default function DetalleProyectoAdmin() {
         titulo="Eliminar propuesta"
         mensaje={`¿Seguro que deseas eliminar "${proyecto.titulo}"? Se eliminarán también sus similitudes y observaciones. Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
+        responsabilidad
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}
       />
@@ -433,6 +434,7 @@ export default function DetalleProyectoAdmin() {
             : ''
         }
         textoConfirmar="Sí, eliminar"
+        responsabilidad
         onConfirmar={confirmarEliminarObservacion}
         onCancelar={() => setObsAEliminar(null)}
       />

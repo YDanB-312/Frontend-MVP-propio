@@ -28,7 +28,7 @@ test.describe('Privacidad: aprendiz vs propuestas ajenas', () => {
   test('integrante del equipo tiene derechos plenos sobre la propuesta compartida', async ({ page }) => {
     // Juan es integrante de "Plataforma de Ventas Online" (creada por María)
     await page.goto('/login')
-    await page.getByPlaceholder('tu.correo@ejemplo.com').fill('juan.perez@soy.sena.edu.co')
+    await page.getByPlaceholder(/Correo electr/i).fill('juan.perez@soy.sena.edu.co')
     await page.locator('input[type="password"]').fill('123456')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await page.waitForURL('**/aprendiz/dashboard')

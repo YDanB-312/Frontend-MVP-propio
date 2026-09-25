@@ -12,6 +12,10 @@ test.describe('Instructor: similitudes agrupadas por ficha', () => {
     await expect(grupo).toContainText(/coincidencia/)
     await expect(page.getByRole('link', { name: /^Ver$/i }).first()).toBeVisible()
 
+    // La contraparte (propuesta de otra ficha) muestra su título, no "Proyecto no disponible".
+    await expect(page.getByText('Proyecto no disponible')).toHaveCount(0)
+    await expect(page.getByText('Sistema de Gestión de Inventarios').first()).toBeVisible()
+
     await grupo.click()
     await expect(grupo).toHaveAttribute('aria-expanded', 'false')
     await grupo.click()
@@ -21,7 +25,7 @@ test.describe('Instructor: similitudes agrupadas por ficha', () => {
 
 async function entrarComo(page, correo, password) {
   await page.goto('/login')
-  await page.getByPlaceholder('tu.correo@ejemplo.com').fill(correo)
+  await page.getByPlaceholder(/Correo electr/i).fill(correo)
   await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /Iniciar Sesi/i }).click()
   await page.waitForURL('**/aprendiz/dashboard', { timeout: 15000 })

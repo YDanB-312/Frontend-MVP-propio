@@ -65,7 +65,7 @@ test.describe('Propuestas del aprendiz', () => {
 
     // Juan ve la propuesta compartida y tiene derechos plenos sobre ella
     await logout(page)
-    await page.getByPlaceholder('tu.correo@ejemplo.com').fill('juan.perez@soy.sena.edu.co')
+    await page.getByPlaceholder(/Correo electr/i).fill('juan.perez@soy.sena.edu.co')
     await page.locator('input[type="password"]').fill('123456')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await page.waitForURL('**/aprendiz/dashboard')

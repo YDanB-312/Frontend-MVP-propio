@@ -9,6 +9,7 @@ export default function NotificacionesAdmin() {
         titulo="Notificaciones"
         subtitle="Novedades del sistema: reportes de fallas, similitudes y actividad de usuarios."
         detallePath="/admin"
+        puedeEliminar
       />
     </DashboardLayout>
   )

@@ -11,7 +11,6 @@
 .titleAccent{color:var(--c-primary);text-shadow:var(--glow-soft)}
 .subtitle{font-size:var(--text-lg);color:var(--c-text-2);line-height:var(--leading-relaxed);margin:0 0 var(--sp-6);max-width:34rem}
 .stats{display:flex;gap:var(--sp-2_5);flex-wrap:wrap;margin-bottom:var(--sp-6)}
-.ctaRow{display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-bottom:var(--sp-6)}
 .heroPoints{display:flex;flex-direction:column;gap:var(--sp-2);font-size:var(--text-sm);color:var(--c-text-2)}
 .heroPoints li{display:flex;align-items:center;gap:var(--sp-2)}
 .heroPoints svg{color:var(--c-primary);flex-shrink:0}
@@ -53,9 +52,6 @@
 .stepNumber{font-size:var(--text-3xl);font-weight:800;color:var(--c-primary)}
 .stepTitle{font-size:var(--text-md);margin:var(--sp-3) 0 var(--sp-2)}
 .stepText{font-size:var(--text-sm);color:var(--c-text-2);line-height:var(--leading-relaxed);margin:0}
-.ctaSection{padding:var(--sp-12) var(--sp-4)}
-.ctaCard{max-width:var(--narrow-max);margin:0 auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:var(--sp-5)}
-.ctaTitle{font-family:var(--font-display);font-size:var(--text-2xl);letter-spacing:var(--tracking-tight);margin:0}
 
 @media (max-width:960px){
   .hero{grid-template-columns:1fr;padding-top:var(--sp-10)}

@@ -42,6 +42,14 @@ export function fechaDesdeApi(valor) {
   return formatearFecha(`${fecha.getDate()}/${fecha.getMonth() + 1}/${fecha.getFullYear()}`)
 }
 
+// Fecha de HOY en zona local (YYYY-MM-DD). Evita el off-by-one que produce
+// `toISOString()` en horas de la noche (UTC).
+export function fechaHoyLocal() {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d.toISOString().slice(0, 10)
+}
+
 // Código de ficha único con el formato del catálogo: abc-defg (3 + 4 letras).
 export function generarCodigoFicha(existentes = []) {
   const letras = 'abcdefghijklmnopqrstuvwxyz'

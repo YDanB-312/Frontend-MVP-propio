@@ -9,7 +9,6 @@ import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import Button from '../../../components/Button/Button'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import Alert from '../../../components/Alert/Alert'
 import FormField from '../../../components/FormField/FormField'
 import { Input, PasswordInput, Select } from '../../../components/Input/Input'
@@ -58,6 +57,7 @@ export default function DetalleUsuario() {
   const navigate = useNavigate()
   const { user: sesion, sincronizarSesion } = useAuth()
   const [modalEliminar, setModalEliminar] = useState(false)
+  const [modalRestablecer, setModalRestablecer] = useState(false)
   // Cambio del propio correo: exige la contraseña actual del admin.
   const [correoPendiente, setCorreoPendiente] = useState(null)
   const [correoPass, setCorreoPass] = useState('')
@@ -144,35 +144,6 @@ export default function DetalleUsuario() {
     const coincideEstado = filtroProp === 'todos' || p.estado === filtroProp
     return coincideQ && coincideEstado
   })
-
-  // Fichas a cargo (instructores): bloquean el borrado, igual que el backend (409).
-  const fichasACargo = usuario.rol === 'instructor' && usuario.instructor
-    ? listaFichas.filter((f) => Number(f.instructor?.id) === Number(usuario.instructor.id))
-    : []
-
-  // El borrado también se bloquea por historial académico (espejo del backend).
-  const listaProyectos = data.listaProyectos || []
-  const propuestasCreadas = listaProyectos.filter((p) => Number(p.id_creador) === Number(usuario.id))
-  const propuestasAsignadas = usuario.rol === 'instructor' && usuario.instructor
-    ? listaProyectos.filter((p) => Number(p.id_instructor_asignado) === Number(usuario.instructor.id))
-    : []
-  const propuestasEnEquipo = usuario.rol === 'aprendiz'
-    ? listaProyectos.filter(
-        (p) => Number(p.id_creador) !== Number(usuario.id)
-          && (p.apprentices || []).some((a) => Number(a.generalUser?.id) === Number(usuario.id))
-      )
-    : []
-
-  const motivoNoEliminar = propuestasCreadas.length > 0
-    ? `No se puede eliminar: es autor de ${propuestasCreadas.length} propuesta(s). Suspende la cuenta para conservar el historial.`
-    : propuestasAsignadas.length > 0
-      ? `No se puede eliminar: tiene ${propuestasAsignadas.length} propuesta(s) asignada(s). Reasígnalas primero.`
-      : propuestasEnEquipo.length > 0
-        ? `No se puede eliminar: participa en ${propuestasEnEquipo.length} propuesta(s). Suspende la cuenta para conservar el historial.`
-        : fichasACargo.length > 0
-          ? `No se puede eliminar: tiene ${fichasACargo.length} ficha(s) a cargo. Reasígnalas primero.`
-          : ''
-  const noEliminable = motivoNoEliminar !== ''
 
   // Máximo porcentaje y conteo de coincidencias de una propuesta.
   const similitudInfoDe = (projectId) => {
@@ -300,7 +271,8 @@ export default function DetalleUsuario() {
             codigo: perfilAprendiz.codigo,
             id_class_group: destino ? Number(destino.id) : null,
             id_usuario: perfilAprendiz.id_usuario,
-            id_programa: destino ? destino.id_programa : perfilAprendiz.id_programa,
+            // Sin ficha no hay programa (opción A: el programa se deriva).
+            id_programa: destino ? destino.id_programa : null,
           })
         }
       }
@@ -380,32 +352,20 @@ export default function DetalleUsuario() {
                 <Prohibit size={14} /> Suspender
               </Button>
             )}
-            <Button type="button" variant="secondary" onClick={restablecerClave}>
+            <Button type="button" variant="secondary" onClick={() => setModalRestablecer(true)}>
               <Key size={14} /> Restablecer contraseña
             </Button>
             <Button
               type="button"
               variant="dangerGhost"
-              disabled={esMiCuenta || noEliminable}
-              aria-describedby={noEliminable ? 'motivo-eliminar-usuario' : undefined}
-              title={
-                esMiCuenta
-                  ? 'No puedes eliminar tu propia cuenta'
-                  : noEliminable
-                    ? motivoNoEliminar
-                    : undefined
-              }
+              disabled={esMiCuenta}
+              title={esMiCuenta ? 'No puedes eliminar tu propia cuenta' : undefined}
               onClick={() => setModalEliminar(true)}
             >
               <Trash size={14} /> Eliminar
             </Button>
           </Actions>
         </div>
-
-        {/* Por qué no se puede eliminar: el backend responde 409 en estos casos. */}
-        {motivoNoEliminar && (
-          <MotivoBloqueo id="motivo-eliminar-usuario">{motivoNoEliminar}</MotivoBloqueo>
-        )}
 
         {claveTemporal && (
           <Alert>
@@ -434,7 +394,7 @@ export default function DetalleUsuario() {
                     type="email"
                     value={form.email}
                     onChange={onChange}
-                    placeholder="usuario@ejemplo.com"
+                    placeholder="Correo electrónico"
                   />
                 </FormField>
               </div>
@@ -552,11 +512,23 @@ export default function DetalleUsuario() {
       <ConfirmModal
         open={!!modalEliminar}
         titulo="Eliminar usuario"
-        mensaje={`¿Seguro que deseas eliminar a "${nombre}"? Se eliminará su cuenta y no se podrá recuperar. Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar a "${nombre}"? Se eliminarán su cuenta y todos sus registros asociados (propuestas, similitudes, observaciones, notificaciones y reportes). Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
         textoCancelar="Cancelar"
+        responsabilidad
+        verificacion="ELIMINAR"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}
+      />
+
+      <ConfirmModal
+        open={modalRestablecer}
+        titulo="Restablecer contraseña"
+        mensaje={`Se generará una contraseña temporal para "${nombre}" y deberá cambiarla al ingresar. ¿Continuar?`}
+        textoConfirmar="Sí, restablecer"
+        textoCancelar="Cancelar"
+        onConfirmar={async () => { await restablecerClave(); setModalRestablecer(false) }}
+        onCancelar={() => setModalRestablecer(false)}
       />
 
       <ConfirmModal

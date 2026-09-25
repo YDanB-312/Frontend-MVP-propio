@@ -23,7 +23,7 @@ test.describe('Navegación lateral (sidebar)', () => {
 
     await logout(page)
     await page.goto('/login')
-    await page.getByPlaceholder('tu.correo@ejemplo.com').fill('maria.gonzalez@soy.sena.edu.co')
+    await page.getByPlaceholder(/Correo electr/i).fill('maria.gonzalez@soy.sena.edu.co')
     await page.locator('input[type="password"]').fill('123456')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await page.waitForURL('**/aprendiz/dashboard')

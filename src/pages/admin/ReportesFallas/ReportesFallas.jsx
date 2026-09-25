@@ -11,11 +11,12 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import ApiState from '../../../components/ApiState/ApiState'
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import { useApi } from '../../../lib/useApi'
 import { reportes } from '../../../lib/recursos'
 import s from '../../../components/ListaBase/ListaBase.module.css'
-import { Bug, Eye } from 'phosphor-react'
+import { Bug, Eye, Trash } from 'phosphor-react'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
@@ -71,6 +72,7 @@ export default function ReportesFallas() {
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
   const [pagina, setPagina] = useState(1)
+  const [aEliminar, setAEliminar] = useState(null)
 
   // Fuente única: la API. Reportes con su usuario incluido.
   const { data, cargando, error, recargar } = useApi(
@@ -80,6 +82,17 @@ export default function ReportesFallas() {
   )
 
   const listaReportes = data || []
+
+  async function confirmarEliminar() {
+    if (!aEliminar) return
+    try {
+      await reportes.eliminar(aEliminar.id)
+      setAEliminar(null)
+      await recargar()
+    } catch {
+      setAEliminar(null)
+    }
+  }
 
   const reporterDe = (r) => nombreCompleto(r.generalUser) || `Usuario #${r.id_usuario}`
 
@@ -283,15 +296,25 @@ export default function ReportesFallas() {
                     header: 'Acciones',
                     align: 'end',
                     render: (r) => (
-                      <Button
-                        as="link"
-                        to={`/admin/detalle-reporte/${r.id}`}
-                        viewTransition
-                        size="sm"
-                        variant="secondary"
-                      >
-                        <Eye size={14} /> Ver
-                      </Button>
+                      <span className={s.actions}>
+                        <Button
+                          as="link"
+                          to={`/admin/detalle-reporte/${r.id}`}
+                          viewTransition
+                          size="sm"
+                          variant="secondary"
+                        >
+                          <Eye size={14} /> Ver
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="danger"
+                          onClick={() => setAEliminar(r)}
+                        >
+                          <Trash size={14} /> Eliminar
+                        </Button>
+                      </span>
                     ),
                   },
                 ]}
@@ -311,6 +334,16 @@ export default function ReportesFallas() {
           )}
         </ApiState>
       </div>
+
+      <ConfirmModal
+        open={!!aEliminar}
+        titulo="Eliminar reporte"
+        mensaje="¿Seguro que deseas eliminar este reporte de falla? Esta acción no se puede deshacer."
+        textoConfirmar="Sí, eliminar"
+        responsabilidad
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setAEliminar(null)}
+      />
     </DashboardLayout>
   )
 }
