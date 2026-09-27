@@ -9,6 +9,9 @@
 .scoreInfo{flex:1;min-width:220px}
 .nivel{display:flex;align-items:center;gap:var(--sp-3);font-family:var(--font-display);font-size:var(--text-xl);font-weight:700;text-transform:capitalize;margin:0 0 var(--sp-2)}
 .nivelDesc{color:var(--c-text-2);line-height:var(--leading-relaxed);margin:0;max-width:36rem}
+.nivel.baja{color:var(--sim-baja)}
+.nivel.media{color:var(--sim-media)}
+.nivel.alta{color:var(--sim-alta)}
 .matchList{display:flex;flex-direction:column;gap:var(--sp-2_5)}
 .matchRow{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3_5) var(--sp-4);background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-xl);box-shadow:var(--sh-card);transition:border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);text-decoration:none}
 .matchRow:hover{border-color:var(--c-border-h);box-shadow:var(--sh-card-h);transform:translateY(-1px)}

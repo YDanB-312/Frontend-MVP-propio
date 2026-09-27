@@ -66,6 +66,11 @@
   --grade-b:#ffbe3d;--grade-b-bg:rgba(255,190,61,.14);--grade-b-border:rgba(255,190,61,.45);
   --grade-c:#a3a3a3;--grade-c-bg:rgba(163,163,163,.14);--grade-c-border:rgba(163,163,163,.4);
 
+  /* Niveles de similitud: baja=bueno (verde), media (amarillo), alta=riesgo (rojo) */
+  --sim-baja:#4ce07a;--sim-baja-bg:rgba(76,224,122,.16);--sim-baja-border:rgba(76,224,122,.45);
+  --sim-media:#ffd07a;--sim-media-bg:rgba(255,208,122,.16);--sim-media-border:rgba(255,208,122,.45);
+  --sim-alta:#ff6b6b;--sim-alta-bg:rgba(255,107,107,.16);--sim-alta-border:rgba(255,107,107,.45);
+
   /* Rail + topnav (F2 AppShell) */
   --c-rail:#0a0a0a;--c-rail-border:rgba(255,255,255,.12);
   --c-rail-active:rgba(49,209,96,.18);--c-rail-active-t:#31d160;
@@ -172,6 +177,9 @@ html[data-theme='light'] {
   --grade-a:#0b5d75;--grade-a-bg:var(--t-100);--grade-a-border:var(--t-300);
   --grade-b:#b45309;--grade-b-bg:var(--amber-100);--grade-b-border:var(--amber-400);
   --grade-c:#525252;--grade-c-bg:var(--s-100);--grade-c-border:var(--s-300);
+  --sim-baja:var(--g-700);--sim-baja-bg:var(--g-100);--sim-baja-border:var(--g-300);
+  --sim-media:var(--amber-700);--sim-media-bg:var(--amber-100);--sim-media-border:var(--amber-400);
+  --sim-alta:var(--red-700);--sim-alta-bg:var(--red-100);--sim-alta-border:var(--red-400);
 
   --c-rail:#ffffff;--c-rail-border:var(--s-200);
   --c-rail-active:var(--g-700);--c-rail-active-t:#ffffff;--c-rail-indicator:var(--g-700);
@@ -243,6 +251,9 @@ html[data-theme='light'] {
     --grade-a:#0b5d75;--grade-a-bg:var(--t-100);--grade-a-border:var(--t-300);
     --grade-b:#b45309;--grade-b-bg:var(--amber-100);--grade-b-border:var(--amber-400);
     --grade-c:#525252;--grade-c-bg:var(--s-100);--grade-c-border:var(--s-300);
+    --sim-baja:var(--g-700);--sim-baja-bg:var(--g-100);--sim-baja-border:var(--g-300);
+    --sim-media:var(--amber-700);--sim-media-bg:var(--amber-100);--sim-media-border:var(--amber-400);
+    --sim-alta:var(--red-700);--sim-alta-bg:var(--red-100);--sim-alta-border:var(--red-400);
     --c-rail:#ffffff;--c-rail-border:var(--s-200);
     --c-rail-active:var(--g-700);--c-rail-active-t:#ffffff;--c-rail-indicator:var(--g-700);
     --c-rail-hover:var(--g-100);--c-rail-text:var(--s-600);

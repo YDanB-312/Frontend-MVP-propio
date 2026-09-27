@@ -9,7 +9,7 @@ test.describe('Home pública: demo del motor', () => {
     await page.goto('/')
 
     // Barra superior con la config real del motor (endpoint público)
-    await expect(page.getByText(/MOTOR · UMBRAL \d+%/)).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('DETECCIÓN DE SIMILITUD')).toBeVisible({ timeout: 15000 })
 
     // Chips del hero con conteos reales
     await expect(page.getByText('Propuestas', { exact: true })).toBeVisible()
@@ -19,7 +19,7 @@ test.describe('Home pública: demo del motor', () => {
     const input = page.locator('#demo-idea')
     await expect(input).toBeVisible()
     await input.fill('plataforma de inventarios para tienda con control de stock')
-    await expect(page.getByText(/sobre el umbral de/i).last()).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('[class*="termMatch"]').first()).toBeVisible({ timeout: 15000 })
     expect(await page.locator('[class*="termMatch"]').count()).toBeGreaterThan(0)
 
     // Ninguna llamada pública debe responder 401

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Brain, FolderOpen, ChartBar, CheckCircle, MagnifyingGlass, Database, Gauge } from 'phosphor-react'
+import { Brain, FolderOpen, ChartBar, CheckCircle, Database, Gauge } from 'phosphor-react'
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
 import StatChip from '../../../components/StatChip/StatChip'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import GradualBlur from '../../../components/GradualBlur/GradualBlur'
+import Button from '../../../components/Button/Button'
 import TextType from '../../../components/TextType/TextType'
 import { useApi } from '../../../lib/useApi'
 import { demo } from '../../../lib/recursos'
@@ -52,11 +53,15 @@ const PASOS = [
 
 const UMBRAL_DEMO = 3
 
+const FRASES_DEMO = [
+  'detecta coincidencias entre propuestas',
+  'protege la originalidad del trabajo',
+  'compara por similitud de texto',
+]
+
 export default function Home() {
-  // Resumen público (config del motor + conteos agregados) para los chips.
+  // Resumen público (conteos agregados) para los chips del hero.
   const { data: resumen } = useApi(() => demo.resumen(), [])
-  const umbralPct = resumen ? Math.round(Number(resumen.umbral) * 100) : null
-  const meses = resumen?.meses ?? null
 
   /* ---------- Demo en vivo: escribe una idea y el motor la compara ---------- */
   const [ideaViva, setIdeaViva] = useState('')
@@ -97,7 +102,7 @@ export default function Home() {
           <div className={s.heroInner}>
             <span className={`mono ${s.heroBadge} fx-rise`} style={{ '--fx-i': 0 }}>
               <span className={s.liveDot} aria-hidden="true" />
-              MOTOR · TF-IDF + N-GRAMAS
+              DETECCIÓN DE SIMILITUD
             </span>
             <h1 className={`${s.title} fx-rise`} style={{ '--fx-i': 1 }}>
               ¿Tu propuesta <span className={s.titleAccent}>es original?</span>
@@ -109,13 +114,16 @@ export default function Home() {
             <div className={`${s.stats} fx-rise`} style={{ '--fx-i': 3 }}>
               <StatChip icon={<Database size={14} />} label="Propuestas" value={resumen ? resumen.total_propuestas : '—'} />
               <StatChip icon={<Gauge size={14} />} label="Programas" value={resumen ? resumen.total_programas : '—'} />
-              <StatChip icon={<MagnifyingGlass size={14} />} label="Umbral" value={umbralPct != null ? `${umbralPct}%` : '—'} />
             </div>
             <ul className={`${s.heroPoints} fx-rise`} style={{ '--fx-i': 4 }}>
               <li><CheckCircle size={16} weight="fill" /> Detección automática de similitud</li>
               <li><CheckCircle size={16} weight="fill" /> Propuestas organizadas por ficha</li>
               <li><CheckCircle size={16} weight="fill" /> Reportes claros para instructores</li>
             </ul>
+            <div className={`${s.heroCta} fx-rise`} style={{ '--fx-i': 5 }}>
+              <Button as="link" to="/register" viewTransition>Crear cuenta</Button>
+              <Button as="link" to="/login" variant="ghost" viewTransition>Iniciar sesión</Button>
+            </div>
           </div>
 
           <div className={s.terminal}>
@@ -129,9 +137,8 @@ export default function Home() {
               <p className={`mono ${s.termLine}`}>
                 <span aria-hidden="true">$&nbsp;</span>
                 <TextType
-                  key={`${meses}-${umbralPct}`}
                   className={`mono ${s.termType}`}
-                  text={`comparar --corpus ${meses ?? '—'}m --umbral ${umbralPct ?? '—'}%`}
+                  texts={FRASES_DEMO}
                   speed={45}
                   startDelay={200}
                   cursor
@@ -140,7 +147,7 @@ export default function Home() {
               </p>
 
               <label className={`mono ${s.termLabel}`} htmlFor="demo-idea">
-                Escribe tu idea y mira al motor trabajar:
+                Escribe tu idea y compárala con la base:
               </label>
               <input
                 id="demo-idea"
@@ -158,11 +165,11 @@ export default function Home() {
                   {!listo
                     ? `Esperando una idea de al menos ${UMBRAL_DEMO} letras`
                     : comparando
-                      ? 'Analizando la idea con el motor'
+                      ? 'Analizando la idea'
                       : errorDemo
-                        ? 'No se pudo consultar el motor'
+                        ? 'No se pudo completar la comparación'
                         : resultado
-                          ? `${resultado.coincidencias.length} coincidencias, ${resultado.sobre} sobre el umbral de ${umbralPct}%`
+                          ? `${resultado.coincidencias.length} coincidencias detectadas`
                           : 'Sin resultados'}
                 </span>
 
@@ -172,7 +179,7 @@ export default function Home() {
                   </p>
                 ) : errorDemo ? (
                   <p className={`mono ${s.termHint}`} aria-hidden="true">
-                    <span className={s.caret} aria-hidden="true">▊</span> no se pudo consultar el motor. Intenta de nuevo.
+                    <span className={s.caret} aria-hidden="true">▊</span> no se pudo completar la comparación. Intenta de nuevo.
                   </p>
                 ) : comparando || !resultado ? (
                   <p className={`mono ${s.termHint}`} aria-hidden="true">
@@ -187,7 +194,7 @@ export default function Home() {
                       </div>
                     ))}
                     <p className={`mono ${s.termLine}`}>
-                      <span className={s.caret} aria-hidden="true">▊</span> {resultado.sobre} sobre el umbral de {umbralPct}%
+                      <span className={s.caret} aria-hidden="true">▊</span> {resultado.coincidencias.length} coincidencia{resultado.coincidencias.length !== 1 ? 's' : ''} detectada{resultado.coincidencias.length !== 1 ? 's' : ''}
                     </p>
                   </div>
                 )}

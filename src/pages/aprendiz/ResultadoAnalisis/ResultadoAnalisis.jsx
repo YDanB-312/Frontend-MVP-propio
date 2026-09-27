@@ -205,7 +205,7 @@ export default function ResultadoAnalisis() {
           <div className={s.scoreTop}>
             <ScoreDial value={pctMax} size={148} label="Coincidencia máxima" />
             <div className={s.scoreInfo}>
-              <p className={s.nivel}>Coincidencia {nivel} <GradeBadge score={pctMax} /></p>
+              <p className={`${s.nivel} ${s[nivel]}`}>Coincidencia {nivel} <GradeBadge score={pctMax} /></p>
               <p className={s.nivelDesc}>
                 {total === 1
                   ? 'Se detectó una coincidencia para tu proyecto.'

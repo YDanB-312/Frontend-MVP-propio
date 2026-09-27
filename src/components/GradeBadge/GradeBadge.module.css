@@ -4,7 +4,7 @@
 .sm{font-size:var(--text-xs)}.sm .letter{font-size:var(--text-sm)}
 .md{font-size:var(--text-sm)}.md .letter{font-size:var(--text-md)}
 .lg{font-size:var(--text-md)}.lg .letter{font-size:var(--text-xl)}
-.s{background:var(--grade-s-bg);border-color:var(--grade-s-border);color:var(--grade-s)}
-.a{background:var(--grade-a-bg);border-color:var(--grade-a-border);color:var(--grade-a)}
-.b{background:var(--grade-b-bg);border-color:var(--grade-b-border);color:var(--grade-b)}
-.c{background:var(--grade-c-bg);border-color:var(--grade-c-border);color:var(--grade-c)}
+.s{background:var(--sim-alta-bg);border-color:var(--sim-alta-border);color:var(--sim-alta)}
+.a{background:var(--sim-alta-bg);border-color:var(--sim-alta-border);color:var(--sim-alta)}
+.b{background:var(--sim-media-bg);border-color:var(--sim-media-border);color:var(--sim-media)}
+.c{background:var(--sim-baja-bg);border-color:var(--sim-baja-border);color:var(--sim-baja)}
