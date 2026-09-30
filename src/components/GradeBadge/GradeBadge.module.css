@@ -4,7 +4,6 @@
 .sm{font-size:var(--text-xs)}.sm .letter{font-size:var(--text-sm)}
 .md{font-size:var(--text-sm)}.md .letter{font-size:var(--text-md)}
 .lg{font-size:var(--text-md)}.lg .letter{font-size:var(--text-xl)}
-.s{background:var(--sim-alta-bg);border-color:var(--sim-alta-border);color:var(--sim-alta)}
 .a{background:var(--sim-alta-bg);border-color:var(--sim-alta-border);color:var(--sim-alta)}
 .b{background:var(--sim-media-bg);border-color:var(--sim-media-border);color:var(--sim-media)}
 .c{background:var(--sim-baja-bg);border-color:var(--sim-baja-border);color:var(--sim-baja)}

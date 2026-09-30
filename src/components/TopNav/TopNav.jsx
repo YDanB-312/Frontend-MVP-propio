@@ -86,8 +86,8 @@ export default function TopNav({ titulo = '', usuario = null, notificaciones = 0
     || usuario?.nombre || ''
   const correoPerfil = perfil?.correo || usuario?.correo
 
-  const cerrarSesion = () => {
-    logout()
+  const cerrarSesion = async () => {
+    await logout()
     navigate('/login', { replace: true })
   }
 

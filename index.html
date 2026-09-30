@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="ProyecTwin - Plataforma de análisis de similitud para proyectos formativos de aprendices del SENA. Detecta coincidencias, gestiona fichas y revisa propuestas académicas." />
     <meta name="author" content="Equipo ProyecTwin - SENA" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" content="#ffffff" />
     <link rel="icon" type="image/png" href="/images/Logo-ProyecTwin.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta property="og:type" content="website" />
@@ -18,12 +18,14 @@
     <meta name="twitter:image" content="/images/Logo-ProyecTwin.png" />
     <title>ProyecTwin - SENA</title>
     <script>
-      // Anti-flicker dark-first: pinta el tema antes del primer paint.
+      // Anti-flicker: pinta el tema antes del primer paint. Preferencia en una
+      // cookie (no localStorage); por defecto claro.
       try {
-        var __t = localStorage.getItem('theme')
-        document.documentElement.dataset.theme = __t === 'light' ? 'light' : 'dark'
+        var __m = document.cookie.match(/(?:^|; )theme=([^;]*)/)
+        var __t = __m ? decodeURIComponent(__m[1]) : 'light'
+        document.documentElement.dataset.theme = __t === 'dark' ? 'dark' : 'light'
       } catch (e) {
-        document.documentElement.dataset.theme = 'dark'
+        document.documentElement.dataset.theme = 'light'
       }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

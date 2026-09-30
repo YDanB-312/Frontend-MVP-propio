@@ -10,6 +10,8 @@ import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
 import ScoreDial from '../../../components/ScoreDial/ScoreDial'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import { gradeForScore, NIVEL_GRADO } from '../../../components/GradeBadge/grade'
+import { useMotor } from '../../../contexts/MotorContext'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi } from '../../../lib/recursos'
@@ -34,6 +36,7 @@ function esMia(proyecto, userId) {
 
 export default function ResultadoAnalisis() {
   const { user } = useAuth()
+  const { umbralPct } = useMotor()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [animado, setAnimado] = useState(false)
@@ -168,7 +171,7 @@ export default function ResultadoAnalisis() {
   const maxima = seleccionada || propias[0]
   const total = propias.length
   const pctMax = Math.round(Number(maxima.porcentaje) || 0)
-  const nivel = pctMax >= 70 ? 'alta' : pctMax >= 40 ? 'media' : 'baja'
+  const nivel = NIVEL_GRADO[gradeForScore(pctMax, umbralPct).grade]
 
   const recomendaciones =
     nivel === 'alta'

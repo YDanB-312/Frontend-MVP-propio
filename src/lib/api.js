@@ -1,49 +1,43 @@
 // Cliente HTTP de ProyecTwin.
 //
-// Única puerta de entrada a la API Laravel. Sin mocks, sin fusión de fuentes y
-// sin estado en memoria: cada llamada va al servidor con fetch().
-// El token de Sanctum se guarda en localStorage (o sessionStorage si el
-// usuario no marcó "recordarme") y se envía como Bearer.
+// Única puerta de entrada a la API Laravel. Sin mocks y sin estado persistente
+// en el navegador: la sesión viaja en una cookie httpOnly que el navegador
+// gestiona sola (no es accesible desde JavaScript). Para métodos que escriben se
+// añade el token CSRF (X-XSRF-TOKEN) que Laravel expone en la cookie XSRF-TOKEN.
 
 const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
-
-const CLAVE_TOKEN = "auth_token";
 
 // Evento que avisa a la app de que la sesión dejó de ser válida (401).
 export const EVENTO_SESION_EXPIRADA = "auth:expirada";
 
-// ---------------------------------------------------------------- Token
+// ---------------------------------------------------------------- CSRF
 
-function getToken() {
+function leerCookie(nombre) {
   try {
-    return (
-      localStorage.getItem(CLAVE_TOKEN) || sessionStorage.getItem(CLAVE_TOKEN)
-    );
+    const m = document.cookie.match(new RegExp("(^|; )" + nombre + "=([^;]*)"));
+    return m ? decodeURIComponent(m[2]) : null;
   } catch {
     return null;
   }
 }
 
-export function setAuthToken(token, remember = true) {
-  // Cambio de sesión (login/logout): los datos en caché pertenecen al usuario
-  // anterior, así que se descartan.
-  if (getToken() !== (token || null)) invalidarCache();
-  const destino = remember ? localStorage : sessionStorage;
-  const otro = remember ? sessionStorage : localStorage;
-  try {
-    if (token) destino.setItem(CLAVE_TOKEN, token);
-    else {
-      localStorage.removeItem(CLAVE_TOKEN);
-      sessionStorage.removeItem(CLAVE_TOKEN);
-    }
-    otro.removeItem(CLAVE_TOKEN);
-  } catch {
-    /* almacenamiento no disponible */
-  }
-}
+let csrfListo = false;
 
-export function haySesion() {
-  return !!getToken();
+// Pide la cookie CSRF una sola vez (Laravel la deja en XSRF-TOKEN).
+async function asegurarCsrf() {
+  if (csrfListo || leerCookie("XSRF-TOKEN")) {
+    csrfListo = true;
+    return;
+  }
+  try {
+    await fetch(`${BASE}/sanctum/csrf-cookie`, {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    csrfListo = true;
+  } catch {
+    /* se reintentará en la próxima escritura */
+  }
 }
 
 // ---------------------------------------------------------------- Caché de GET
@@ -88,7 +82,7 @@ export async function apiFetch(
   path,
   { method = "GET", body, auth = true, timeout = 15000, cache = true } = {},
 ) {
-  if (!BASE) throw new Error("VITE_API_URL no configurado");
+  if (!BASE && !path.startsWith("/")) throw new Error("Ruta inválida");
   const url = `${BASE}${path.startsWith("/") ? "" : "/"}${path}`;
 
   const esGet = method === "GET";
@@ -112,8 +106,13 @@ export async function apiFetch(
       "Content-Type": "application/json",
       Accept: "application/json",
     };
-    const token = auth ? getToken() : null;
-    if (token) headers.Authorization = `Bearer ${token}`;
+
+    // Las escrituras exigen el token CSRF (cookie httpOnly de sesión + header).
+    if (!esGet) {
+      await asegurarCsrf();
+      const xsrf = leerCookie("XSRF-TOKEN");
+      if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+    }
 
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeout);
@@ -122,6 +121,7 @@ export async function apiFetch(
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
+        credentials: "include",
         signal: ctrl.signal,
       });
       const text = await res.text();
@@ -133,14 +133,13 @@ export async function apiFetch(
       }
 
       if (!res.ok) {
-        // 401 en una llamada autenticada = token inválido o vencido. Se descarta
-        // la sesión local y se avisa a la app (AuthContext redirige a /login).
+        // 401 en una llamada autenticada = sesión ausente o vencida. Se avisa a
+        // la app (AuthContext limpia el usuario y la UI redirige a /login).
         if (res.status === 401 && auth) {
-          setAuthToken(null);
           try {
             window.dispatchEvent(new Event(EVENTO_SESION_EXPIRADA));
           } catch {
-            /* SSR/entornos sin window */
+            /* entornos sin window */
           }
         }
         const err = new Error(data?.message || `Error ${res.status}`);
@@ -171,26 +170,17 @@ export async function apiFetch(
 
 // ---------------------------------------------------------------- Sesión
 
-export async function apiLogin(correo, password, remember = true) {
-  const data = await apiFetch("/auth/login", {
+export async function apiLogin(correo, password, remember = false) {
+  // La sesión queda en la cookie httpOnly que devuelve el servidor.
+  return apiFetch("/auth/login", {
     method: "POST",
-    body: { correo, password },
+    body: { correo, password, recordarme: !!remember },
     auth: false,
   });
-  if (data.token) setAuthToken(data.token, remember);
-  return data; // { user, token, rol }
 }
 
 export function apiLogout() {
-  // Se captura el token actual para revocarlo; al terminar solo se limpia si
-  // sigue siendo el mismo (si el usuario volvió a iniciar sesión, no se borra
-  // el token nuevo).
-  const previo = getToken();
-  return apiFetch("/auth/logout", { method: "POST" })
-    .catch(() => null)
-    .finally(() => {
-      if (getToken() === previo) setAuthToken(null);
-    });
+  return apiFetch("/auth/logout", { method: "POST" }).catch(() => null);
 }
 
 export function apiMe() {
@@ -198,7 +188,7 @@ export function apiMe() {
 }
 
 // Cambio de la propia contraseña: el backend valida la actual y NO emite token
-// nuevo (la sesión y el "Recordarme" se conservan).
+// nuevo (la sesión se conserva).
 export function apiChangePassword(passwordActual, password) {
   return apiFetch("/auth/password", {
     method: "PUT",
@@ -210,8 +200,8 @@ export function apiChangePassword(passwordActual, password) {
   });
 }
 
-// Recuperación de contraseña por correo (en local el enlace se escribe en el log;
-// en `local` la respuesta además trae `reset_url` para poder probarlo).
+// Recuperación de contraseña por correo (en `local` la respuesta trae
+// `reset_url` para poder probarlo sin abrir el correo).
 export function apiForgotPassword(correo) {
   return apiFetch("/auth/forgot-password", {
     method: "POST",

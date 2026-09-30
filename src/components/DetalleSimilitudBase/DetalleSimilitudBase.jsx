@@ -266,6 +266,44 @@ export default function DetalleSimilitudBase({
         ))}
       </div>
 
+      {similitud.detalles && (
+        <DataPanel title="¿Qué tienen en común?" icon={<MagnifyingGlass />}>
+          <div className={s.comunSignals}>
+            {similitud.detalles.caracteres != null && (
+              <span className={s.comunSig}>Texto (n-gramas): {similitud.detalles.caracteres}%</span>
+            )}
+            {similitud.detalles.palabras != null && (
+              <span className={s.comunSig}>Palabras (BM25): {similitud.detalles.palabras}%</span>
+            )}
+            {similitud.detalles.tema != null && (
+              <span className={s.comunSig}>Tema (LSA): {similitud.detalles.tema}%</span>
+            )}
+            {similitud.detalles.cobertura != null && (
+              <span className={s.comunSig}>Cobertura: {similitud.detalles.cobertura}%</span>
+            )}
+          </div>
+
+          {similitud.detalles.terminos?.length > 0 && (
+            <p className={s.comunTexto}>
+              <strong>Términos en común:</strong> {similitud.detalles.terminos.join(', ')}
+            </p>
+          )}
+
+          {similitud.detalles.pasajes?.length > 0 && (
+            <div className={s.pasajes}>
+              <p className={s.pasajesTitle}>Fragmentos que coinciden</p>
+              {similitud.detalles.pasajes.map((fr, i) => (
+                <div key={i} className={s.pasaje}>
+                  <div className={s.pasajeRow}><span className={s.pasajeTag}>A</span><span>{fr.a}</span></div>
+                  <div className={s.pasajeRow}><span className={`${s.pasajeTag} ${s.pasajeTagB}`}>B</span><span>{fr.b}</span></div>
+                  <span className={s.pasajeScore}>{fr.score}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </DataPanel>
+      )}
+
       {otras.length > 0 && (
         <DataPanel title={`Otras coincidencias relacionadas (${otras.length})`} icon={<MagnifyingGlass />}>
           <ul className={s.otrasList}>

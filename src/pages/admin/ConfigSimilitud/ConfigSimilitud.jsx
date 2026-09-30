@@ -13,6 +13,7 @@ import { ChartBar, CheckCircle, SlidersHorizontal, ArrowClockwise, Gauge, Databa
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { useApi } from '../../../lib/useApi'
 import { motor, similitudes } from '../../../lib/recursos'
+import { useMotor } from '../../../contexts/MotorContext'
 import s from './ConfigSimilitud.module.css'
 
 export default function ConfigSimilitud() {
@@ -26,7 +27,11 @@ export default function ConfigSimilitud() {
     { inicial: null }
   )
 
-  const vigente = data?.configMotor || { umbral: 0.2, meses: 12 }
+  // El umbral gobierna la clasificación (A/B/C) en toda la app: al cambiarlo,
+  // se refresca el contexto para que los badges/niveles se recalculen.
+  const { recargar: recargarMotor } = useMotor()
+
+  const vigente = data?.configMotor || { umbral: 0.65, meses: 12 }
   const totalSimilitudes = (data?.listaSimilitudes || []).length
 
   const [umbral, setUmbral] = useState('')
@@ -61,6 +66,7 @@ export default function ConfigSimilitud() {
     try {
       await motor.actualizar(u / 100, m)
       await recargar()
+      await recargarMotor()
       setMsgTipo('ok')
       setMsg(`Motor actualizado: umbral ${u}% y ventana de ${m} meses. Aplica a las próximas detecciones; usa Recalcular para la base existente.`)
     } catch (err2) {
@@ -76,6 +82,7 @@ export default function ConfigSimilitud() {
     try {
       const res = await similitudes.recalcular()
       await recargar()
+      await recargarMotor()
       setMsgTipo('ok')
       setMsg(`Recalibración lista: ${res?.eliminadas ?? 0} coincidencia(s) fuera de regla eliminadas, ${res?.creadas ?? 0} nueva(s) detectada(s).`)
     } catch (err) {

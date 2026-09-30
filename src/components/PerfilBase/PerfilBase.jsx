@@ -103,10 +103,11 @@ export default function PerfilBase({
     msgTimer.current = setTimeout(() => setFotoMsg(null), 2600)
   }
 
-  // Guarda la foto (data URL base64) manteniendo los campos requeridos.
+  // Guarda la foto (data URL base64) sin tocar el resto de la cuenta: el
+  // backend acepta actualización parcial, así no falla por campos vacíos
+  // (p. ej. el admin sin apellido).
   async function actualizarFoto(fotoUrl) {
-    const cuenta = await usuarios.obtener(user.id)
-    await usuarios.actualizar(user.id, payloadCuenta(cuenta, { foto_url: fotoUrl }))
+    await usuarios.actualizar(user.id, { foto_url: fotoUrl })
     await recargarPerfil()
   }
 

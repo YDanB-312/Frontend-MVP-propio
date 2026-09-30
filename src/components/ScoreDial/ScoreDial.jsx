@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { gradeForScore } from '../GradeBadge/grade'
+import { useMotor } from '../../contexts/MotorContext'
 import { reduceMovimiento } from '../../utils/viewTransition'
 import s from './ScoreDial.module.css'
 
@@ -8,9 +9,10 @@ const CIRC = 2 * Math.PI * R
 
 // Dial de veredicto: anillo SVG + grado + porcentaje mono.
 export default function ScoreDial({ value = 0, size = 132, label = 'Coincidencia', className = '' }) {
+  const { umbralPct } = useMotor()
   const n = Number(value)
   const pct = Number.isFinite(n) ? Math.max(0, Math.min(100, n <= 1 ? Math.round(n * 100) : Math.round(n))) : 0
-  const { grade } = gradeForScore(pct)
+  const { grade } = gradeForScore(pct, umbralPct)
   const gid = useId()
   const [animado, setAnimado] = useState(() => reduceMovimiento())
 

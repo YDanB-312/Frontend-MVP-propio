@@ -11,6 +11,8 @@ const API = process.env.PROYECTWIN_API || 'http://127.0.0.1:8000'
 
 const proxy = {
   '/v1': { target: API, changeOrigin: true },
+  // Cookie CSRF de Sanctum (misma-origen para la sesión por cookie).
+  '/sanctum': { target: API, changeOrigin: true },
 }
 
 // https://vite.dev/config/

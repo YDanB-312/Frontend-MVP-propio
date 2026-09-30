@@ -1,12 +1,12 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { haySesion } from '../../lib/api'
 
-// Autoriza rutas privadas: exige usuario en sesión Y token válido presente.
-// (Un `auth_user` huérfano, sin token, no debe dar acceso.)
+// Autoriza rutas privadas. La sesión vive en una cookie httpOnly, así que hay
+// que esperar a que AuthContext resuelva /auth/me antes de decidir.
 export default function ProtectedRoute({ allowedRoles, children }) {
-  const { user, isAuthenticated } = useAuth()
-  if (!isAuthenticated || !haySesion()) return <Navigate to="/login" replace />
+  const { user, isAuthenticated, cargando } = useAuth()
+  if (cargando) return null
+  if (!isAuthenticated) return <Navigate to="/login" replace />
   if (allowedRoles && !allowedRoles.includes(user.rol)) return <Navigate to="/login" replace />
   return children
 }

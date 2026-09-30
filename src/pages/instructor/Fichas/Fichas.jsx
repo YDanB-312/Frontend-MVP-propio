@@ -7,7 +7,6 @@ import DataPanel from '../../../components/DataPanel/DataPanel'
 import FormField from '../../../components/FormField/FormField'
 import Badge from '../../../components/Badge/Badge'
 import Alert from '../../../components/Alert/Alert'
-import MotivoBloqueo from '../../../components/MotivoBloqueo/MotivoBloqueo'
 import Button from '../../../components/Button/Button'
 import { Input, Select } from '../../../components/Input/Input'
 import Actions from '../../../components/Actions/Actions'
@@ -420,7 +419,6 @@ export default function Fichas() {
                       const estudiantes = aprendicesApi.filter((a) => Number(a.id_class_group) === Number(f.id)).length
                       const props = todosProyectos.filter((p) => Number(p.id_class_group) === Number(f.id))
                       const pend = props.filter((p) => p.estado === 'pendiente').length
-                      const bloqueada = estudiantes > 0 || props.length > 0
                       return (
                         <article key={f.id} className={s.card}>
                           <header className={s.cardHeader}>
@@ -466,18 +464,10 @@ export default function Fichas() {
                                 type="button"
                                 size="sm"
                                 variant="danger"
-                                disabled={bloqueada}
-                                aria-describedby={bloqueada ? `motivo-ficha-ins-${f.id}` : undefined}
-                                title={bloqueada ? 'No se puede eliminar: tiene aprendices o propuestas asociadas' : undefined}
                                 onClick={() => setAEliminar(f)}
                               >
                                 <Trash size={14} /> Eliminar
                               </Button>
-                              {bloqueada && (
-                                <MotivoBloqueo compact id={`motivo-ficha-ins-${f.id}`}>
-                                  Con datos · {estudiantes} aprendices · {props.length} propuestas
-                                </MotivoBloqueo>
-                              )}
                             </span>
                           </footer>
                         </article>
@@ -505,11 +495,13 @@ export default function Fichas() {
         titulo="Eliminar ficha"
         mensaje={
           aEliminar
-                ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`
+            ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Se eliminarán también sus aprendices y propuestas (con sus similitudes y observaciones). Esta acción no se puede deshacer.`
             : ''
         }
         textoConfirmar="Sí, eliminar"
         textoCancelar="Cancelar"
+        responsabilidad
+        verificacion="ELIMINAR"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setAEliminar(null)}
       />

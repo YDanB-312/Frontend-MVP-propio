@@ -11,8 +11,9 @@ const RUTAS_OSCURO = {
 const SEVERIDAD_BLOQ = ['critical', 'serious']
 
 async function activarOscuro(page) {
+  // La preferencia de tema vive en una cookie (no localStorage).
   await page.addInitScript(() => {
-    try { localStorage.setItem('theme', 'dark') } catch { /* el navegador de test siempre permite localStorage */ }
+    try { document.cookie = 'theme=dark; Path=/; SameSite=Lax' } catch { /* ignore */ }
   })
 }
 

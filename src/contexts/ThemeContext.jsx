@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
 import { THEME_KEY, ThemeContext } from './theme'
 
-// Dark-first: sin preferencia guardada se arranca en consola oscura.
-function temaInicial() {
+// Lee una cookie de primer nivel (no usa localStorage).
+function leerCookie(nombre) {
   try {
-    const guardado = localStorage.getItem(THEME_KEY)
-    if (guardado === 'light' || guardado === 'dark') return guardado
+    const m = document.cookie.match(new RegExp('(^|; )' + nombre + '=([^;]*)'))
+    return m ? decodeURIComponent(m[2]) : null
   } catch {
-    // almacenamiento no disponible
+    return null
   }
-  return 'dark'
+}
+
+// Por defecto: claro (blanco). La preferencia persiste en una cookie (no
+// localStorage) para que un refresco no cambie el modo.
+function temaInicial() {
+  const guardado = leerCookie(THEME_KEY)
+  return guardado === 'dark' || guardado === 'light' ? guardado : 'light'
 }
 
 export function ThemeProvider({ children }) {
@@ -18,9 +24,9 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     try {
-      localStorage.setItem(THEME_KEY, theme)
+      document.cookie = `${THEME_KEY}=${theme}; Path=/; Max-Age=31536000; SameSite=Lax`
     } catch {
-      // almacenamiento no disponible
+      /* cookies no disponibles */
     }
   }, [theme])
 
