@@ -4,7 +4,7 @@ import { EMAIL_REGEX, MIN_PASSWORD_LENGTH, esEmailValido, esPasswordValida } fro
 describe('validation', () => {
   it('expone la misma regex histórica y mínimo 6', () => {
     expect(EMAIL_REGEX).toEqual(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
-    expect(MIN_PASSWORD_LENGTH).toBe(8)
+    expect(MIN_PASSWORD_LENGTH).toBe(6)
   })
 
   it('esEmailValido recorta y valida', () => {
@@ -16,8 +16,8 @@ describe('validation', () => {
   })
 
   it('esPasswordValida exige mínimo sin obligar presencia', () => {
-    expect(esPasswordValida('12345678')).toBe(true)
-    expect(esPasswordValida('1234567')).toBe(false)
+    expect(esPasswordValida('123456')).toBe(true)
+    expect(esPasswordValida('12345')).toBe(false)
     expect(esPasswordValida('')).toBe(false)
     expect(esPasswordValida(null)).toBe(false)
   })

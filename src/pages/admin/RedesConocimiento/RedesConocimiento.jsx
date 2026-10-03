@@ -285,8 +285,33 @@ export default function RedesConocimiento() {
     setGuardando(true)
     try {
       if (modo === 'editar') {
-        // Una sola llamada transaccional: la red y sus programas se guardan juntos.
-        await redes.sincronizar(editId, { nombre: formNombre.trim(), programas: lista })
+        await redes.actualizar(editId, { nombre: formNombre.trim() })
+        const existentes = listaProgramas.filter((p) => Number(p.knowledge_network_id) === Number(editId))
+        const idsEnForm = new Set(lista.filter((p) => p.id).map((p) => Number(p.id)))
+        // 1) Renombrar / crear
+        for (const item of lista) {
+          if (item.id) {
+            const previo = existentes.find((p) => Number(p.id) === Number(item.id))
+            if (previo && previo.nombre !== item.nombre) {
+              await programas.actualizar(item.id, {
+                nombre: item.nombre,
+                nivel: previo.nivel,
+                num_trimestres: previo.num_trimestres,
+                knowledge_network_id: Number(editId),
+              })
+            }
+          } else {
+            await programas.crear({
+              nombre: item.nombre,
+              ...PROGRAMA_DEFECTO,
+              knowledge_network_id: Number(editId),
+            })
+          }
+        }
+        // 2) Eliminar los que ya no están en el formulario
+        for (const previo of existentes) {
+          if (!idsEnForm.has(Number(previo.id))) await programas.eliminar(previo.id)
+        }
       } else {
         const red = await redes.crear({ nombre: formNombre.trim() })
         for (const item of lista) {

@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../lib/useApi'
 import { notificaciones as apiNotificaciones } from '../../lib/recursos'
 import {
   House, FolderOpen, Bell, Bug, UserCircle,
-  ClipboardText, BookOpen, BookBookmark, UsersThree, MagnifyingGlass, GearSix,
+  ClipboardText, BookOpen, BookBookmark, UsersThree, MagnifyingGlass, GraduationCap, GearSix,
   ClockCounterClockwise, TreeStructure
 } from 'phosphor-react'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
@@ -19,6 +18,7 @@ const LINKS = {
     { to: '/aprendiz/dashboard', icon: <House size={20} weight="regular" />, label: 'Dashboard' },
     { to: '/aprendiz/propuestas', icon: <FolderOpen size={20} weight="regular" />, label: 'Propuestas', activeFor: ['/aprendiz/detalle-proyecto'] },
     { to: '/aprendiz/similitudes', icon: <MagnifyingGlass size={20} weight="regular" />, label: 'Similitudes', activeFor: ['/aprendiz/detalle-similitud', '/aprendiz/resultado-analisis'] },
+    { to: '/aprendiz/ficha', icon: <GraduationCap size={20} weight="regular" />, label: 'Ficha', activeFor: ['/aprendiz/detalle-ficha'] },
     { to: '/aprendiz/alertas', icon: <Bell size={20} weight="regular" />, label: 'Alertas' },
     { to: '/aprendiz/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
     { to: '/aprendiz/reportar-falla', icon: <Bug size={20} weight="regular" />, label: 'Reportar Falla' },
@@ -50,7 +50,6 @@ const LINKS = {
 export default function DashboardLayout({ role = 'aprendiz', titulo = '', children }) {
   const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  useDocumentTitle(titulo)
 
   // Campana: notificaciones reales del usuario (fuente única: la API).
   const { data } = useApi(
@@ -65,14 +64,12 @@ export default function DashboardLayout({ role = 'aprendiz', titulo = '', childr
 
   return (
     <div className={s.layout}>
-      <a className={s.skipLink} href="#contenido">Saltar al contenido</a>
       <GovernmentBar />
       <TopNav
         titulo={titulo}
         usuario={user}
         role={role}
         notificaciones={sinLeer}
-        sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(o => !o)}
       />
       <Sidebar
@@ -82,7 +79,7 @@ export default function DashboardLayout({ role = 'aprendiz', titulo = '', childr
         links={links}
       />
       <div className={s.body}>
-        <main id="contenido" tabIndex={-1} className={s.main}>{children}</main>
+        <main className={s.main}>{children}</main>
         <Footer role={role} />
       </div>
     </div>

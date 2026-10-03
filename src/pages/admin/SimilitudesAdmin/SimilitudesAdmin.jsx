@@ -137,18 +137,6 @@ export default function SimilitudesAdmin() {
     setPagina(1)
   }
 
-  // Resumen legible de los filtros activos (visible con el panel plegado).
-  const chipsActivos = [
-    busqueda.trim() && `Búsqueda: "${busqueda.trim()}"`,
-    filtroEstado !== 'todos' && `Estado: ${ESTADO_LABEL[filtroEstado] || filtroEstado}`,
-    filtroFicha !== 'todos' && `Ficha: ${filtroFicha}`,
-    filtroPrograma !== 'todos' && `Programa: ${filtroPrograma}`,
-    filtroInstructor !== 'todos' && 'Instructor',
-    minSim && `≥ ${minSim}%`,
-    desde && `Desde ${desde}`,
-    hasta && `Hasta ${hasta}`,
-  ].filter(Boolean)
-
   const altas = listaSimilitudes.filter((sim) => Math.round(Number(sim.porcentaje) || 0) >= 70).length
   const programasAfectados = new Set(
     listaSimilitudes.flatMap((sim) => [
@@ -183,7 +171,7 @@ export default function SimilitudesAdmin() {
             <StatChip label="Umbral" value={`${umbralPct}%`} />
           </div>
 
-          <FilterBar title="Buscar y filtrar" activeCount={chipsActivos.length} chips={chipsActivos}>
+          <FilterBar title="Buscar y filtrar">
             <label className={s.field}>
               <span className={s.label}>Buscar</span>
               <Input

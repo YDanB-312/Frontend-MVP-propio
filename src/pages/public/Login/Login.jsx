@@ -30,7 +30,7 @@ export default function Login() {
     setError('')
 
     if (!email.trim() || !password) {
-      setError('Ingresa tu correo o documento y tu contraseña.')
+      setError('Ingresa tu correo y contraseña.')
       return
     }
 
@@ -39,9 +39,6 @@ export default function Login() {
       const resultado = await login(email, password, recordarme)
       if (resultado.exito) {
         navigate(resultado.ruta, { replace: true })
-      } else if (resultado.pendienteActivacion) {
-        // Cuenta creada pero sin activar: se lleva al paso de activación.
-        navigate('/activar-cuenta', { state: { correo: resultado.correo || email.trim() } })
       } else {
         setError(resultado.mensaje)
       }
@@ -67,13 +64,13 @@ export default function Login() {
             </p>
           )}
 
-          <FormField label="Correo o número de documento" required>
+          <FormField label="Correo electrónico" required>
             <Input
-              type="text"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Correo electrónico o documento"
-              autoComplete="username"
+              placeholder="Correo electrónico"
+              autoComplete="email"
               autoFocus
             />
           </FormField>

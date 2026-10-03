@@ -14,7 +14,7 @@ test.describe('Administración de usuarios (admin)', () => {
     const formulario = page.locator('form')
     await formulario.getByPlaceholder('Ej. María González').fill('Instructor E2E Programa')
     await formulario.getByPlaceholder(/Correo electr/i).fill(email)
-    await formulario.locator('input[name="password"]').fill('clave12345')
+    await formulario.locator('input[name="password"]').fill('123456')
     await formulario.locator('select[name="role"]').selectOption('instructor')
 
     // Ya no existe selección de red/programas al crear el usuario

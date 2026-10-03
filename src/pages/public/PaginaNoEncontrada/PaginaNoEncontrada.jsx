@@ -1,12 +1,9 @@
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle'
 import s from './PaginaNoEncontrada.module.css'
 
 export default function PaginaNoEncontrada() {
-  useDocumentTitle('Página no encontrada')
-
   return (
     <LandingLayout>
       <main className={s.wrapper}>

@@ -105,9 +105,7 @@ export default function DetalleSimilitudBase({
   // pares de sus proyectos, así que no puede ver similitudes ajenas.
   const relatedTo = [proyecto1?.id, proyecto2?.id].filter(Boolean).join(',')
   const { data: todas } = useApi(
-    // Sin ids todavía no se consulta: evita descargar TODAS las similitudes
-    // para luego volver a pedirlas filtradas (petición pesada desperdiciada).
-    () => (relatedTo ? similitudes.listar({ related_to: relatedTo }) : Promise.resolve([])),
+    () => similitudes.listar(relatedTo ? { related_to: relatedTo } : {}),
     [relatedTo],
     { inicial: [] }
   )

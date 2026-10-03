@@ -16,7 +16,7 @@ import Alert from '../../../components/Alert/Alert'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi, fichas, instructores } from '../../../lib/recursos'
+import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instructores } from '../../../lib/recursos'
 import { fechaDesdeApi, norm } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './RevisionPropuestas.module.css'
@@ -143,7 +143,18 @@ export default function RevisionPropuestas() {
       // 1) Actualiza el estado (PUT exige el objeto completo).
       await proyectos.actualizar(proyecto.id, { ...proyecto, estado: accion })
 
-      // 2) Al aprobar, el motor del backend calcula las coincidencias.
+      // 2) Notifica al creador de la propuesta.
+      await notificaciones.crear({
+        titulo: accion === 'aprobado'
+          ? `Tu proyecto '${proyecto.titulo}' ha sido Aprobado`
+          : `Tu proyecto '${proyecto.titulo}' ha sido Rechazado`,
+        tipo: 'revision',
+        enlace: `proyecto:${proyecto.id}`,
+        fecha: new Date().toISOString(),
+        id_usuario: proyecto.id_creador,
+      })
+
+      // 3) Al aprobar, el motor del backend calcula las coincidencias.
       if (accion === 'aprobado') {
         try {
           await similitudesApi.detectar(proyecto.id)

@@ -10,7 +10,6 @@ import Button from '../../../components/Button/Button'
 import TextType from '../../../components/TextType/TextType'
 import { useApi } from '../../../lib/useApi'
 import { demo } from '../../../lib/recursos'
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle'
 import s from './Home.module.css'
 
 const FEATURES = [
@@ -61,7 +60,6 @@ const FRASES_DEMO = [
 ]
 
 export default function Home() {
-  useDocumentTitle('Inicio')
   // Resumen público (conteos agregados) para los chips del hero.
   const { data: resumen } = useApi(() => demo.resumen(), [])
 
@@ -144,6 +142,7 @@ export default function Home() {
                   speed={45}
                   startDelay={200}
                   cursor
+                  respectReducedMotion={false}
                 />
               </p>
 

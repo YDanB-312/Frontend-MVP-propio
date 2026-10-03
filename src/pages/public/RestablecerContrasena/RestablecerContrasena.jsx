@@ -25,7 +25,7 @@ export default function RestablecerContrasena() {
     setError('')
 
     if (!esPasswordValida(password)) {
-      setError('La contraseña debe tener al menos 8 caracteres.')
+      setError('La contraseña debe tener al menos 6 caracteres.')
       return
     }
     if (password !== confirmar) {
@@ -106,7 +106,7 @@ export default function RestablecerContrasena() {
             <Input type="email" value={correo} readOnly />
           </FormField>
 
-          <FormField label="Nueva contraseña" help="Mínimo 8 caracteres" required>
+          <FormField label="Nueva contraseña" help="Mínimo 6 caracteres" required>
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}

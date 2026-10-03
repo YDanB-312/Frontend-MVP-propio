@@ -8,7 +8,7 @@
 .table tbody tr:hover{background:var(--c-chip-hover)}
 .align-start{text-align:left}.align-center{text-align:center}.align-end{text-align:right}
 .table thead th:last-child{position:sticky;right:0;z-index:2}
-.table tbody td:last-child{position:sticky;right:0;z-index:1;background:var(--c-surface);box-shadow:-12px 0 12px -12px var(--c-border-h)}
+.table tbody td:last-child{position:sticky;right:0;z-index:1;background:var(--c-surface);box-shadow:-12px 0 12px -12px rgba(0,0,0,.5)}
 .empty{padding:var(--sp-6);text-align:center;color:var(--c-text-3);border:1px dashed var(--c-border);border-radius:var(--r-xl)}
 @media (max-width:640px){
   .table{min-width:0}

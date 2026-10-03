@@ -71,8 +71,6 @@ test.describe('Propuestas del aprendiz', () => {
     await page.waitForURL('**/aprendiz/dashboard')
 
     await page.goto('/aprendiz/propuestas')
-    // La lista pagina en cliente: se filtra para no depender del orden/página.
-    await page.getByPlaceholder(/Título, resumen o palabras clave/i).fill('Propuesta Equipo E2E')
     await expect(page.getByText(/Propuesta Equipo E2E/)).toBeVisible()
 
     await page.getByText(/Propuesta Equipo E2E/).click()

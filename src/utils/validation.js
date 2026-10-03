@@ -13,7 +13,7 @@ export const MAX_DESCRIPCION = 600
 
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export const MIN_PASSWORD_LENGTH = 8
+export const MIN_PASSWORD_LENGTH = 6
 
 export function esEmailValido(email) {
   return EMAIL_REGEX.test(String(email || '').trim())

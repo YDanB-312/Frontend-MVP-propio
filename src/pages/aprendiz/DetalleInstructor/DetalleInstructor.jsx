@@ -74,7 +74,7 @@ export default function DetalleInstructor() {
             message="Aún no tienes una ficha con instructor asignado. Cuando coordinación te asigne una ficha, verás aquí a tu instructor."
             actionLabel="Ir a Mi Ficha"
             actionIcon={<GraduationCap size={14} />}
-            onAction={() => navigate('/aprendiz/dashboard')}
+            onAction={() => navigate('/aprendiz/ficha')}
           />
         </div>
       </DashboardLayout>

@@ -9,6 +9,7 @@ const FOOTER_BY_ROLE = {
       { label: 'Dashboard', to: '/aprendiz/dashboard' },
       { label: 'Propuestas', to: '/aprendiz/propuestas' },
       { label: 'Similitudes', to: '/aprendiz/similitudes' },
+      { label: 'Ficha', to: '/aprendiz/ficha' },
       { label: 'Alertas', to: '/aprendiz/alertas' },
       { label: 'Mi Perfil', to: '/aprendiz/perfil' },
       { label: 'Reportar Falla', to: '/aprendiz/reportar-falla' },

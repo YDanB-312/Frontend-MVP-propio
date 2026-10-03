@@ -42,6 +42,7 @@ for (const rol of ROLES) {
 
 // Escenarios de simulación cruzada (varios roles encadenados).
 const SIMULACIONES = [
+  { nombre: 'simulación cruzada', spec: 'e2e/agentes/simulacion-cruzada.spec.js' },
   { nombre: 'simulación similitud', spec: 'e2e/agentes/simulacion-similitud.spec.js' },
   { nombre: 'simulación reporte', spec: 'e2e/agentes/simulacion-reporte.spec.js' },
 ]

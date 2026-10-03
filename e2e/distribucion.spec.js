@@ -29,7 +29,7 @@ test.describe('Navegación lateral (sidebar)', () => {
     await page.waitForURL('**/aprendiz/dashboard')
     await page.goto('/aprendiz/dashboard')
     sidebar = page.locator('aside')
-    for (const nombre of ['Dashboard', 'Propuestas', 'Similitudes', 'Alertas', 'Mi Perfil', 'Reportar Falla']) {
+    for (const nombre of ['Dashboard', 'Propuestas', 'Similitudes', 'Ficha', 'Alertas', 'Mi Perfil', 'Reportar Falla']) {
       await expect(sidebar.getByRole('link', { name: nombre })).toBeVisible()
     }
   })

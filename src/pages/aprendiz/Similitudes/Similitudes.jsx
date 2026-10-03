@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { CaretRight, CaretDown, MagnifyingGlass } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -8,13 +8,11 @@ import ApiState from '../../../components/ApiState/ApiState'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
-import Pagination from '../../../components/Pagination/Pagination'
 import { Input } from '../../../components/Input/Input'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi } from '../../../lib/recursos'
 import { norm } from '../../../utils/helpers'
-import { PAGINA_TARJETAS } from '../../../constants/pagination'
 import s from './Similitudes.module.css'
 
 const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
@@ -30,12 +28,10 @@ function esMia(proyecto, userId) {
 
 export default function Similitudes() {
   const { user } = useAuth()
-  const navigate = useNavigate()
 
   // Filtros de la vista.
   const [busqueda, setBusqueda] = useState('')
   const [minSim, setMinSim] = useState('')
-  const [pagina, setPagina] = useState(1)
 
   // Propuestas y similitudes: fuente única la API.
   const { data: todosProyectos, cargando, error, recargar } = useApi(
@@ -98,12 +94,6 @@ export default function Similitudes() {
       .sort((a, b) => b.max - a.max)
   }, [sims, idsPropios, mapaProyectos])
 
-  // La lista completa se renderizaba entera: se pagina por grupos.
-  const gruposPagina = useMemo(
-    () => grupos.slice((pagina - 1) * PAGINA_TARJETAS, pagina * PAGINA_TARJETAS),
-    [grupos, pagina]
-  )
-
   // Arranca todo colapsado; el usuario expande lo que quiere ver
   const [abiertos, setAbiertos] = useState(() => new Set())
 
@@ -134,7 +124,7 @@ export default function Similitudes() {
                 title="Sin similitudes detectadas"
                 message="Aún no tienes propuestas vigentes para comparar. Registra tu primera propuesta."
                 actionLabel="Ir a mis propuestas"
-                onAction={() => navigate('/aprendiz/propuestas')}
+                onAction={() => window.location.assign('/aprendiz/propuestas')}
               />
             ) : (
               <EmptyState
@@ -150,7 +140,7 @@ export default function Similitudes() {
                   <span className={s.label}>Buscar</span>
                   <Input
                     value={busqueda}
-                    onChange={(e) => { setBusqueda(e.target.value); setPagina(1) }}
+                    onChange={(e) => setBusqueda(e.target.value)}
                     placeholder="Título de la propuesta…"
                   />
                 </label>
@@ -161,14 +151,14 @@ export default function Similitudes() {
                     min={0}
                     max={100}
                     value={minSim}
-                    onChange={(e) => { setMinSim(e.target.value); setPagina(1) }}
+                    onChange={(e) => setMinSim(e.target.value)}
                     placeholder="Ej. 40"
                   />
                 </label>
               </FilterBar>
               <SectionHeader title="Ranking de coincidencias" count={sims.length} hint="agrupadas por tu propuesta" />
               <div className={s.grupos}>
-                {gruposPagina.map((g) => {
+                {grupos.map((g) => {
                   const abierto = abiertos.has(g.propioId)
                   return (
                     <section key={g.propioId} className={s.grupo}>
@@ -223,13 +213,6 @@ export default function Similitudes() {
                   )
                 })}
               </div>
-              <Pagination
-                totalItems={grupos.length}
-                itemsPerPage={PAGINA_TARJETAS}
-                paginaActual={pagina}
-                setPaginaActual={setPagina}
-                itemName="propuestas"
-              />
             </>
           )}
         </ApiState>

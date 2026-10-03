@@ -51,8 +51,6 @@ test.describe('Detección de similitudes al aprobar', () => {
     await logout(page)
     await login(page, 'instructor')
     await page.goto('/instructor/revision-propuestas')
-    // La cola pagina en cliente: se filtra para no depender del orden/página.
-    await page.getByPlaceholder(/Título, aprendiz o ficha/i).fill('Sistema de Control de Inventarios')
     await page.getByRole('list', { name: /Cola de revisión/i }).getByRole('button', { name: /Sistema de Control de Inventarios/ }).click()
     await page.getByRole('button', { name: /^Aprobar /i }).click()
     await page.getByRole('button', { name: 'Sí, aprobar' }).click()
