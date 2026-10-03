@@ -60,17 +60,30 @@ export async function recorrer(page, rol) {
     problemas.push({ tipo, url, detalle: String(detalle).slice(0, 300) })
   }
 
+  // En las pantallas públicas (login/recuperación) el 401 de /auth/me es
+  // esperado: todavía no hay sesión. En una vista privada sí es un problema.
+  const esPublica = (url) => {
+    try {
+      const r = new URL(url).pathname
+      return r === '/' || r === '/login' || r.startsWith('/recuperar') || r.startsWith('/restablecer')
+    } catch {
+      return false
+    }
+  }
+
   let urlActual = ''
   page.on('pageerror', (err) => anotar('pageerror', urlActual, err.message))
   page.on('console', (msg) => {
     if (msg.type() !== 'error') return
     const texto = msg.text()
     if (CONSOLA_IGNORADA.some((re) => re.test(texto))) return
+    if (/Failed to load resource.*401/.test(texto) && esPublica(page.url())) return
     anotar('console', urlActual, texto)
   })
   page.on('response', (res) => {
     if (!esApi(res.url())) return
     const status = res.status()
+    if (status === 401 && res.url().includes('/auth/me') && esPublica(page.url())) return
     if (status >= 400) anotar('http', urlActual, `${status} ${res.request().method()} ${res.url()}`)
   })
 

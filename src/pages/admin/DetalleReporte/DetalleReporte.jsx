@@ -9,13 +9,13 @@ import StatusMark from '../../../components/StatusMark/StatusMark'
 import { REPORTE_STATUS } from '../../../constants/estadoStatus'
 import Avatar from '../../../components/Avatar/Avatar'
 import Button from '../../../components/Button/Button'
-import { Select } from '../../../components/Input/Input'
+import { Select, Textarea } from '../../../components/Input/Input'
 import Lightbox from '../../../components/Lightbox/Lightbox'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useApi } from '../../../lib/useApi'
-import { reportes, notificaciones } from '../../../lib/recursos'
-import { fechaDesdeApi, fechaHoyLocal } from '../../../utils/helpers'
+import { reportes } from '../../../lib/recursos'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import s from './DetalleReporte.module.css'
 
 const ESTADO_LABEL = {
@@ -66,6 +66,7 @@ export default function DetalleReporte() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [nuevoEstado, setNuevoEstado] = useState('pendiente')
+  const [respuesta, setRespuesta] = useState('')
   const [guardado, setGuardado] = useState(false)
   const [accionMsg, setAccionMsg] = useState(null)
   const [fotoViendo, setFotoViendo] = useState(null)
@@ -82,6 +83,7 @@ export default function DetalleReporte() {
     if (reporte) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setNuevoEstado(reporte.estado || 'pendiente')
+      setRespuesta(reporte.respuesta || '')
       setGuardado(false)
     }
   }, [reporte?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -103,9 +105,9 @@ export default function DetalleReporte() {
           ) : (
             <EmptyState
               icon={<MagnifyingGlass />}
-              title="Reporte no encontrado"
-              message="El reporte de falla que buscas no existe."
-              actionLabel="Volver a reportes de fallas"
+              title="Solicitud no encontrada"
+              message="La solicitud de soporte que buscas no existe."
+              actionLabel="Volver a soporte"
               onAction={() => navigate('/admin/reportes-fallas')}
             />
           )}
@@ -119,52 +121,45 @@ export default function DetalleReporte() {
 
   const guardarEstado = async (e) => {
     e.preventDefault()
-    if (nuevoEstado === reporte.estado) return
     setAccionMsg(null)
     try {
+      // El backend registra la bitácora y avisa al solicitante cuando la
+      // solicitud se cierra (resuelta/rechazada).
       await reportes.actualizar(reporte.id, {
         titulo: reporte.titulo,
+        numero_ficha: reporte.numero_ficha,
+        motivo: reporte.motivo,
         descripcion: reporte.descripcion,
         tipo: reporte.tipo,
         estado: nuevoEstado,
+        respuesta: respuesta.trim() || null,
         fecha: reporte.fecha,
         id_usuario: reporte.id_usuario,
       })
-      // Aviso al reportante (best-effort): informativo, sin enlace (el rol
-      // aprendiz/instructor no tiene vista de detalle de reporte → evita un
-      // enlace sin destino). No bloquea la actualización.
-      await notificaciones.crear({
-        titulo: `Tu reporte '${reporte.titulo}' ha pasado a ${ESTADO_LABEL[nuevoEstado] || nuevoEstado}`,
-        tipo: 'sistema',
-        enlace: null,
-        leida: false,
-        fecha: fechaHoyLocal(),
-        id_usuario: reporte.id_usuario,
-      }).catch(() => null)
       await recargar()
       setGuardado(true)
     } catch (err) {
-      setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado del reporte.')
+      setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado de la solicitud.')
     }
   }
 
   return (
-    <DashboardLayout role="admin" titulo="Detalle de Reporte">
+    <DashboardLayout role="admin" titulo="Detalle de Soporte">
       <div className={s.page}>
         <PageHeader
           title={reporte.titulo}
-          subtitle={`Reporte #${reporte.id} · Recibido el ${fechaDesdeApi(reporte.fecha)}`}
+          subtitle={`Solicitud #${reporte.id} · Recibida el ${fechaDesdeApi(reporte.fecha)}`}
           icon={<Bug />}
           breadcrumb={[
             { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
-            { label: 'Reportes de Fallas', to: '/admin/reportes-fallas', icon: <Bug size={14} /> },
+            { label: 'Soporte', to: '/admin/reportes-fallas', icon: <Bug size={14} /> },
             { label: `#${reporte.id}` },
           ]}
         />
 
         {guardado && (
           <p className={s.alertSuccess} role="status">
-            <CheckCircle size={14} /> El estado del reporte se actualizó correctamente.
+            <CheckCircle size={14} /> La solicitud se actualizó correctamente.
           </p>
         )}
 
@@ -175,7 +170,7 @@ export default function DetalleReporte() {
         )}
 
         <DataPanel
-          title="Información del reporte"
+          title="Información de la solicitud"
           icon={<FileText />}
           action={
             <StatusMark status={REPORTE_STATUS[reporte.estado] || 'pending'} label={ESTADO_LABEL[reporte.estado] || reporte.estado} />
@@ -194,8 +189,20 @@ export default function DetalleReporte() {
                 <Badge variant={prioridadInfo.variant}>{prioridadInfo.label}</Badge>
               </dd>
             </div>
+            {reporte.numero_ficha && (
+              <div className={s.cell}>
+                <dt>Número de ficha</dt>
+                <dd><code>{reporte.numero_ficha}</code></dd>
+              </div>
+            )}
+            {reporte.motivo && (
+              <div className={s.cell}>
+                <dt>Motivo</dt>
+                <dd>{reporte.motivo}</dd>
+              </div>
+            )}
             <div className={s.cell}>
-              <dt>Fecha del reporte</dt>
+              <dt>Fecha de la solicitud</dt>
               <dd>{fechaDesdeApi(reporte.fecha)}</dd>
             </div>
             <div className={s.cell}>
@@ -203,6 +210,12 @@ export default function DetalleReporte() {
               <dd>{fechaDesdeApi(reporte.updated_at || reporte.fecha)}</dd>
             </div>
           </dl>
+
+          {reporte.respuesta && (
+            <p className={s.description}>
+              <strong>Respuesta enviada:</strong> {reporte.respuesta}
+            </p>
+          )}
 
           <form className={s.statusForm} onSubmit={guardarEstado}>
             <label className={s.statusField}>
@@ -221,11 +234,24 @@ export default function DetalleReporte() {
                 ))}
               </Select>
             </label>
+            <label className={s.statusField}>
+              <span className={s.statusLabel}>Respuesta al solicitante</span>
+              <Textarea
+                rows={3}
+                value={respuesta}
+                onChange={(e) => {
+                  setRespuesta(e.target.value)
+                  setGuardado(false)
+                }}
+                maxLength={2000}
+                placeholder="Explica cómo se resolvió (se envía al cerrar la solicitud)."
+              />
+            </label>
             <Button
               type="submit"
-              disabled={nuevoEstado === reporte.estado}
+              disabled={nuevoEstado === reporte.estado && respuesta === (reporte.respuesta || '')}
             >
-              <CheckCircle size={14} /> Guardar estado
+              <CheckCircle size={14} /> Guardar
             </Button>
           </form>
         </DataPanel>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FolderOpen, MagnifyingGlass, ChartBar, Users, PencilSimple, Prohibit, Key, Trash, CheckCircle, Warning } from 'phosphor-react'
+import { FolderOpen, MagnifyingGlass, ChartBar, Users, PencilSimple, Prohibit, Key, Trash, CheckCircle, Warning, FileText } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import DataPanel from '../../../components/DataPanel/DataPanel'
@@ -11,7 +11,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import Alert from '../../../components/Alert/Alert'
 import FormField from '../../../components/FormField/FormField'
-import { Input, PasswordInput, Select } from '../../../components/Input/Input'
+import { Input, PasswordInput, Select, Textarea } from '../../../components/Input/Input'
 import Actions from '../../../components/Actions/Actions'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
@@ -73,6 +73,11 @@ export default function DetalleUsuario() {
   const [claveTemporal, setClaveTemporal] = useState(null)
   const [filtroProp, setFiltroProp] = useState('todos')
   const [busquedaProp, setBusquedaProp] = useState('')
+  // Verificación de instructor: rechazo con motivo y aviso de resultado.
+  const [rechazando, setRechazando] = useState(false)
+  const [motivoRechazo, setMotivoRechazo] = useState('')
+  const [guardandoVerif, setGuardandoVerif] = useState(false)
+  const [verifMsg, setVerifMsg] = useState('')
 
   // Fuente única: la API. Usuario + relaciones + propuestas/similitudes del aprendiz.
   const { data, cargando, error, recargar } = useApi(
@@ -128,6 +133,34 @@ export default function DetalleUsuario() {
   const ficha = perfilAprendiz?.classGroup
     || (perfilAprendiz?.id_class_group ? listaFichas.find((f) => Number(f.id) === Number(perfilAprendiz.id_class_group)) : null)
     || null
+
+  // Verificación de la cuenta (aprendiz/instructor autoregistrados): el estado
+  // vive en general_users; el documento se consulta por el endpoint de admin.
+  const resolverVerificacion = async (accion) => {
+    if (accion === 'rechazar' && !motivoRechazo.trim()) {
+      setAccionMsg('Indica el motivo del rechazo.')
+      return
+    }
+    setAccionMsg(null)
+    setVerifMsg('')
+    setGuardandoVerif(true)
+    try {
+      await usuarios.verificar(usuario.id, {
+        accion,
+        motivo: accion === 'rechazar' ? motivoRechazo.trim() : undefined,
+      })
+      setRechazando(false)
+      setMotivoRechazo('')
+      setVerifMsg(accion === 'verificar'
+        ? 'Cuenta verificada: el usuario ya puede ingresar.'
+        : 'Solicitud rechazada: el usuario recibió el motivo por correo.')
+      await recargar()
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudo resolver la verificación.')
+    } finally {
+      setGuardandoVerif(false)
+    }
+  }
 
   // Propuestas del aprendiz: creador O integrante del equipo (misma regla que
   // usa el propio aprendiz en su dashboard, para que los conteos coincidan).
@@ -371,6 +404,85 @@ export default function DetalleUsuario() {
           <Alert>
             <Key size={14} /> Nueva contraseña temporal: <strong>{claveTemporal}</strong>. Compártela con el usuario por un canal seguro.
           </Alert>
+        )}
+
+        {usuario.rol !== 'admin' && (
+          <DataPanel title="Verificación de la cuenta" icon={<CheckCircle />}>
+            <p>
+              Estado actual:{' '}
+              <Badge
+                variant={
+                  usuario.estado_verificacion === 'verificado'
+                    ? 'success'
+                    : usuario.estado_verificacion === 'rechazado'
+                      ? 'danger'
+                      : 'warning'
+                }
+              >
+                {usuario.estado_verificacion === 'verificado'
+                  ? 'Verificado'
+                  : usuario.estado_verificacion === 'rechazado'
+                    ? 'Rechazada'
+                    : 'Pendiente'}
+              </Badge>
+            </p>
+            {usuario.estado_verificacion === 'rechazado' && usuario.motivo_rechazo && (
+              <p>Motivo del rechazo: {usuario.motivo_rechazo}</p>
+            )}
+
+            <Actions align="start" wrap>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!usuario.tiene_soporte}
+                title={usuario.tiene_soporte ? 'Ver el PDF adjunto' : 'Esta cuenta no adjuntó documento'}
+                onClick={() => window.open(`/v1/general-users/${usuario.id}/soporte`, '_blank', 'noopener')}
+              >
+                <FileText size={14} /> Ver documento
+              </Button>
+              <Button
+                type="button"
+                disabled={guardandoVerif || usuario.estado_verificacion === 'verificado'}
+                onClick={() => resolverVerificacion('verificar')}
+              >
+                <CheckCircle size={14} /> Aprobar cuenta
+              </Button>
+              <Button
+                type="button"
+                variant="dangerGhost"
+                disabled={guardandoVerif}
+                onClick={() => setRechazando(true)}
+              >
+                <Prohibit size={14} /> Rechazar
+              </Button>
+            </Actions>
+
+            {rechazando && (
+              <>
+                <FormField label="Motivo del rechazo" required help="Se incluye en el correo que recibe el usuario.">
+                  <Textarea
+                    rows={3}
+                    value={motivoRechazo}
+                    onChange={(e) => setMotivoRechazo(e.target.value)}
+                    maxLength={500}
+                    placeholder="Ej: el documento no permite confirmar el rol."
+                  />
+                </FormField>
+                <Actions align="start" wrap>
+                  <Button type="button" disabled={guardandoVerif} onClick={() => resolverVerificacion('rechazar')}>
+                    <Prohibit size={14} /> Confirmar rechazo
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setRechazando(false)}>
+                    Cancelar
+                  </Button>
+                </Actions>
+              </>
+            )}
+          </DataPanel>
+        )}
+
+        {verifMsg && (
+          <Alert><CheckCircle size={14} /> {verifMsg}</Alert>
         )}
 
         {accionMsg && (

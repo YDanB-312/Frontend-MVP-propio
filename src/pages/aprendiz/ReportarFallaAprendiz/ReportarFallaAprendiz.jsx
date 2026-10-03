@@ -14,10 +14,12 @@ const hoyISO = () => {
 export default function ReportarFallaAprendiz() {
   const { user } = useAuth()
 
-  // El reporte se envía directamente a la API (lo lee el panel de admin).
+  // La solicitud se envía directamente a la API (la lee el panel de admin).
   const handleSubmit = async (form) => {
     await reportes.crear({
-      titulo: form.titulo.trim(),
+      titulo: form.titulo.trim() || null,
+      numero_ficha: form.numero_ficha?.trim() || null,
+      motivo: form.motivo?.trim() || null,
       descripcion: form.descripcion.trim(),
       tipo: form.tipo,
       estado: 'pendiente',
@@ -27,7 +29,7 @@ export default function ReportarFallaAprendiz() {
   }
 
   return (
-    <DashboardLayout role="aprendiz" titulo="Reportar Falla">
+    <DashboardLayout role="aprendiz" titulo="Soporte">
       <ReportarFallaBase role="aprendiz" onSubmit={handleSubmit} />
     </DashboardLayout>
   )

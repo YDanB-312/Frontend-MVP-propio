@@ -45,7 +45,7 @@ export default function SafeRoute({ children }) {
                 <ArrowCounterClockwise size={16} /> Volver al dashboard
               </button>
               <button type="button" className={s.secondary} onClick={() => navigate(REPORTE_POR_ROL[role] || home)}>
-                <Bug size={16} /> Reportar falla
+                <Bug size={16} /> Solicitar soporte
               </button>
             </Actions>
           </div>

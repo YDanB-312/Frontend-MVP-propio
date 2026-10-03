@@ -18,6 +18,9 @@ export const usuarios = {
   crear: (body) => apiFetch("/general-users", { method: "POST", body }),
   actualizar: (id, body) =>
     apiFetch(`/general-users/${id}`, { method: "PUT", body }),
+  // Verificación de cuentas autoregistradas (solo admin): aprobar/rechazar.
+  verificar: (id, body) =>
+    apiFetch(`/general-users/${id}/verificacion`, { method: "PUT", body }),
   // Cambio del propio correo: el backend exige la contraseña actual.
   cambiarCorreo: (correo, passwordActual) =>
     apiFetch("/auth/email", {
@@ -50,6 +53,9 @@ export const instructores = {
   listar: (included = "generalUser") =>
     apiFetch(`/instructors${qs({ included })}`).then(lista),
   crear: (body) => apiFetch("/instructors", { method: "POST", body }),
+  // Resolución del admin: aprobar o rechazar (con motivo) la verificación.
+  verificar: (id, body) =>
+    apiFetch(`/instructors/${id}/verificacion`, { method: "PUT", body }),
 };
 
 export const aprendices = {

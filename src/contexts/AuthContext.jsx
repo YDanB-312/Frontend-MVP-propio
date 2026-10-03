@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { RUTA_POR_ROL } from '../constants/routes'
 import {
-  apiFetch, apiLogin, apiLogout, apiMe, apiChangePassword,
+  apiRegistro, apiLogin, apiLogout, apiMe, apiChangePassword,
   EVENTO_SESION_EXPIRADA,
 } from '../lib/api'
 
@@ -21,6 +21,7 @@ function aSesion(u) {
     correo: u.correo,
     nombre: [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo,
     rol: String(u.rol || '').toLowerCase(),
+    estadoVerificacion: u.estado_verificacion || 'verificado',
   }
 }
 
@@ -44,17 +45,29 @@ export function AuthProvider({ children }) {
   }, [])
 
   // ---------------------------------------------------------------- Registro
-  const register = useCallback(async ({ nombre, apellido, correo, password, rol }) => {
+  const register = useCallback(async ({ nombre, apellido, correo, password, rol, soporte }) => {
     try {
-      await apiFetch('/general-users', {
-        method: 'POST',
-        auth: false,
-        body: { nombre: nombre.trim(), apellido: apellido.trim(), correo: correo.trim().toLowerCase(), password, rol },
-      })
+      await apiRegistro(
+        {
+          nombre: nombre.trim(),
+          apellido: apellido.trim(),
+          correo: correo.trim().toLowerCase(),
+          password,
+          rol,
+        },
+        soporte
+      )
       return { exito: true, email: correo.trim().toLowerCase() }
     } catch (err) {
-      if (err?.status === 422) return { exito: false, mensaje: 'Este correo ya está registrado.' }
-      return { exito: false, mensaje: err?.data?.message || 'No se pudo crear la cuenta.' }
+      const errores = err?.data?.errors
+      // El correo es el único campo que el cliente no puede validar solo.
+      if (err?.status === 422 && errores?.correo) {
+        return { exito: false, mensaje: 'Este correo ya está registrado.' }
+      }
+      const mensaje = errores?.soporte?.[0]
+        || err?.data?.message
+        || 'No se pudo crear la cuenta.'
+      return { exito: false, mensaje }
     }
   }, [])
 

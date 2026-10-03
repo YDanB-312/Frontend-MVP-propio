@@ -10,7 +10,7 @@ export const RUTAS_POR_ROL = {
     '/aprendiz/detalle-proyecto/4',
     '/aprendiz/detalle-proyecto/1',
     '/aprendiz/detalle-ficha/1',
-    '/aprendiz/detalle-similitud/1',
+    '/aprendiz/detalle-similitud/2',
     '/aprendiz/perfil-companero/5',
     '/aprendiz/perfil-instructor',
     '/aprendiz/resultado-analisis?analisis=ok',

@@ -77,12 +77,12 @@ export async function aprendiz(h) {
     await h.esperar('Tus datos se actualizaron correctamente.', 10000)
   })
 
-  await h.paso('reportar falla', async () => {
+  await h.paso('solicitar soporte', async () => {
     await h.ir('/aprendiz/reportar-falla')
-    await page.getByLabel(/Título del reporte/i).fill(`Falla agente ${h.sufijo}`)
-    await page.getByLabel(/Descripción/i).fill('Reporte creado automáticamente por el agente para validar el flujo de reportes de falla de punta a punta.')
-    h.usar('Enviar reporte')
-    await page.getByRole('button', { name: /Enviar reporte/i }).click()
-    await h.esperar('Gracias por reportar', 10000)
+    await page.getByLabel(/Título de la solicitud/i).fill(`Soporte agente ${h.sufijo}`)
+    await page.getByLabel(/Descripción/i).fill('Solicitud creada automáticamente por el agente para validar el soporte de punta a punta.')
+    h.usar('Enviar solicitud')
+    await page.getByRole('button', { name: /Enviar solicitud/i }).click()
+    await h.esperar('Gracias por escribirnos', 10000)
   })
 }

@@ -129,15 +129,15 @@ export async function admin(h) {
     await confirmarBorrado(page)
   })
 
-  await h.paso('cambiar el estado de un reporte', async () => {
+  await h.paso('cambiar el estado de una solicitud de soporte', async () => {
     await h.ir('/admin/reportes-fallas')
     await page.locator('tbody tr').first().getByRole('link', { name: /Ver/i }).click()
     await page.waitForURL('**/admin/detalle-reporte/**')
     const sel = page.getByLabel('Cambiar estado')
     const actual = await sel.inputValue()
     await sel.selectOption(actual === 'resuelto' ? 'en_revision' : 'resuelto')
-    h.usar('Guardar estado')
-    await page.getByRole('button', { name: /Guardar estado/i }).click()
+    h.usar('Guardar')
+    await page.getByRole('button', { name: /^Guardar$/ }).click()
     await h.esperar('se actualizó correctamente', 10000)
   })
 

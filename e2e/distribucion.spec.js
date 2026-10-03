@@ -5,7 +5,7 @@ test.describe('Navegación lateral (sidebar)', () => {
     await login(page, 'admin')
     await page.goto('/admin/dashboard')
     const sidebar = page.locator('aside')
-    for (const nombre of ['Dashboard', 'Propuestas', 'Similitudes', 'Reportes de Fallas', 'Alertas', 'Usuarios', 'Fichas', 'Bitácora', 'Motor de similitud', 'Mi Perfil']) {
+    for (const nombre of ['Dashboard', 'Propuestas', 'Similitudes', 'Soporte', 'Alertas', 'Usuarios', 'Fichas', 'Bitácora', 'Motor de similitud', 'Mi Perfil']) {
       await expect(sidebar.getByRole('link', { name: nombre })).toBeVisible()
     }
     // Sin títulos separadores
@@ -16,7 +16,7 @@ test.describe('Navegación lateral (sidebar)', () => {
     await login(page, 'instructor')
     await page.goto('/instructor/dashboard')
     let sidebar = page.locator('aside')
-    for (const nombre of ['Dashboard', 'Revisión Propuestas', 'Similitudes', 'Fichas', 'Alertas', 'Mi Perfil', 'Reportar Falla']) {
+    for (const nombre of ['Dashboard', 'Revisión Propuestas', 'Similitudes', 'Fichas', 'Alertas', 'Mi Perfil', 'Soporte']) {
       await expect(sidebar.getByRole('link', { name: nombre })).toBeVisible()
     }
     await expect(sidebar.locator('p')).toHaveCount(0)
@@ -29,7 +29,7 @@ test.describe('Navegación lateral (sidebar)', () => {
     await page.waitForURL('**/aprendiz/dashboard')
     await page.goto('/aprendiz/dashboard')
     sidebar = page.locator('aside')
-    for (const nombre of ['Dashboard', 'Propuestas', 'Similitudes', 'Ficha', 'Alertas', 'Mi Perfil', 'Reportar Falla']) {
+    for (const nombre of ['Dashboard', 'Propuestas', 'Similitudes', 'Ficha', 'Alertas', 'Mi Perfil', 'Soporte']) {
       await expect(sidebar.getByRole('link', { name: nombre })).toBeVisible()
     }
   })

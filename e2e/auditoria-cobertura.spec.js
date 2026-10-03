@@ -5,13 +5,16 @@ for (const [role, rutas] of Object.entries(RUTAS_POR_ROL)) {
   test.describe(`Cobertura: ${role}`, () => {
     for (const ruta of rutas) {
       test(`${role} → ${ruta}`, async ({ page }) => {
+        // Se audita DESPUÉS del login: el 401 de /auth/me en la pantalla de
+        // login (sin sesión) es esperado y no es un problema de la vista.
+        await login(page, role)
+
         const problemas = []
         page.on('pageerror', (err) => problemas.push('pageerror: ' + err.message))
         page.on('console', (msg) => {
           if (msg.type() === 'error') problemas.push('console: ' + msg.text().slice(0, 180))
         })
 
-        await login(page, role)
         await page.goto(ruta)
         await page.waitForTimeout(1200)
 

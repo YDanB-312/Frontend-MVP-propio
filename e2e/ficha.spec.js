@@ -1,20 +1,15 @@
-import { test, expect, login } from './helpers'
+import { test, expect, login, crearUsuarioApi } from './helpers'
 
 // El aprendiz puede salir de su ficha cuando quiera y unirse a otra con el
 // código que le comparte un instructor.
 
 const unico = () => `aprend.e2e.${Date.now()}@soy.sena.edu.co`
 
-async function registrarAprendiz(page) {
+// Cuenta verificada creada por el admin (el registro público queda pendiente y
+// no puede iniciar sesión hasta la aprobación).
+async function crearAprendiz(request) {
   const email = unico()
-  await page.goto('/register')
-  await page.getByPlaceholder(/Mar.a Jos/i).fill('Test E2E')
-  await page.getByPlaceholder(/Gonz.lez Ruiz/i).fill('Automatizado')
-  await page.getByPlaceholder(/Correo electr/i).fill(email)
-  await page.locator('input[type="password"]').first().fill('clave123')
-  await page.locator('input[type="password"]').nth(1).fill('clave123')
-  await page.getByRole('button', { name: /Crear Cuenta/i }).click()
-  await page.waitForURL('**/confirmacion')
+  await crearUsuarioApi(request, { nombre: 'Test E2E', apellido: 'Automatizado', correo: email })
   return email
 }
 
@@ -32,8 +27,8 @@ async function abrirFicha(page) {
 }
 
 test.describe('Mi Ficha: salir y unirse por código', () => {
-  test('un aprendiz sin ficha se une con el código del instructor', async ({ page }) => {
-    const email = await registrarAprendiz(page)
+  test('un aprendiz sin ficha se une con el código del instructor', async ({ page, request }) => {
+    const email = await crearAprendiz(request)
     await entrar(page, email, 'clave123')
     await abrirFicha(page)
 
@@ -52,8 +47,8 @@ test.describe('Mi Ficha: salir y unirse por código', () => {
     await expect(page.getByText(/Integrantes de la ficha/i)).toBeVisible()
   })
 
-  test('un código inválido avisa y no une a nadie', async ({ page }) => {
-    const email = await registrarAprendiz(page)
+  test('un código inválido avisa y no une a nadie', async ({ page, request }) => {
+    const email = await crearAprendiz(request)
     await entrar(page, email, 'clave123')
     await abrirFicha(page)
 

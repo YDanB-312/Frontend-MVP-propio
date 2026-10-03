@@ -15,11 +15,11 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash, Warning } from 'phosphor-react'
+import { Books, ChartBar, CheckCircle, Eye, Lifebuoy, Plus, Trash, Warning } from 'phosphor-react'
 import { useApi } from '../../../lib/useApi'
 import { fichas, programas, redes, instructores, proyectos } from '../../../lib/recursos'
 import { toFieldErrors } from '../../../lib/api'
-import { norm, generarCodigoFicha, fechaDesdeApi } from '../../../utils/helpers'
+import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import { FICHA_ESTADO_VARIANT as ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import c from '../../../components/FormularioBase/FormularioBase.module.css'
@@ -31,6 +31,7 @@ const ITEMS_POR_PAGINA = PAGINA_TABLA
 const ESTADO_LABEL = {
   activo: 'Activo',
   finalizado: 'Finalizado',
+  anulada: 'Anulada',
 }
 
 // Concatena nombre + apellido de un general_user.
@@ -43,6 +44,7 @@ export default function FichasAdmin() {
   const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
   const [creadaMsg, setCreadaMsg] = useState(false)
   const [accionMsg, setAccionMsg] = useState(null)
+  const [avisoMsg, setAvisoMsg] = useState('')
   const msgTimer = useRef(null)
 
   /* ---------- Lista ---------- */
@@ -138,7 +140,6 @@ export default function FichasAdmin() {
 
   function abrirCreacion() {
     setCreadaMsg(false)
-    setCodigo(generarCodigoFicha())
     setCreando(true)
   }
 
@@ -146,7 +147,14 @@ export default function FichasAdmin() {
     if (!aEliminar) return
     setAccionMsg(null)
     try {
-      await fichas.eliminar(aEliminar.id)
+      const resp = await fichas.eliminar(aEliminar.id)
+      // Con historial la ficha se anula (el número queda libre); sin historial
+      // se elimina de verdad.
+      setAvisoMsg(
+        resp?.accion === 'anulada'
+          ? 'La ficha tenía aprendices o propuestas: quedó anulada y su número volvió a estar disponible.'
+          : 'Ficha eliminada correctamente.'
+      )
       setAEliminar(null)
       await recargar()
     } catch (err) {
@@ -156,15 +164,17 @@ export default function FichasAdmin() {
   }
 
   /* ---------- Creación ---------- */
-  const [codigo, setCodigo] = useState(() => generarCodigoFicha())
   const [form, setForm] = useState({ red: '', programa: '', nombre: '', numero: '', instructorId: '' })
   const [errores, setErrores] = useState({})
   const [guardando, setGuardando] = useState(false)
+  // Número que chocó con una ficha existente (habilita pedir soporte).
+  const [numeroDuplicado, setNumeroDuplicado] = useState(null)
 
   const onChange = (e) => {
     const { name, value } = e.target
     setForm((f) => ({ ...f, [name]: value }))
     setErrores((err) => ({ ...err, [name]: undefined }))
+    if (name === 'numero') setNumeroDuplicado(null)
   }
 
   function alCambiarRed(e) {
@@ -172,8 +182,6 @@ export default function FichasAdmin() {
     setForm((f) => ({ ...f, red: value, programa: '' }))
     setErrores((err) => ({ ...err, red: undefined, programa: undefined }))
   }
-
-  const regenerarCodigo = () => setCodigo(generarCodigoFicha())
 
   const validar = () => {
     const err = {}
@@ -210,36 +218,25 @@ export default function FichasAdmin() {
       id_instructor: form.instructorId === '' ? null : Number(form.instructorId),
     }
     setGuardando(true)
+    setNumeroDuplicado(null)
     try {
-      let codigoEfectivo = codigo
-      try {
-        await fichas.crear({ ...payload, codigo: codigoEfectivo })
-      } catch (error) {
-        const campos = toFieldErrors(error?.data)
-        if (campos.codigo) {
-          // Colisión del código aleatorio: regenerar y reintentar una vez.
-          codigoEfectivo = generarCodigoFicha()
-          setCodigo(codigoEfectivo)
-          await fichas.crear({ ...payload, codigo: codigoEfectivo })
-        } else if (campos.numero) {
-          setErrores({ numero: campos.numero })
-          return
-        } else if (campos.id_programa) {
-          setErrores({ programa: 'El programa no existe en el servidor.' })
-          return
-        } else {
-          setErrores({ numero: error?.data?.message || 'No se pudo crear la ficha en el servidor.' })
-          return
-        }
-      }
+      // El código de unión lo genera el servidor; el número es único.
+      await fichas.crear(payload)
       await recargar()
       setForm({ red: '', programa: '', nombre: '', numero: '', instructorId: '' })
       setErrores({})
-      setCodigo(generarCodigoFicha())
       setCreando(false)
       mostrarCreada()
     } catch (error) {
-      setErrores({ numero: error?.data?.message || 'No se pudo crear la ficha en el servidor.' })
+      const campos = toFieldErrors(error?.data)
+      if (campos.numero) {
+        setErrores({ numero: campos.numero })
+        setNumeroDuplicado(form.numero.trim())
+      } else if (campos.id_programa) {
+        setErrores({ programa: 'El programa no existe en el servidor.' })
+      } else {
+        setErrores({ numero: error?.data?.message || 'No se pudo crear la ficha en el servidor.' })
+      }
     } finally {
       setGuardando(false)
     }
@@ -337,17 +334,19 @@ export default function FichasAdmin() {
                 />
               </FormField>
 
-              <FormField
-                label="Código de la ficha"
-                help="El sistema genera un código único automáticamente."
-              >
-                <div className={c.codigoRow}>
-                  <code className={c.codigo}>{codigo}</code>
-                  <Button type="button" variant="ghost" onClick={regenerarCodigo}>
-                    <ArrowClockwise size={14} /> Regenerar
+              {numeroDuplicado && (
+                <Alert variant="warning">
+                  <Warning size={14} /> El número {numeroDuplicado} ya está registrado en otra ficha.
+                  <Button
+                    as="link"
+                    to={`/admin/reportes-fallas?numero=${encodeURIComponent(numeroDuplicado)}`}
+                    size="sm"
+                    variant="secondary"
+                  >
+                    <Lifebuoy size={14} /> Revisar soporte
                   </Button>
-                </div>
-              </FormField>
+                </Alert>
+              )}
 
               <Actions form>
                 <Button type="submit" disabled={guardando}>
@@ -369,6 +368,10 @@ export default function FichasAdmin() {
 
             {accionMsg && (
               <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
+            )}
+
+            {avisoMsg && (
+              <Alert><CheckCircle size={14} /> {avisoMsg}</Alert>
             )}
 
             <FilterBar title="Buscar y filtrar">
@@ -395,6 +398,7 @@ export default function FichasAdmin() {
                   <option value="todos">Todos</option>
                   <option value="activo">Activo</option>
                   <option value="finalizado">Finalizado</option>
+                  <option value="anulada">Anulada</option>
                 </Select>
               </label>
               <label className={s.field}>
@@ -498,7 +502,7 @@ export default function FichasAdmin() {
                         <>
                           <span className={s.title}>{f.nombre}</span>
                           <br />
-                          <span className={s.subText}>N° {f.numero} · {f.program?.nombre || 'Sin programa'}</span>
+                          <span className={s.subText}>N° {f.numero || '—'} · {f.program?.nombre || 'Sin programa'}</span>
                         </>
                       ),
                     },
@@ -577,7 +581,7 @@ export default function FichasAdmin() {
         titulo="Eliminar ficha"
         mensaje={
           aEliminar
-            ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Se eliminarán también sus aprendices y propuestas (con sus similitudes y observaciones). Esta acción no se puede deshacer.`
+            ? `¿Seguro que deseas quitar la ficha "${aEliminar.nombre}" (${aEliminar.numero || aEliminar.codigo})? Si tiene aprendices o propuestas quedará anulada y su número se liberará; si está vacía, se elimina.`
             : ''
         }
         textoConfirmar="Sí, eliminar"

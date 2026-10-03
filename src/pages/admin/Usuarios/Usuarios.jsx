@@ -35,6 +35,10 @@ const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admi
 const ESTADO_VARIANT = { activo: 'success', suspendido: 'danger' }
 const ESTADO_LABEL = { activo: 'Activo', suspendido: 'Suspendido' }
 
+// Estado de la verificación administrativa del instructor.
+const VERIF_VARIANT = { pendiente: 'warning', verificado: 'success', rechazado: 'danger' }
+const VERIF_LABEL = { pendiente: 'Pendiente', verificado: 'Verificado', rechazado: 'Rechazada' }
+
 // Nombre completo -> { nombre, apellido } (la API exige ambos campos).
 function splitNombre(texto) {
   const partes = String(texto || '').trim().split(/\s+/).filter(Boolean)
@@ -475,6 +479,19 @@ export default function Usuarios() {
                         const perfil = aprendicesPorUsuario.get(Number(usr.id))
                         const ficha = fichaDeUsuario(usr)
                         return perfil?.program?.nombre || ficha?.program?.nombre || <span className={s.muted}>—</span>
+                      },
+                    },
+                    {
+                      key: 'verificacion',
+                      header: 'Verificación',
+                      render: (usr) => {
+                        if (usr.rol === 'admin') return <span className={s.muted}>—</span>
+                        const estado = usr.estado_verificacion || 'verificado'
+                        return (
+                          <Badge variant={VERIF_VARIANT[estado] || 'neutral'}>
+                            {VERIF_LABEL[estado] || estado}
+                          </Badge>
+                        )
                       },
                     },
                     {

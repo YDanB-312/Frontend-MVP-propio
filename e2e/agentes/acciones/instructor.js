@@ -85,12 +85,12 @@ export async function instructor(h) {
     await expect(btn).toBeDisabled({ timeout: 10000 })
   })
 
-  await h.paso('reportar falla', async () => {
+  await h.paso('solicitar soporte', async () => {
     await h.ir('/instructor/reportar-falla')
-    await page.getByLabel(/Título del reporte/i).fill(`Falla instructor ${h.sufijo}`)
-    await page.getByLabel(/Descripción/i).fill('Reporte creado automáticamente por el agente instructor para validar el flujo de reportes.')
-    h.usar('Enviar reporte')
-    await page.getByRole('button', { name: /Enviar reporte/i }).click()
-    await h.esperar('Gracias por reportar', 10000)
+    await page.getByLabel(/Título de la solicitud/i).fill(`Soporte instructor ${h.sufijo}`)
+    await page.getByLabel(/Descripción/i).fill('Solicitud creada automáticamente por el agente instructor para validar el soporte.')
+    h.usar('Enviar solicitud')
+    await page.getByRole('button', { name: /Enviar solicitud/i }).click()
+    await h.esperar('Gracias por escribirnos', 10000)
   })
 }

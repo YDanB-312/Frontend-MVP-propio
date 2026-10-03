@@ -9,4 +9,5 @@ export const PROJECT_ESTADO_VARIANT = {
 export const FICHA_ESTADO_VARIANT = {
   activo: 'success',
   finalizado: 'info',
+  anulada: 'danger',
 }

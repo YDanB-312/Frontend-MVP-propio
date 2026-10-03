@@ -20,7 +20,7 @@ export const IGNORADOS = [
 // recorrido de navegación.
 export const CUBIERTOS = [
   // Registro / escritura
-  /nueva propuesta|nuevo usuario|nueva red|nuevo integrante|enviar propuesta|enviar reporte/i,
+  /nueva propuesta|nuevo usuario|nueva red|nuevo integrante|enviar propuesta|enviar solicitud/i,
   /crear ficha|crear usuario|crear centro|crear red|crear/i,
   /guardar cambios|guardar contenido|guardar par|guardar estado|guardar/i,
   /agregar observaci|agregar|a[ñn]adir/i,
@@ -38,7 +38,7 @@ export const CUBIERTOS = [
 ]
 
 // Etiquetas de navegación/migas (enlaces internos).
-export const NAVEGACION = /^dashboard$|^propuestas$|^proyectos$|^fichas$|^similitudes$|^usuarios$|^mi perfil$|^perfil$|^reportes|^alertas$|^bit[áa]cora$|^redes|^motor|^inicio$|^volver$|^ir a/i
+export const NAVEGACION = /^dashboard$|^propuestas$|^proyectos$|^fichas$|^similitudes$|^usuarios$|^mi perfil$|^perfil$|^soporte$|^alertas$|^bit[áa]cora$|^redes|^motor|^inicio$|^volver$|^ir a/i
 
 export function clasificar(control) {
   if (control.deshabilitado) return { estado: 'justificado', motivo: 'deshabilitado por diseño' }

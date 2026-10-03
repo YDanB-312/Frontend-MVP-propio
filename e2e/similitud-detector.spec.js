@@ -57,6 +57,8 @@ test.describe('Detector de similitud entre propuestas', () => {
     await logout(page)
     await login(page, 'instructor')
     await page.goto('/instructor/revision-propuestas')
+    // La cola está paginada: se busca por título para asegurar el nodo.
+    await page.getByPlaceholder(/Título, aprendiz o ficha/i).fill(temaA.titulo)
     const nodo = page.getByRole('button', { name: temaA.titulo }).first()
     await expect(nodo).toBeVisible({ timeout: 15000 })
     await nodo.click()

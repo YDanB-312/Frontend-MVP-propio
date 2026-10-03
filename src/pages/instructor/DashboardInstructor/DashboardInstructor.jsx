@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, CaretRight, ClipboardText, PlusCircle, BookOpen, MagnifyingGlass } from 'phosphor-react'
+import { Bell, CaretRight, ClipboardText, PlusCircle, BookOpen, MagnifyingGlass, Warning } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DashboardHero from '../../../components/DashboardHero/DashboardHero'
+import Alert from '../../../components/Alert/Alert'
 import StatChip from '../../../components/StatChip/StatChip'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import ActivityList from '../../../components/ActivityList/ActivityList'
@@ -67,6 +68,9 @@ export default function DashboardInstructor() {
     () => instructoresApi.find((i) => Number(i.id_usuario) === Number(user?.id)) || null,
     [instructoresApi, user?.id]
   )
+
+  // Solo un instructor verificado por el admin puede crear fichas y revisar.
+  const verificado = user?.estadoVerificacion === 'verificado'
 
   // Fichas a su cargo: la relación viene en ficha.instructor.id (fila instructors).
   const misFichas = useMemo(
@@ -156,17 +160,26 @@ export default function DashboardInstructor() {
           }
           actions={
             <>
-              {pendientes.length > 0 && (
+              {pendientes.length > 0 && verificado && (
                 <Button as="link" to="/instructor/revision-propuestas" viewTransition>
                   <ClipboardText size={14} /> Revisar propuestas
                 </Button>
               )}
-              <Button as="link" to="/instructor/fichas?crear=1" viewTransition variant="secondary">
-                <PlusCircle size={14} /> Crear ficha
-              </Button>
+              {verificado && (
+                <Button as="link" to="/instructor/fichas?crear=1" viewTransition variant="secondary">
+                  <PlusCircle size={14} /> Crear ficha
+                </Button>
+              )}
             </>
           }
         />
+
+        {!verificado && (
+          <Alert variant="warning">
+            <Warning size={14} /> Tu cuenta está {user?.estadoVerificacion === 'rechazado' ? 'rechazada' : 'pendiente de verificación'}.
+            Un administrador debe verificarla para que puedas crear fichas y revisar propuestas. Te avisaremos por correo cuando se resuelva.
+          </Alert>
+        )}
 
         <ApiState cargando={cargando} error={error} onReintentar={recargar}>
           <section aria-label="Pendientes del turno">

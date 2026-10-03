@@ -20,7 +20,7 @@ import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instr
 import { fechaDesdeApi, norm } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './RevisionPropuestas.module.css'
-import { ArrowRight, CheckCircle, ClipboardText, Tray, XCircle } from 'phosphor-react'
+import { ArrowRight, CheckCircle, ClipboardText, Tray, Warning, XCircle } from 'phosphor-react'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
@@ -79,6 +79,9 @@ export default function RevisionPropuestas() {
     () => instructoresApi.find((i) => Number(i.id_usuario) === Number(user?.id)) || null,
     [instructoresApi, user?.id]
   )
+
+  // Solo un instructor verificado por el admin puede aprobar/rechazar.
+  const verificado = user?.estadoVerificacion === 'verificado'
   const misFichasIds = useMemo(
     () => new Set(fichasApi
       .filter((f) => Number(f.instructor?.id) === Number(miFila?.id))
@@ -198,6 +201,12 @@ export default function RevisionPropuestas() {
         {msgAprobacion && (
           <Alert variant={msgAprobacion.includes('sin coincidencias') ? 'success' : 'info'}>
             {msgAprobacion}
+          </Alert>
+        )}
+
+        {!verificado && (
+          <Alert variant="warning">
+            <Warning size={14} /> Tu cuenta está pendiente de verificación: aún no puedes aprobar ni rechazar propuestas.
           </Alert>
         )}
 
@@ -329,7 +338,7 @@ export default function RevisionPropuestas() {
                       )}
                     </div>
                     <div className={local.previewAcciones} aria-live="polite">
-                      {seleccionada.estado === 'pendiente' ? (
+                      {seleccionada.estado === 'pendiente' && verificado ? (
                         <>
                           <Button
                             type="button"

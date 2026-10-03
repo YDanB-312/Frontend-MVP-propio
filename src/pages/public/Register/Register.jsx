@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { GraduationCap, ChalkboardTeacher } from 'phosphor-react'
+import { GraduationCap, ChalkboardTeacher, FilePdf, X } from 'phosphor-react'
 import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
@@ -9,17 +9,26 @@ import { Input, PasswordInput } from '../../../components/Input/Input'
 import s from './Register.module.css'
 import { esEmailValido, esPasswordValida } from '../../../utils/validation'
 
+const MAX_PDF_BYTES = 10 * 1024 * 1024
+
 export default function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ nombre: '', apellido: '', correo: '', password: '', confirmar: '' })
   const [rol, setRol] = useState('aprendiz')
+  const [soporte, setSoporte] = useState(null)
   const [errors, setErrors] = useState({})
   const [cargando, setCargando] = useState(false)
 
   function set(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }))
     setErrors((e) => ({ ...e, [campo]: undefined }))
+  }
+
+  function alElegirSoporte(e) {
+    const archivo = e.target.files?.[0] || null
+    setSoporte(archivo)
+    setErrors((err) => ({ ...err, soporte: undefined }))
   }
 
   function validar() {
@@ -31,6 +40,14 @@ export default function Register() {
     }
     if (!esPasswordValida(form.password)) errs.password = 'La contraseña debe tener al menos 6 caracteres.'
     if (form.confirmar !== form.password) errs.confirmar = 'Las contraseñas no coinciden.'
+    // El PDF que soporta el rol es obligatorio para el autoregistro.
+    if (!soporte) {
+      errs.soporte = 'Adjunta el PDF que soporta tu rol.'
+    } else if (soporte.type !== 'application/pdf') {
+      errs.soporte = 'El documento debe ser un archivo PDF.'
+    } else if (soporte.size > MAX_PDF_BYTES) {
+      errs.soporte = 'El PDF no debe superar 10 MB.'
+    }
     return errs
   }
 
@@ -48,6 +65,7 @@ export default function Register() {
         correo: form.correo,
         password: form.password,
         rol,
+        soporte,
       })
       if (res.exito) {
         navigate('/confirmacion', { state: { correo: form.correo.trim().toLowerCase() } })
@@ -142,6 +160,40 @@ export default function Register() {
               </button>
             </div>
           </fieldset>
+
+          <FormField
+            label="Documento de soporte (PDF)"
+            error={errors.soporte}
+            help="Certificado, contrato o carné que respalde tu rol. Un administrador lo revisará para aprobar tu cuenta."
+            required
+          >
+            <div className={s.archivoRow}>
+              <label className={s.archivoBtn}>
+                <FilePdf size={16} />
+                {soporte ? 'Cambiar PDF' : 'Adjuntar PDF'}
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={alElegirSoporte}
+                  aria-label="Documento de soporte"
+                  className={s.archivoInput}
+                />
+              </label>
+              {soporte && (
+                <span className={s.archivoNombre}>
+                  {soporte.name}
+                  <button
+                    type="button"
+                    className={s.archivoQuitar}
+                    onClick={() => setSoporte(null)}
+                    aria-label="Quitar documento"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              )}
+            </div>
+          </FormField>
 
           <Button type="submit" size="lg" fullWidth disabled={cargando}>
             {cargando ? 'Creando cuenta...' : 'Crear Cuenta'}

@@ -1,4 +1,4 @@
-import { test, expect, login, logout } from './helpers'
+import { test, expect, login, logout, crearUsuarioApi } from './helpers'
 
 test.describe('Autenticación por rol', () => {
   for (const role of ['aprendiz', 'instructor', 'admin']) {
@@ -94,17 +94,11 @@ test.describe('Seguridad de la cuenta', () => {
     await page.waitForURL('**/aprendiz/dashboard')
   })
 
-  test('cambiar el correo exige la contraseña actual y solo entonces se guarda', async ({ page }) => {
+  test('cambiar el correo exige la contraseña actual y solo entonces se guarda', async ({ page, request }) => {
     // Usuario nuevo para no alterar las cuentas del seed que usan los demás specs.
+    // Se crea desde el admin (verificado) porque el registro público queda pendiente.
     const email = `correo.e2e.${Date.now()}@soy.sena.edu.co`
-    await page.goto('/register')
-    await page.getByPlaceholder(/Mar.a Jos/i).fill('Correo E2E')
-    await page.getByPlaceholder(/Gonz.lez Ruiz/i).fill('Prueba')
-    await page.getByPlaceholder(/Correo electr/i).fill(email)
-    await page.locator('input[type="password"]').first().fill('clave123')
-    await page.locator('input[type="password"]').nth(1).fill('clave123')
-    await page.getByRole('button', { name: /Crear Cuenta/i }).click()
-    await page.waitForURL('**/confirmacion')
+    await crearUsuarioApi(request, { nombre: 'Correo E2E', apellido: 'Prueba', correo: email })
 
     await page.goto('/login')
     await page.getByPlaceholder(/Correo electr/i).fill(email)

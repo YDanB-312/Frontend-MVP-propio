@@ -51,6 +51,8 @@ test.describe('Detección de similitudes al aprobar', () => {
     await logout(page)
     await login(page, 'instructor')
     await page.goto('/instructor/revision-propuestas')
+    // La cola está paginada: se busca por título para asegurar el nodo.
+    await page.getByPlaceholder(/Título, aprendiz o ficha/i).fill('Sistema de Control de Inventarios')
     await page.getByRole('list', { name: /Cola de revisión/i }).getByRole('button', { name: /Sistema de Control de Inventarios/ }).click()
     await page.getByRole('button', { name: /^Aprobar /i }).click()
     await page.getByRole('button', { name: 'Sí, aprobar' }).click()
@@ -65,14 +67,14 @@ test.describe('Crear ficha (instructor)', () => {
     await login(page, 'instructor')
     await page.goto('/instructor/fichas?crear=1')
 
-    // El formulario renderiza con estilos (cascada red→programa, código autogenerado)
+    // El formulario renderiza con estilos (cascada red→programa). El código de
+    // unión ya no se elige en el formulario: lo genera el servidor.
     const nombre = page.getByPlaceholder('Ej. Análisis y Desarrollo 2718')
     const numero = page.getByPlaceholder('Ej. 3142101')
     const red = page.locator('form select[name="red"]')
     const programa = page.locator('form select[name="programaId"]')
     await expect(nombre).toBeVisible()
     await expect(numero).toBeVisible()
-    await expect(page.getByText(/[a-z]{3}-[a-z]{4}/).first()).toBeVisible()
 
     // Validación: enviar vacío muestra errores y no navega
     const submit = page.locator('form').getByRole('button', { name: /^Crear ficha$/i })
@@ -98,6 +100,8 @@ test.describe('Crear ficha (instructor)', () => {
     await expect(page.getByText('Ficha creada correctamente.')).toBeVisible()
     await expect(page.getByText('Ficha de Prueba E2E')).toBeVisible()
     await expect(page.getByText('N° 9999 · ADSO')).toBeVisible()
+    // El código de unión generado por el servidor aparece en la lista.
+    await expect(page.locator('code').filter({ hasText: /^[a-z]{3}-[a-z]{4}$/ }).first()).toBeVisible()
   })
 })
 

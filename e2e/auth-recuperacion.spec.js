@@ -1,20 +1,15 @@
-import { test, expect } from './helpers'
+import { test, expect, crearUsuarioApi } from './helpers'
 
 // Recuperación de contraseña por correo. En local el correo se escribe en el log
 // y la API devuelve `reset_url`, así que el flujo completo es probable.
 
 const unico = () => `reset.e2e.${Date.now()}@soy.sena.edu.co`
 
-async function registrarAprendiz(page) {
+// El registro público queda pendiente de verificación; para este flujo se crea
+// la cuenta desde el admin (nace verificada) y así el login funciona.
+async function crearAprendiz(request) {
   const email = unico()
-  await page.goto('/register')
-  await page.getByPlaceholder(/Mar.a Jos/i).fill('Reset E2E')
-  await page.getByPlaceholder(/Gonz.lez Ruiz/i).fill('Prueba')
-  await page.getByPlaceholder(/Correo electr/i).fill(email)
-  await page.locator('input[type="password"]').first().fill('clave123')
-  await page.locator('input[type="password"]').nth(1).fill('clave123')
-  await page.getByRole('button', { name: /Crear Cuenta/i }).click()
-  await page.waitForURL('**/confirmacion')
+  await crearUsuarioApi(request, { nombre: 'Reset E2E', apellido: 'Prueba', correo: email })
   return email
 }
 
@@ -33,8 +28,8 @@ test.describe('Recuperar contraseña', () => {
 })
 
 test.describe('Restablecer contraseña', () => {
-  test('flujo completo: enlace, nueva clave y login', async ({ page }) => {
-    const email = await registrarAprendiz(page)
+  test('flujo completo: enlace, nueva clave y login', async ({ page, request }) => {
+    const email = await crearAprendiz(request)
 
     // Solicita el enlace y lo toma del aviso de modo local.
     await page.goto('/recuperar-contrasena')

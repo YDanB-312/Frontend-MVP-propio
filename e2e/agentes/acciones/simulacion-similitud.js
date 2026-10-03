@@ -20,6 +20,8 @@ async function crearPropuesta(page, h, titulo) {
 
 async function aprobar(page, h, titulo) {
   await h.ir('/instructor/revision-propuestas')
+  // La cola está paginada: se busca por título para asegurar el nodo.
+  await page.getByPlaceholder(/Título, aprendiz o ficha/i).fill(titulo)
   const nodo = page
     .getByRole('list', { name: /Cola de revisión/i })
     .getByRole('button', { name: new RegExp(titulo) })

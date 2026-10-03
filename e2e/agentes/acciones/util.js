@@ -24,17 +24,29 @@ export function crearEjecutor(page, rol) {
     problemas.push({ tipo, url, detalle: String(detalle).slice(0, 300) })
   }
 
+  // En las pantallas públicas (login/recuperación) el 401 de /auth/me es
+  // esperado: todavía no hay sesión. En una vista privada sí es un problema.
+  const esPublica = (url) => {
+    try {
+      const r = new URL(url).pathname
+      return r === '/' || r === '/login' || r.startsWith('/recuperar') || r.startsWith('/restablecer')
+    } catch {
+      return false
+    }
+  }
+
   page.on('pageerror', (err) => anotar('pageerror', urlActual, err.message))
   page.on('console', (msg) => {
     if (msg.type() !== 'error') return
     const texto = msg.text()
     if (/favicon|React DevTools/i.test(texto)) return
+    if (/Failed to load resource.*401/.test(texto) && esPublica(page.url())) return
     anotar('console', urlActual, texto)
   })
   page.on('response', (res) => {
-    if (res.url().includes('/v1/') && res.status() >= 400) {
-      anotar('http', urlActual, `${res.status()} ${res.request().method()} ${res.url()}`)
-    }
+    if (!res.url().includes('/v1/') || res.status() < 400) return
+    if (res.status() === 401 && res.url().includes('/auth/me') && esPublica(page.url())) return
+    anotar('http', urlActual, `${res.status()} ${res.request().method()} ${res.url()}`)
   })
 
   const h = {

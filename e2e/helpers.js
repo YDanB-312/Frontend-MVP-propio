@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { Buffer } from 'node:buffer'
 
 const CUENTAS = {
   aprendiz: { email: 'maria.gonzalez@soy.sena.edu.co', password: '123456', home: '/aprendiz/dashboard', nombre: 'María' },
@@ -26,6 +27,38 @@ export async function login(page, role) {
 export async function logout(page) {
   await page.getByRole('button', { name: 'Cerrar sesión' }).click()
   await page.waitForURL('**/login')
+}
+
+// Adjunta el PDF obligatorio del registro (el input es invisible por diseño).
+export async function adjuntarPdfSoporte(page, nombre = 'soporte.pdf') {
+  await page.locator('input[aria-label="Documento de soporte"]').setInputFiles({
+    name: nombre,
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF'),
+  })
+}
+
+// Crea una cuenta vía API como administrador (nace verificada, sin documento).
+// Devuelve el correo para encadenar el flujo que la use.
+export async function crearUsuarioApi(request, {
+  nombre = 'E2E',
+  apellido = 'Prueba',
+  correo,
+  password = 'clave123',
+  rol = 'aprendiz',
+}) {
+  const acceso = await request.post('/v1/auth/login', {
+    data: { correo: CUENTAS.admin.email, password: CUENTAS.admin.password },
+  })
+  expect(acceso.ok()).toBeTruthy()
+  const { token } = await acceso.json()
+
+  const alta = await request.post('/v1/general-users', {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { nombre, apellido, correo, password, rol },
+  })
+  expect(alta.ok()).toBeTruthy()
+  return correo
 }
 
 export async function esperarDashboard(page, role) {

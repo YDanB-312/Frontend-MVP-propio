@@ -71,6 +71,8 @@ test.describe('Propuestas del aprendiz', () => {
     await page.waitForURL('**/aprendiz/dashboard')
 
     await page.goto('/aprendiz/propuestas')
+    // La lista está paginada: se busca por título para asegurar la tarjeta.
+    await page.getByPlaceholder(/Título, resumen o palabras clave/i).fill('Propuesta Equipo E2E')
     await expect(page.getByText(/Propuesta Equipo E2E/)).toBeVisible()
 
     await page.getByText(/Propuesta Equipo E2E/).click()

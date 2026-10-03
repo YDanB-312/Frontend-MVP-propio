@@ -7,6 +7,13 @@
 
 const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
+// La cookie CSRF vive en la raíz del backend, no bajo el prefijo de la API:
+// con BASE="/v1" debe pedirse a "/sanctum/csrf-cookie" (el proxy de Vite lo
+// reenvía). Si BASE es absoluto, se conserva su origen.
+const URL_CSRF = /^https?:/i.test(BASE)
+  ? new URL("/sanctum/csrf-cookie", BASE).href
+  : "/sanctum/csrf-cookie";
+
 // Evento que avisa a la app de que la sesión dejó de ser válida (401).
 export const EVENTO_SESION_EXPIRADA = "auth:expirada";
 
@@ -30,7 +37,7 @@ async function asegurarCsrf() {
     return;
   }
   try {
-    await fetch(`${BASE}/sanctum/csrf-cookie`, {
+    await fetch(URL_CSRF, {
       credentials: "include",
       headers: { Accept: "application/json" },
     });
@@ -169,6 +176,43 @@ export async function apiFetch(
 }
 
 // ---------------------------------------------------------------- Sesión
+
+// Registro público (multipart): adjunta el PDF que soporta el rol (aprendiz o
+// instructor). La cuenta queda pendiente de verificación del administrador.
+export async function apiRegistro(datos, archivo) {
+  await asegurarCsrf();
+
+  const headers = { Accept: "application/json" };
+  const xsrf = leerCookie("XSRF-TOKEN");
+  if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+
+  const fd = new FormData();
+  Object.entries(datos).forEach(([clave, valor]) => fd.append(clave, valor));
+  if (archivo) fd.append("soporte", archivo);
+
+  const res = await fetch(`${BASE}/general-users`, {
+    method: "POST",
+    headers,
+    body: fd,
+    credentials: "include",
+  });
+
+  const text = await res.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  if (!res.ok) {
+    const err = new Error(data?.message || `Error ${res.status}`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
 
 export async function apiLogin(correo, password, remember = false) {
   // La sesión queda en la cookie httpOnly que devuelve el servidor.

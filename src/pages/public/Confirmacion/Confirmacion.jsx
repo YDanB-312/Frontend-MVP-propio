@@ -15,15 +15,15 @@ export default function Confirmacion() {
           <CheckCircle size={48} weight="light" className={s.icon} />
         </div>
         <header className={s.header}>
-          <h1 className={s.title}>¡Cuenta creada con éxito!</h1>
+          <h1 className={s.title}>¡Solicitud enviada!</h1>
           <p className={s.subtitle}>
             {correo ? (
               <>
-                Enviamos un correo de confirmación a <strong>{correo}</strong>. Verifica tu bandeja de entrada para
-                activar tu cuenta.
+                Tu registro con <strong>{correo}</strong> quedó en revisión. Un administrador verificará el
+                documento que adjuntaste; cuando lo apruebe podrás iniciar sesión.
               </>
             ) : (
-              'Tu cuenta fue registrada correctamente. Verifica tu bandeja de entrada para activarla.'
+              'Tu registro quedó en revisión. Un administrador verificará el documento adjunto; cuando lo apruebe podrás iniciar sesión.'
             )}
           </p>
         </header>

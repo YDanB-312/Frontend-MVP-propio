@@ -38,19 +38,19 @@ test.describe('Autorización: instructor vs recursos ajenos', () => {
   })
 
 
-  test('las similitudes son globales: cualquier instructor las ve', async ({ page }) => {
-    await login(page, 'otro')
+  test('el instructor ve las coincidencias de sus fichas', async ({ page }) => {
+    await login(page, 'instructor')
     await page.goto('/instructor/similitudes')
 
-    // El listado institucional muestra las coincidencias detectadas
+    // El listado muestra las coincidencias de las fichas a su cargo
     await expect(page.locator('table tbody tr').first()).toBeVisible()
   })
 
-  test('en similitud del mismo programa, Ver proyecto lleva a modo lectura', async ({ page }) => {
-    // Carlos Rodríguez Díaz (fichas 2 y 3, con ADSO) abre la similitud 2
-    // (proyectos de ficha 1, también ADSO): regla intra-programa visible
+  test('en similitud que toca su ficha, Ver proyecto lleva a modo lectura', async ({ page }) => {
+    // Carlos Rodríguez Díaz (fichas 2 y 3) abre la similitud 1: la propuesta 7
+    // es de su ficha 2 (aprobada) y la 1 es de la ficha 1 (pendiente).
     await login(page, 'otro')
-    await page.goto('/instructor/detalle-similitud/2')
+    await page.goto('/instructor/detalle-similitud/1')
 
     // El contexto de la coincidencia SÍ es visible (tarjetas A/B)
     await expect(page.getByText(/Propuesta A/).first()).toBeVisible()

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
@@ -65,7 +66,9 @@ function nombreCompleto(usuario) {
 }
 
 export default function ReportesFallas() {
-  const [busqueda, setBusqueda] = useState('')
+  const [searchParams] = useSearchParams()
+  // Si llega ?numero=... desde el formulario de fichas, se precarga la búsqueda.
+  const [busqueda, setBusqueda] = useState(() => searchParams.get('numero') || '')
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroTipo, setFiltroTipo] = useState('todos')
   const [filtroPrioridad, setFiltroPrioridad] = useState('todos')
@@ -108,6 +111,8 @@ export default function ReportesFallas() {
     const coincideQ =
       !q ||
       norm(r.titulo).includes(q) ||
+      norm(r.numero_ficha).includes(q) ||
+      norm(r.motivo).includes(q) ||
       norm(`#${r.id}`).includes(q) ||
       norm(r.descripcion).includes(q) ||
       norm(reporterDe(r)).includes(q)
@@ -137,15 +142,15 @@ export default function ReportesFallas() {
   }
 
   return (
-    <DashboardLayout role="admin" titulo="Reportes de Fallas">
+    <DashboardLayout role="admin" titulo="Soporte">
       <div className={s.page}>
         <PageHeader
-          title="Reportes de Fallas"
-          subtitle="Da seguimiento a los problemas reportados por los usuarios de la plataforma."
+          title="Soporte"
+          subtitle="Atiende las solicitudes de los usuarios: conflictos con fichas, errores y dudas."
           icon={<Bug />}
           breadcrumb={[
             { label: 'Dashboard', to: '/admin/dashboard' },
-            { label: 'Reportes de Fallas' },
+            { label: 'Soporte' },
           ]}
         />
 
@@ -159,7 +164,7 @@ export default function ReportesFallas() {
                   setBusqueda(e.target.value)
                   setPagina(1)
                 }}
-                placeholder="Título, #id o reportante…"
+                placeholder="Título, número de ficha, #id o reportante…"
               />
             </label>
             <label className={s.field}>
@@ -235,18 +240,18 @@ export default function ReportesFallas() {
               />
             </label>
             <p className={s.info}>
-              {filtrados.length} reporte{filtrados.length !== 1 ? 's' : ''}
+              {filtrados.length} solicitud{filtrados.length !== 1 ? 'es' : ''}
             </p>
           </FilterBar>
 
           {paginados.length === 0 ? (
             <EmptyState
               icon={<Bug />}
-              title="Sin reportes"
+              title="Sin solicitudes"
               message={
                 listaReportes.length === 0
-                  ? 'No hay reportes de fallas registrados. ¡Buen momento para celebrar!'
-                  : 'Ningún reporte coincide con los filtros aplicados.'
+                  ? 'No hay solicitudes de soporte registradas.'
+                  : 'Ninguna solicitud coincide con los filtros aplicados.'
               }
               actionLabel={listaReportes.length === 0 ? undefined : 'Limpiar filtros'}
               onAction={listaReportes.length === 0 ? undefined : limpiarFiltros}
@@ -254,16 +259,18 @@ export default function ReportesFallas() {
           ) : (
             <>
               <DataTable
-                ariaLabel="Reportes de fallas"
+                ariaLabel="Solicitudes de soporte"
                 columns={[
                   {
                     key: 'reporte',
-                    header: 'Reporte',
+                    header: 'Solicitud',
                     render: (r) => (
                       <>
                         <span className={s.title}>{r.titulo}</span>
                         <br />
-                        <span className={s.subText}>#{r.id}</span>
+                        <span className={s.subText}>
+                          #{r.id}{r.numero_ficha ? ` · Ficha ${r.numero_ficha}` : ''}
+                        </span>
                       </>
                     ),
                   },

@@ -50,7 +50,8 @@ export function fechaHoyLocal() {
   return d.toISOString().slice(0, 10)
 }
 
-// Código de ficha único con el formato del catálogo: abc-defg (3 + 4 letras).
+// El código de unión de ficha lo genera el SERVIDOR (formato abc-defg). Se
+// conserva esta utilidad solo para pruebas/formato; el cliente no lo elige.
 export function generarCodigoFicha(existentes = []) {
   const letras = 'abcdefghijklmnopqrstuvwxyz'
   const bloque = (n) => Array.from({ length: n }, () => letras[Math.floor(Math.random() * letras.length)]).join('')

@@ -12,7 +12,7 @@ const FOOTER_BY_ROLE = {
       { label: 'Ficha', to: '/aprendiz/ficha' },
       { label: 'Alertas', to: '/aprendiz/alertas' },
       { label: 'Mi Perfil', to: '/aprendiz/perfil' },
-      { label: 'Reportar Falla', to: '/aprendiz/reportar-falla' },
+      { label: 'Soporte', to: '/aprendiz/reportar-falla' },
     ],
   },
   instructor: {
@@ -23,7 +23,7 @@ const FOOTER_BY_ROLE = {
       { label: 'Fichas', to: '/instructor/fichas' },
       { label: 'Alertas', to: '/instructor/alertas' },
       { label: 'Mi Perfil', to: '/instructor/perfil' },
-      { label: 'Reportar Falla', to: '/instructor/reportar-falla' },
+      { label: 'Soporte', to: '/instructor/reportar-falla' },
     ],
   },
   admin: {

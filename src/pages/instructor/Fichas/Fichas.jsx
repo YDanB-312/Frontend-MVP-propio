@@ -14,13 +14,12 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { ArrowClockwise, Books, ChartBar, CheckCircle, Copy, Eye, Plus, Trash, Warning } from 'phosphor-react'
+import { Books, ChartBar, CheckCircle, Copy, Eye, Lifebuoy, Plus, Trash, Warning } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { toFieldErrors } from '../../../lib/api'
 import { fichas, instructores, aprendices, proyectos, redes, programas } from '../../../lib/recursos'
 import { FICHA_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { generarCodigoFicha } from '../../../utils/helpers'
 import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 // Estilos reutilizados de las páginas originales (lista + formulario)
@@ -32,6 +31,7 @@ const ITEMS_POR_PAGINA = PAGINA_TABLA
 const ESTADO_LABEL = {
   activo: 'Activo',
   finalizado: 'Finalizado',
+  anulada: 'Anulada',
 }
 
 export default function Fichas() {
@@ -49,6 +49,7 @@ export default function Fichas() {
 
   const [creadaMsg, setCreadaMsg] = useState(false)
   const [accionMsg, setAccionMsg] = useState('')
+  const [avisoMsg, setAvisoMsg] = useState('')
   const msgTimer = useRef(null)
 
   /* ---------- Lista ---------- */
@@ -71,6 +72,9 @@ export default function Fichas() {
     () => instructoresApi.find((i) => Number(i.id_usuario) === Number(user?.id)) || null,
     [instructoresApi, user?.id]
   )
+
+  // Solo un instructor verificado por el admin puede crear/gestionar fichas.
+  const verificado = user?.estadoVerificacion === 'verificado'
 
   // Modelo Classroom: solo las fichas creadas por este instructor.
   const fichasPropias = useMemo(
@@ -112,8 +116,15 @@ export default function Fichas() {
   const confirmarEliminar = async () => {
     if (!aEliminar) return
     try {
-      await fichas.eliminar(aEliminar.id)
+      const resp = await fichas.eliminar(aEliminar.id)
       setAccionMsg('')
+      // Con historial la ficha se anula (el número queda libre); sin historial
+      // se elimina de verdad.
+      setAvisoMsg(
+        resp?.accion === 'anulada'
+          ? 'La ficha tenía aprendices o propuestas: quedó anulada y su número volvió a estar disponible.'
+          : 'Ficha eliminada correctamente.'
+      )
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo eliminar la ficha. Intenta de nuevo.')
     }
@@ -124,15 +135,17 @@ export default function Fichas() {
   /* ---------- Creación ---------- */
   const { data: programasApi } = useApi(() => programas.listar(), [], { inicial: [] })
 
-  const [codigo, setCodigo] = useState(() => generarCodigoFicha([]))
   const [form, setForm] = useState({ red: '', programaId: '', nombre: '', numero: '' })
   const [errores, setErrores] = useState({})
   const [guardando, setGuardando] = useState(false)
+  // Número que chocó con una ficha existente (habilita pedir soporte).
+  const [numeroDuplicado, setNumeroDuplicado] = useState(null)
 
   const onChange = (e) => {
     const { name, value } = e.target
     setForm((f) => ({ ...f, [name]: value }))
     setErrores((err) => ({ ...err, [name]: undefined }))
+    if (name === 'numero') setNumeroDuplicado(null)
   }
 
   function alCambiarRed(e) {
@@ -140,8 +153,6 @@ export default function Fichas() {
     setForm((f) => ({ ...f, red: value, programaId: '' }))
     setErrores((err) => ({ ...err, red: undefined, programaId: undefined }))
   }
-
-  const regenerarCodigo = () => setCodigo(generarCodigoFicha(fichasApi))
 
   // Copia el código para compartirlo con los aprendices.
   async function copiarCodigo(valor) {
@@ -185,15 +196,6 @@ export default function Fichas() {
     return err
   }
 
-  const crearEnApi = async (codigoUsado) => fichas.crear({
-    codigo: codigoUsado,
-    numero: form.numero.trim(),
-    nombre: form.nombre.trim(),
-    estado: 'activo',
-    id_programa: Number(form.programaId),
-    id_instructor: Number(miFila.id),
-  })
-
   const onSubmit = async (e) => {
     e.preventDefault()
     const err = validar()
@@ -206,34 +208,32 @@ export default function Fichas() {
       return
     }
     setGuardando(true)
-    let codigoEfectivo = codigo
+    setNumeroDuplicado(null)
     try {
-      try {
-        await crearEnApi(codigoEfectivo)
-      } catch (error) {
-        const campos = toFieldErrors(error?.data)
-        // El código es único: si choca, se regenera y se reintenta una vez.
-        if (campos.codigo) {
-          codigoEfectivo = generarCodigoFicha(fichasApi)
-          setCodigo(codigoEfectivo)
-          await crearEnApi(codigoEfectivo)
-        } else if (campos.id_programa || campos.programa) {
-          setErrores({ programaId: 'El programa no existe en el servidor.' })
-          return
-        } else if (campos.numero) {
-          setErrores({ numero: campos.numero })
-          return
-        } else {
-          setErrores({ numero: error?.data?.message || 'No se pudo crear la ficha. Intenta de nuevo.' })
-          return
-        }
-      }
+      // El código de unión lo genera el servidor; el número es único.
+      await fichas.crear({
+        numero: form.numero.trim(),
+        nombre: form.nombre.trim(),
+        estado: 'activo',
+        id_programa: Number(form.programaId),
+        id_instructor: Number(miFila.id),
+      })
       setForm({ red: '', programaId: '', nombre: '', numero: '' })
       setErrores({})
-      setCodigo(generarCodigoFicha(fichasApi))
       setCreando(false)
       await recargar()
       mostrarCreada()
+    } catch (error) {
+      const campos = toFieldErrors(error?.data)
+      if (campos.numero) {
+        setErrores({ numero: campos.numero })
+        // El número ya existe: se ofrece crear una solicitud de soporte.
+        setNumeroDuplicado(form.numero.trim())
+      } else if (campos.id_programa || campos.programa) {
+        setErrores({ programaId: 'El programa no existe en el servidor.' })
+      } else {
+        setErrores({ numero: error?.data?.message || 'No se pudo crear la ficha. Intenta de nuevo.' })
+      }
     } finally {
       setGuardando(false)
     }
@@ -262,12 +262,24 @@ export default function Fichas() {
           onBack={creando ? () => setCreando(false) : undefined}
           actions={
             !creando ? (
-              <Button type="button" onClick={abrirCreacion}>
+              <Button
+                type="button"
+                onClick={abrirCreacion}
+                disabled={!verificado}
+                title={verificado ? undefined : 'Tu cuenta de instructor está pendiente de verificación.'}
+              >
                 <Plus size={14} /> Crear Ficha
               </Button>
             ) : undefined
           }
         />
+
+        {!verificado && (
+          <Alert variant="warning">
+            <Warning size={14} /> Tu cuenta está {user?.estadoVerificacion === 'rechazado' ? 'rechazada' : 'pendiente de verificación'}.
+            Un administrador debe verificarla para que puedas crear y gestionar fichas.
+          </Alert>
+        )}
 
         {creando ? (
           <DataPanel title="Datos de la ficha" icon={<Books />}>
@@ -317,17 +329,19 @@ export default function Fichas() {
                 />
               </FormField>
 
-              <FormField
-                label="Código de la ficha"
-                help="Código único que compartes con tus aprendices para que se unan a la ficha."
-              >
-                <div className={c.codigoRow}>
-                  <code className={c.codigo}>{codigo}</code>
-                  <Button type="button" variant="ghost" onClick={regenerarCodigo}>
-                    <ArrowClockwise size={14} /> Regenerar
+              {numeroDuplicado && (
+                <Alert variant="warning">
+                  <Warning size={14} /> El número {numeroDuplicado} ya está registrado en otra ficha.
+                  <Button
+                    as="link"
+                    to={`/instructor/reportar-falla?numero=${encodeURIComponent(numeroDuplicado)}`}
+                    size="sm"
+                    variant="secondary"
+                  >
+                    <Lifebuoy size={14} /> Solicitar soporte
                   </Button>
-                </div>
-              </FormField>
+                </Alert>
+              )}
 
               <Actions form>
                 <Button type="submit" disabled={guardando}>
@@ -350,6 +364,12 @@ export default function Fichas() {
             {accionMsg && (
               <Alert variant="danger">
                 <Warning size={14} /> {accionMsg}
+              </Alert>
+            )}
+
+            {avisoMsg && (
+              <Alert>
+                <CheckCircle size={14} /> {avisoMsg}
               </Alert>
             )}
 
@@ -377,6 +397,7 @@ export default function Fichas() {
                   <option value="todos">Todos</option>
                   <option value="activo">Activo</option>
                   <option value="finalizado">Finalizado</option>
+                  <option value="anulada">Anulada</option>
                 </Select>
               </label>
               <label className={s.field}>
@@ -442,7 +463,7 @@ export default function Fichas() {
                           <Link to={`/instructor/detalle-ficha/${f.id}`} viewTransition className={s.cardTitle}>
                             {f.nombre}
                           </Link>
-                          <p className={s.cardMeta}>N° {f.numero} · {f.program?.nombre || 'Sin programa'}</p>
+                          <p className={s.cardMeta}>N° {f.numero || '—'} · {f.program?.nombre || 'Sin programa'}</p>
                           <div className={s.cohorteBar} role="img" aria-label={`${pend} de ${props.length} propuestas por revisar`}>
                             <span className={s.cohorteFill} style={{ width: props.length === 0 ? '0%' : `${Math.round(((props.length - pend) / props.length) * 100)}%` }} />
                           </div>
@@ -495,7 +516,7 @@ export default function Fichas() {
         titulo="Eliminar ficha"
         mensaje={
           aEliminar
-            ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Se eliminarán también sus aprendices y propuestas (con sus similitudes y observaciones). Esta acción no se puede deshacer.`
+            ? `¿Seguro que deseas quitar la ficha "${aEliminar.nombre}" (${aEliminar.numero || aEliminar.codigo})? Si tiene aprendices o propuestas quedará anulada y su número se liberará; si está vacía, se elimina.`
             : ''
         }
         textoConfirmar="Sí, eliminar"

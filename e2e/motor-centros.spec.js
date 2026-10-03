@@ -4,10 +4,10 @@ test.describe('Admin: motor de similitudes', () => {
   test('umbral y ventana visibles, ajustables y recalibrables', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/similitudes')
-    await expect(page.getByText(/Umbral 20% · corpus de 12 meses/i)).toBeVisible()
+    await expect(page.getByText(/Umbral 30% · corpus de 12 meses/i)).toBeVisible()
 
     await page.goto('/admin/config-similitud')
-    await expect(page.getByText(/Umbral vigente: 20% · Ventana: 12 meses/i)).toBeVisible()
+    await expect(page.getByText(/Umbral vigente: 30% · Ventana: 12 meses/i)).toBeVisible()
 
     await page.locator('input[type="number"]').first().fill('80')
     await page.locator('input[type="number"]').nth(1).fill('6')
