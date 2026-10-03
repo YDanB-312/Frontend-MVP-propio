@@ -16,7 +16,7 @@ export async function admin(h) {
     const form = page.locator('form')
     await form.getByPlaceholder('Ej. María González').fill(`Instructor Agente ${h.sufijo}`)
     await form.getByPlaceholder(/Correo electr/i).fill(`agente.${h.sufijo}@sena.edu.co`)
-    await form.locator('input[name="password"]').fill('123456')
+    await form.locator('input[name="password"]').fill('clave12345')
     await form.locator('select[name="role"]').selectOption('instructor')
 
     h.usar('Crear usuario')

@@ -15,7 +15,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { usuarios, proyectos, similitudes, reportes, notificaciones, motor } from '../../../lib/recursos'
+import { notificaciones, stats } from '../../../lib/recursos'
 import { fechaDesdeApi } from '../../../utils/helpers'
 import { RECIENTES } from '../../../constants/pagination'
 import s from './DashboardAdmin.module.css'
@@ -32,45 +32,37 @@ const TIPO_NOTIF = {
 export default function DashboardAdmin() {
   const { user } = useAuth()
 
-  // Fuente única: la API. Se piden todos los recursos del tablero en paralelo.
+  // Fuente única: la API. Los números vienen agregados del servidor (stats) y
+  // solo las alertas se traen como lista.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [listaUsuarios, listaProyectos, listaSimilitudes, listaReportes, listaNotificaciones, configMotor] =
-        await Promise.all([
-          usuarios.listar(),
-          proyectos.listar(),
-          similitudes.listar(),
-          reportes.listar(),
-          notificaciones.listar(),
-          motor.obtener(),
-        ])
-      return { listaUsuarios, listaProyectos, listaSimilitudes, listaReportes, listaNotificaciones, configMotor }
+      const [resumen, listaNotificaciones] = await Promise.all([
+        stats.resumen(),
+        notificaciones.listar(),
+      ])
+      return { resumen, listaNotificaciones }
     },
     [user?.id],
     { inicial: null }
   )
 
-  const dato = data || {}
-  const usuariosLista = dato.listaUsuarios || []
-  const proyectosLista = dato.listaProyectos || []
-  const similitudesLista = dato.listaSimilitudes || []
-  const reportesLista = dato.listaReportes || []
-  const motorConfig = dato.configMotor || { umbral: 0.2, meses: 12 }
+  const resumen = data?.resumen || null
+  const motorConfig = resumen?.motor || { umbral: 0.3, meses: 12 }
 
   // Alertas del admin autenticado (la API devuelve todas; se filtra por usuario).
-  const alertas = (dato.listaNotificaciones || [])
+  const alertas = (data?.listaNotificaciones || [])
     .filter((n) => Number(n.id_usuario) === Number(user?.id))
     .sort((a, b) => Number(b.id) - Number(a.id))
     .slice(0, RECIENTES)
 
   const datos = {
-    totalUsuarios: usuariosLista.length,
-    suspendidos: usuariosLista.filter((u) => u.estado === false).length,
-    totalProyectos: proyectosLista.length,
-    pendientes: proyectosLista.filter((p) => p.estado === 'pendiente').length,
-    totalSimilitudes: similitudesLista.length,
-    totalReportes: reportesLista.length,
-    reportesAbiertos: reportesLista.filter((r) => r.estado === 'pendiente' || r.estado === 'en_revision').length,
+    totalUsuarios: resumen?.usuarios?.total ?? 0,
+    suspendidos: resumen?.usuarios?.suspendidos ?? 0,
+    totalProyectos: resumen?.proyectos?.total ?? 0,
+    pendientes: resumen?.proyectos?.pendiente ?? 0,
+    totalSimilitudes: resumen?.similitudes ?? 0,
+    totalReportes: resumen?.reportes?.total ?? 0,
+    reportesAbiertos: resumen?.reportes?.abiertos ?? 0,
   }
   const saludo = user?.nombre?.split(' ')[0] || 'Admin'
 

@@ -117,6 +117,19 @@ export default function ProyectosAdmin() {
     setPagina(1)
   }
 
+  // Resumen legible de los filtros activos (visible con el panel plegado).
+  const chipsActivos = [
+    busqueda.trim() && `Búsqueda: "${busqueda.trim()}"`,
+    filtroEstado !== 'todos' && `Estado: ${ESTADO_LABEL[filtroEstado] || filtroEstado}`,
+    filtroFicha !== 'todos' && `Ficha: ${filtroFicha === 'sin' ? 'sin ficha' : filtroFicha}`,
+    filtroPrograma !== 'todos' && `Programa: ${filtroPrograma}`,
+    filtroInstructor !== 'todos' && 'Instructor',
+    filtroArea !== 'todos' && `Área: ${filtroArea}`,
+    minSim && `≥ ${minSim}%`,
+    desde && `Desde ${desde}`,
+    hasta && `Hasta ${hasta}`,
+  ].filter(Boolean)
+
   return (
     <DashboardLayout role="admin" titulo="Propuestas">
       <div className={s.page}>
@@ -131,7 +144,7 @@ export default function ProyectosAdmin() {
         />
 
         <ApiState cargando={cargando} error={error} onReintentar={recargar}>
-          <FilterBar title="Buscar y filtrar">
+          <FilterBar title="Buscar y filtrar" activeCount={chipsActivos.length} chips={chipsActivos}>
             <label className={s.field}>
               <span className={s.label}>Buscar</span>
               <Input

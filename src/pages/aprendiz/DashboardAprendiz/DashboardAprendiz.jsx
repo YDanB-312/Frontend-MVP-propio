@@ -15,6 +15,7 @@ import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, notificaciones } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import { useAuth } from '../../../contexts/AuthContext'
+import { useMotor } from '../../../contexts/MotorContext'
 import { formatearFecha } from '../../../utils/helpers'
 import { RECIENTES } from '../../../constants/pagination'
 import s from './DashboardAprendiz.module.css'
@@ -54,6 +55,7 @@ function infoSimilitud(lista, projectId) {
 }
 
 export default function DashboardAprendiz() {
+  const { umbralPct } = useMotor()
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -110,7 +112,7 @@ export default function DashboardAprendiz() {
       side: (
         <>
           {info && (
-            <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
+            <Badge variant={info.pct >= umbralPct ? 'danger' : info.pct >= umbralPct / 2 ? 'warning' : 'success'}>
               {info.pct}% · {info.count} coincidencia{info.count !== 1 ? 's' : ''}
             </Badge>
           )}

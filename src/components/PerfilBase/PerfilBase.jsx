@@ -258,7 +258,7 @@ export default function PerfilBase({
     const errs = {}
     if (!passForm.actual) errs.actual = 'Ingresa tu contraseña actual.'
     if (!passForm.nueva || !esPasswordValida(passForm.nueva)) {
-      errs.nueva = 'La nueva contraseña debe tener al menos 6 caracteres.'
+      errs.nueva = 'La nueva contraseña debe tener al menos 8 caracteres.'
     }
     if (passForm.confirmar !== passForm.nueva) {
       errs.confirmar = 'Las contraseñas no coinciden.'
@@ -446,7 +446,7 @@ export default function PerfilBase({
           {!cambiandoPass ? (
           <div className={s.seguridadRow}>
             <p className={s.seguridadTexto}>
-              Usa una contraseña única de al menos 6 caracteres para proteger tu cuenta.
+              Usa una contraseña única de al menos 8 caracteres para proteger tu cuenta.
               <br />
               <Link to="/recuperar-contrasena" className={s.link}>¿Olvidaste tu contraseña? Recupérala por correo</Link>
             </p>
@@ -468,7 +468,7 @@ export default function PerfilBase({
                 autoComplete="current-password"
               />
             </FormField>
-            <FormField label="Nueva contraseña" required error={passErrors.nueva} help="Mínimo 6 caracteres">
+            <FormField label="Nueva contraseña" required error={passErrors.nueva} help="Mínimo 8 caracteres">
               <PasswordInput
                 value={passForm.nueva}
                 onChange={(e) => alCambiarPass('nueva', e.target.value)}

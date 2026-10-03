@@ -14,6 +14,9 @@ const PASOS = [
   'Generando recomendaciones...',
 ]
 
+// Progreso por fase real del ciclo de la petición (no un porcentaje inventado).
+const PROGRESO_FASE = [15, 50, 85, 100]
+
 const TIPS = [
   'Los proyectos con descripciones detalladas obtienen análisis más precisos.',
   'Cita siempre las fuentes que usaste en tu documentación.',
@@ -22,67 +25,80 @@ const TIPS = [
   'Actualiza tus palabras clave para mejorar las comparaciones futuras.',
 ]
 
-const DURACION_PASO_MS = 90
-const INCREMENTO = 2
-const TOPE_ANIMACION = 90
-
 export default function AnalizandoProyecto() {
   const location = useLocation()
   const navigate = useNavigate()
   const projectId = location.state?.projectId
   const equipoFallidos = location.state?.equipoFallidos || []
 
-  const [progreso, setProgreso] = useState(0)
+  // Fase real: 0 enviado · 1 comparando (request en vuelo) · 2 generando
+  // (respuesta recibida) · 3 listo (navegación al resultado).
+  const [fase, setFase] = useState(0)
   const [tipIndex, setTipIndex] = useState(0)
   const [estado, setEstado] = useState('analizando') // 'analizando' | 'error'
   const [error, setError] = useState('')
-  const [listo, setListo] = useState(false)
   const [intento, setIntento] = useState(0)
   const navigateRef = useRef(false)
 
-  // Animación: avanza hasta el tope y espera al análisis real (no finge el 100%).
+  // Tips rotando mientras se analiza.
   useEffect(() => {
-    const progresoTimer = setInterval(() => {
-      setProgreso((p) => (p < TOPE_ANIMACION ? Math.min(TOPE_ANIMACION, p + INCREMENTO) : p))
-    }, DURACION_PASO_MS)
     const tipsTimer = setInterval(() => {
       setTipIndex((i) => (i + 1) % TIPS.length)
     }, 1800)
-    return () => {
-      clearInterval(progresoTimer)
-      clearInterval(tipsTimer)
-    }
+    return () => clearInterval(tipsTimer)
   }, [])
 
-  // Análisis real: el motor se ejecuta en el servidor y se espera su resultado.
+  // Análisis real: el motor se ejecuta en el servidor y la fase sigue su ciclo.
   useEffect(() => {
     if (!projectId) {
       navigate('/aprendiz/propuestas', { replace: true })
       return
     }
     let vivo = true
+    navigateRef.current = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reinicio de fases al (re)intentar
+    setFase(0)
+    setEstado('analizando')
+
+    // Da un instante visible a la fase inicial antes de marcar "comparando".
+    const aComparar = setTimeout(() => { if (vivo) setFase(1) }, 350)
+
     similitudesApi.detectar(projectId)
-      .then(() => { if (vivo) setListo(true) })
+      .then(() => {
+        if (!vivo) return
+        setFase(2)
+      })
       .catch((err) => {
         if (!vivo) return
         setEstado('error')
         setError(err?.data?.message || 'No se pudo completar el análisis. Intenta de nuevo.')
       })
-    return () => { vivo = false }
+
+    return () => {
+      vivo = false
+      clearTimeout(aComparar)
+    }
   }, [projectId, intento, navigate])
 
+  // Con la respuesta lista, se cierra la última fase y se navega al resultado.
   useEffect(() => {
-    if (!listo || navigateRef.current) return
+    if (fase < 2 || navigateRef.current) return
+    const aListo = setTimeout(() => setFase(3), 450)
+    return () => clearTimeout(aListo)
+  }, [fase])
+
+  useEffect(() => {
+    if (fase < 3 || navigateRef.current) return
     navigateRef.current = true
-    setProgreso(100)
     const salida = setTimeout(
       () => navigate(`/aprendiz/resultado-analisis?projectId=${projectId}`, { replace: true }),
-      500
+      400
     )
     return () => clearTimeout(salida)
-  }, [listo, projectId, navigate])
+  }, [fase, projectId, navigate])
 
-  const pasoActual = Math.min(PASOS.length - 1, Math.floor(progreso / (100 / PASOS.length)))
+  const progreso = PROGRESO_FASE[fase] ?? 15
+  const pasoActual = fase
 
   if (estado === 'error') {
     return (
@@ -97,8 +113,7 @@ export default function AnalizandoProyecto() {
                 type="button"
                 onClick={() => {
                   navigateRef.current = false
-                  setProgreso(0)
-                  setListo(false)
+                  setFase(0)
                   setEstado('analizando')
                   setError('')
                   setIntento((n) => n + 1)
@@ -119,7 +134,7 @@ export default function AnalizandoProyecto() {
   return (
     <DashboardLayout role="aprendiz" titulo="Analizando Proyecto">
       <div className={s.wrapper}>
-        <section className={s.card} aria-live="polite">
+        <section className={s.card}>
           <div className={s.ringWrap}>
             <svg className={s.ring} viewBox="0 0 120 120" aria-hidden="true">
               <circle className={s.ringBg} cx="60" cy="60" r="52" />
@@ -133,10 +148,12 @@ export default function AnalizandoProyecto() {
               />
             </svg>
             <span className={s.pct}>{progreso}%</span>
-            <span className={`${s.brain} ${progreso < 100 ? s.pulse : ''}`} aria-hidden="true"><Brain size={22} /></span>
+            <span className={`${s.brain} ${fase < 3 ? s.pulse : ''}`} aria-hidden="true"><Brain size={22} /></span>
           </div>
 
           <h1 className={s.title}>Analizando propuesta...</h1>
+          {/* Se anuncia solo el hito (fase), no un porcentaje animado. */}
+          <p className="sr-only" aria-live="polite">{PASOS[pasoActual]}</p>
           <p className={s.subtitle}>
             ProyecTwin está comparando tu propuesta con la base de datos académica. Este proceso toma solo unos
             segundos.

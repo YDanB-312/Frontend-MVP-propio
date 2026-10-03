@@ -4,7 +4,10 @@ import { test, expect } from './helpers'
 test.describe('Home pública: demo del motor', () => {
   test('sin sesión muestra el resumen y el playground sin 401', async ({ page }) => {
     const noAutorizado = []
-    page.on('response', (r) => { if (r.status() === 401) noAutorizado.push(r.url()) })
+    // La sonda de sesión (/auth/me) responde 401 a un visitante: es esperada.
+    page.on('response', (r) => {
+      if (r.status() === 401 && !r.url().includes('/auth/me')) noAutorizado.push(r.url())
+    })
 
     await page.goto('/')
 

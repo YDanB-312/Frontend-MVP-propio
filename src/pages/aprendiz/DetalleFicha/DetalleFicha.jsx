@@ -76,7 +76,7 @@ export default function DetalleFicha() {
           icon={<GraduationCap />}
           breadcrumb={[
             { label: 'Dashboard', to: '/aprendiz/dashboard' },
-            { label: 'Mi Ficha', to: '/aprendiz/ficha' },
+            { label: ficha.nombre },
           ]}
         />
 

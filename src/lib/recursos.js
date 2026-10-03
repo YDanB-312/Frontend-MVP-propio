@@ -11,6 +11,13 @@ const lista = (data) => (Array.isArray(data) ? data : (data?.data ?? []));
 export const usuarios = {
   listar: (filtros = {}) =>
     apiFetch(`/general-users${qs(filtros)}`).then(lista),
+  // Paginación en el servidor: devuelve { filas, total, ultimaPagina }.
+  pagina: (filtros = {}) =>
+    apiFetch(`/general-users${qs(filtros)}`).then((data) => ({
+      filas: data?.data ?? [],
+      total: data?.total ?? 0,
+      ultimaPagina: data?.last_page ?? 1,
+    })),
   obtener: (id, included = "apprentice,instructor,admin") =>
     apiFetch(`/general-users/${id}${qs({ included })}`),
   // Perfil público (vistas entre usuarios: compañero/instructor): solo datos básicos.
@@ -27,12 +34,28 @@ export const usuarios = {
   eliminar: (id) => apiFetch(`/general-users/${id}`, { method: "DELETE" }),
 };
 
+// ---------------------------------------------------------------- Padrón
+// Identidades institucionales (solo admin): alta, retiro y códigos de
+// activación de las cuentas registradas que aún no están activas.
+export const padron = {
+  listar: (filtros = {}) => apiFetch(`/padron${qs(filtros)}`).then(lista),
+  crear: (body) => apiFetch("/padron", { method: "POST", body }),
+  eliminar: (id) => apiFetch(`/padron/${id}`, { method: "DELETE" }),
+  codigos: () => apiFetch("/padron/codigos").then(lista),
+  regenerarCodigo: (idUsuario) =>
+    apiFetch(`/padron/${idUsuario}/codigo`, { method: "POST", body: {} }),
+};
+
 // ---------------------------------------------------------------- Catálogos
 export const redes = {
   listar: () => apiFetch("/knowledge-networks").then(lista),
   crear: (body) => apiFetch("/knowledge-networks", { method: "POST", body }),
   actualizar: (id, body) =>
     apiFetch(`/knowledge-networks/${id}`, { method: "PUT", body }),
+  // Guardado por lote: nombre + programas (crear/renombrar/eliminar) en una
+  // sola transacción del servidor.
+  sincronizar: (id, body) =>
+    apiFetch(`/knowledge-networks/${id}/programas`, { method: "PUT", body }),
   eliminar: (id) => apiFetch(`/knowledge-networks/${id}`, { method: "DELETE" }),
 };
 
@@ -49,26 +72,13 @@ export const programas = {
 export const instructores = {
   listar: (included = "generalUser") =>
     apiFetch(`/instructors${qs({ included })}`).then(lista),
-  crear: (body) => apiFetch("/instructors", { method: "POST", body }),
 };
 
 export const aprendices = {
   listar: (included = "generalUser,classGroup") =>
     apiFetch(`/apprentices${qs({ included })}`).then(lista),
-  crear: (body) => apiFetch("/apprentices", { method: "POST", body }),
   actualizar: (id, body) =>
     apiFetch(`/apprentices/${id}`, { method: "PUT", body }),
-  // Mi ficha (aprendiz): siempre sobre el usuario del token.
-  previsualizarCodigo: (codigo) =>
-    apiFetch(
-      `/apprentices/me/ficha/codigo/${encodeURIComponent(codigo.trim().toLowerCase())}`,
-    ),
-  unirmeAlCodigo: (codigo) =>
-    apiFetch("/apprentices/me/ficha", {
-      method: "POST",
-      body: { codigo: codigo.trim().toLowerCase() },
-    }),
-  salirDeFicha: () => apiFetch("/apprentices/me/ficha", { method: "DELETE" }),
 };
 
 // ---------------------------------------------------------------- Fichas
@@ -99,16 +109,15 @@ export const proyectos = {
   actualizar: (id, body) =>
     apiFetch(`/projects/${id}`, { method: "PUT", body }),
   eliminar: (id) => apiFetch(`/projects/${id}`, { method: "DELETE" }),
-  // Equipo (pivote aprendiz ↔ proyecto). Se incluye el aprendiz y su usuario
-  // para resolver nombres sin depender del roster (acotado por ficha).
+  // Equipo (pivote aprendiz ↔ proyecto). El servidor filtra por propuesta:
+  // ya no se descarga la tabla completa para filtrar en el navegador.
   equipo: (idProyecto) =>
     apiFetch(
-      `/apprentice-projects${qs({ included: "apprentice.generalUser" })}`,
-    )
-      .then(lista)
-      .then((filas) =>
-        filas.filter((f) => Number(f.id_proyecto) === Number(idProyecto)),
-      ),
+      `/apprentice-projects${qs({
+        included: "apprentice.generalUser",
+        id_proyecto: idProyecto,
+      })}`,
+    ).then(lista),
   agregarAlEquipo: (idAprendiz, idProyecto) =>
     apiFetch("/apprentice-projects", {
       method: "POST",
@@ -131,14 +140,27 @@ export const similitudes = {
     ).then(lista),
   obtener: (id) =>
     apiFetch(`/similarities/${id}${qs({ included: INCLUDE_SIMILITUD })}`),
+  // El motor puede tardar (BM25 + LSA + pasajes): timeout amplio.
   detectar: (idProyecto) =>
     apiFetch("/similarities/detect", {
       method: "POST",
       body: { id_proyecto: idProyecto },
+      timeout: 120000,
     }),
   recalcular: () =>
-    apiFetch("/similarities/recalculate", { method: "POST", body: {} }),
+    apiFetch("/similarities/recalculate", {
+      method: "POST",
+      body: {},
+      timeout: 120000,
+    }),
   eliminar: (id) => apiFetch(`/similarities/${id}`, { method: "DELETE" }),
+};
+
+// ---------------------------------------------------------------- Stats
+// Conteos agregados por rol: los tableros ya no descargan colecciones enteras
+// solo para pintar números.
+export const stats = {
+  resumen: () => apiFetch("/stats/resumen"),
 };
 
 // ---------------------------------------------------------------- Motor

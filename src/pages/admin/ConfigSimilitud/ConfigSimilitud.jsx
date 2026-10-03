@@ -12,16 +12,17 @@ import ApiState from '../../../components/ApiState/ApiState'
 import { ChartBar, CheckCircle, SlidersHorizontal, ArrowClockwise, Gauge, Database, MagnifyingGlass, Warning } from 'phosphor-react'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { useApi } from '../../../lib/useApi'
-import { motor, similitudes } from '../../../lib/recursos'
+import { motor, similitudes, stats } from '../../../lib/recursos'
 import { useMotor } from '../../../contexts/MotorContext'
 import s from './ConfigSimilitud.module.css'
 
 export default function ConfigSimilitud() {
-  // Fuente única: la API. Config vigente del motor + conteo de coincidencias.
+  // Fuente única: la API. Config vigente del motor + conteo agregado de
+  // coincidencias (sin descargar la tabla completa).
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [configMotor, listaSimilitudes] = await Promise.all([motor.obtener(), similitudes.listar()])
-      return { configMotor, listaSimilitudes }
+      const [configMotor, resumen] = await Promise.all([motor.obtener(), stats.resumen()])
+      return { configMotor, totalSimilitudes: resumen?.similitudes ?? 0 }
     },
     [],
     { inicial: null }
@@ -32,7 +33,7 @@ export default function ConfigSimilitud() {
   const { recargar: recargarMotor } = useMotor()
 
   const vigente = data?.configMotor || { umbral: 0.65, meses: 12 }
-  const totalSimilitudes = (data?.listaSimilitudes || []).length
+  const totalSimilitudes = data?.totalSimilitudes ?? 0
 
   const [umbral, setUmbral] = useState('')
   const [meses, setMeses] = useState('')

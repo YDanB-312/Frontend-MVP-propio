@@ -8,8 +8,11 @@ const VARIANTS = {
 }
 
 export default function Alert({ variant = 'success', className = '', children, ...props }) {
+  // Los errores se anuncian de inmediato; el resto, de forma cortés.
+  const role = variant === 'danger' ? 'alert' : 'status'
+
   return (
-    <div className={`${s.alert} ${VARIANTS[variant] || s.success} ${className}`} role="status" {...props}>
+    <div className={`${s.alert} ${VARIANTS[variant] || s.success} ${className}`} role={role} {...props}>
       {children}
     </div>
   )

@@ -11,6 +11,8 @@ const Register = lazy(() => import('./pages/public/Register'))
 const RecuperarContrasena = lazy(() => import('./pages/public/RecuperarContrasena'))
 const RestablecerContrasena = lazy(() => import('./pages/public/RestablecerContrasena'))
 const Confirmacion = lazy(() => import('./pages/public/Confirmacion'))
+const ActivarCuenta = lazy(() => import('./pages/public/ActivarCuenta'))
+const CambioObligatorio = lazy(() => import('./pages/public/CambioObligatorio'))
 const PaginaNoEncontrada = lazy(() => import('./pages/public/PaginaNoEncontrada'))
 
 // Aprendiz
@@ -21,7 +23,6 @@ const MiPerfil = lazy(() => import('./pages/aprendiz/MiPerfil'))
 const DetalleProyecto = lazy(() => import('./pages/aprendiz/DetalleProyecto'))
 const DetalleSimilitud = lazy(() => import('./pages/aprendiz/DetalleSimilitud'))
 const ReportarFallaAprendiz = lazy(() => import('./pages/aprendiz/ReportarFallaAprendiz'))
-const MiFicha = lazy(() => import('./pages/aprendiz/MiFicha'))
 const SimilitudesAprendiz = lazy(() => import('./pages/aprendiz/Similitudes'))
 const DetalleFicha = lazy(() => import('./pages/aprendiz/DetalleFicha'))
 const DetalleCompanero = lazy(() => import('./pages/aprendiz/DetalleCompanero'))
@@ -72,14 +73,14 @@ export default function App() {
         <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
         <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
         <Route path="/confirmacion" element={<Confirmacion />} />
+        <Route path="/activar-cuenta" element={<ActivarCuenta />} />
+        <Route path="/cambiar-contrasena" element={<ProtectedRoute><SafeRoute><CambioObligatorio /></SafeRoute></ProtectedRoute>} />
 
         <Route path="/aprendiz/dashboard" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><DashboardAprendiz /></SafeRoute></ProtectedRoute>} />
         <Route path="/aprendiz/mis-proyectos" element={<Navigate to="/aprendiz/propuestas" replace />} />
         <Route path="/aprendiz/nuevo-proyecto" element={<Navigate to="/aprendiz/propuestas?crear=1" replace />} />
         <Route path="/aprendiz/propuestas" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><Propuestas /></SafeRoute></ProtectedRoute>} />
-        <Route path="/aprendiz/unirse-ficha" element={<Navigate to="/aprendiz/ficha" replace />} />
         <Route path="/aprendiz/similitudes" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><SimilitudesAprendiz /></SafeRoute></ProtectedRoute>} />
-        <Route path="/aprendiz/ficha" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><MiFicha /></SafeRoute></ProtectedRoute>} />
         <Route path="/aprendiz/alertas" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><AlertasAprendiz /></SafeRoute></ProtectedRoute>} />
         <Route path="/aprendiz/reportar-falla" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><ReportarFallaAprendiz /></SafeRoute></ProtectedRoute>} />
         <Route path="/aprendiz/perfil" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><MiPerfil /></SafeRoute></ProtectedRoute>} />

@@ -1,4 +1,4 @@
-import { test, expect, login, logout } from './helpers'
+import { test, expect, login, logout, registrarYActivar } from './helpers'
 
 test.describe('Autenticación por rol', () => {
   for (const role of ['aprendiz', 'instructor', 'admin']) {
@@ -44,8 +44,19 @@ test.describe('Autenticación por rol', () => {
 })
 
 test.describe('Seguridad de la cuenta', () => {
-  test('cambiar contraseña exige la actual y la nueva queda activa', async ({ page }) => {
-    await login(page, 'aprendiz')
+  test('cambiar contraseña exige la actual y la nueva queda activa', async ({ page, request }) => {
+    // Usuario nuevo: no se muta la clave de las cuentas del seed (estado compartido).
+    const { correo, password } = await registrarYActivar(page, request, {
+      nombre: 'Clave E2E',
+      apellido: 'Prueba',
+    })
+
+    await page.goto('/login')
+    await page.getByPlaceholder(/Correo electr/i).fill(correo)
+    await page.locator('input[type="password"]').fill(password)
+    await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
+    await page.waitForURL('**/aprendiz/dashboard')
+
     await page.goto('/aprendiz/perfil')
 
     // El rol permanece visible incluso durante la edición del perfil (campo de solo lectura)
@@ -53,8 +64,7 @@ test.describe('Seguridad de la cuenta', () => {
     await expect(page.getByRole('main').getByText('Rol', { exact: true })).toBeVisible()
     await expect(page.getByRole('textbox', { name: 'Rol' })).toHaveValue('Aprendiz')
     // Nombre y apellido son editables por el propio aprendiz.
-    await expect(page.getByRole('textbox', { name: 'Nombres' })).toHaveValue('María')
-    await expect(page.getByRole('textbox', { name: 'Apellidos' })).toHaveValue('González')
+    await expect(page.getByRole('textbox', { name: 'Nombres' })).toHaveValue('Clave E2E')
     await page.getByRole('main').getByRole('button', { name: 'Cancelar' }).click()
 
     // Abrir el formulario de seguridad
@@ -70,13 +80,13 @@ test.describe('Seguridad de la cuenta', () => {
     await expect(page.getByText(/La contraseña actual no es correcta/i)).toBeVisible()
 
     // Confirmación que no coincide → rechaza
-    await campos.nth(0).fill('123456')
+    await campos.nth(0).fill(password)
     await campos.nth(2).fill('otraClave999')
     await formulario.getByRole('button', { name: /Actualizar contraseña/i }).click()
     await expect(page.getByText(/Las contraseñas no coinciden/i)).toBeVisible()
 
     // Flujo exitoso
-    await campos.nth(0).fill('123456')
+    await campos.nth(0).fill(password)
     await campos.nth(1).fill('nuevaClave123')
     await campos.nth(2).fill('nuevaClave123')
     await formulario.getByRole('button', { name: /Actualizar contraseña/i }).click()
@@ -84,8 +94,8 @@ test.describe('Seguridad de la cuenta', () => {
 
     // La nueva contraseña queda activa; la vieja ya no sirve
     await logout(page)
-    await page.getByPlaceholder(/Correo electr/i).fill('maria.gonzalez@soy.sena.edu.co')
-    await page.locator('input[type="password"]').fill('123456')
+    await page.getByPlaceholder(/Correo electr/i).fill(correo)
+    await page.locator('input[type="password"]').fill(password)
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await expect(page.locator('[role="alert"], .error')).toBeVisible()
 
@@ -94,21 +104,16 @@ test.describe('Seguridad de la cuenta', () => {
     await page.waitForURL('**/aprendiz/dashboard')
   })
 
-  test('cambiar el correo exige la contraseña actual y solo entonces se guarda', async ({ page }) => {
+  test('cambiar el correo exige la contraseña actual y solo entonces se guarda', async ({ page, request }) => {
     // Usuario nuevo para no alterar las cuentas del seed que usan los demás specs.
-    const email = `correo.e2e.${Date.now()}@soy.sena.edu.co`
-    await page.goto('/register')
-    await page.getByPlaceholder(/Mar.a Jos/i).fill('Correo E2E')
-    await page.getByPlaceholder(/Gonz.lez Ruiz/i).fill('Prueba')
-    await page.getByPlaceholder(/Correo electr/i).fill(email)
-    await page.locator('input[type="password"]').first().fill('clave123')
-    await page.locator('input[type="password"]').nth(1).fill('clave123')
-    await page.getByRole('button', { name: /Crear Cuenta/i }).click()
-    await page.waitForURL('**/confirmacion')
+    const { correo: email, password } = await registrarYActivar(page, request, {
+      nombre: 'Correo E2E',
+      apellido: 'Prueba',
+    })
 
     await page.goto('/login')
     await page.getByPlaceholder(/Correo electr/i).fill(email)
-    await page.locator('input[type="password"]').fill('clave123')
+    await page.locator('input[type="password"]').fill(password)
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await page.waitForURL('**/aprendiz/dashboard')
 
@@ -133,7 +138,7 @@ test.describe('Seguridad de la cuenta', () => {
     await expect(page.getByText(/contraseña actual no es correcta/i)).toBeVisible()
 
     // Con la correcta, se guarda y el perfil muestra el correo nuevo.
-    await page.getByLabel(/Contraseña actual/i).fill('clave123')
+    await page.getByLabel(/Contraseña actual/i).fill(password)
     await modal.getByRole('button', { name: /Cambiar correo/i }).click()
     await expect(page.getByRole('main').getByText(nuevo).first()).toBeVisible({ timeout: 15000 })
   })

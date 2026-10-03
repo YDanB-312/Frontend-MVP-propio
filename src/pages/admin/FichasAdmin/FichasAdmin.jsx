@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -72,41 +72,47 @@ export default function FichasAdmin() {
     { inicial: null }
   )
 
-  const listaFichas = data?.listaFichas || []
-  const listaProgramas = data?.listaProgramas || []
-  const listaRedes = data?.listaRedes || []
-  const listaInstructores = data?.listaInstructores || []
-  const listaProyectos = data?.listaProyectos || []
+  const listaFichas = useMemo(() => data?.listaFichas || [], [data])
+  const listaProgramas = useMemo(() => data?.listaProgramas || [], [data])
+  const listaRedes = useMemo(() => data?.listaRedes || [], [data])
+  const listaInstructores = useMemo(() => data?.listaInstructores || [], [data])
+  const listaProyectos = useMemo(() => data?.listaProyectos || [], [data])
 
   // Propuestas por ficha (id_class_group).
-  const propuestasPorFicha = new Map()
-  for (const p of listaProyectos) {
-    const key = Number(p.id_class_group)
-    propuestasPorFicha.set(key, (propuestasPorFicha.get(key) || 0) + 1)
-  }
+  const propuestasPorFicha = useMemo(() => {
+    const mapa = new Map()
+    for (const p of listaProyectos) {
+      const key = Number(p.id_class_group)
+      mapa.set(key, (mapa.get(key) || 0) + 1)
+    }
+    return mapa
+  }, [listaProyectos])
 
-  const filtradas = listaFichas.filter((f) => {
-    const q = norm(busqueda.trim())
-    const instructorNombre = nombreCompleto(f.instructor?.generalUser)
-    const coincideQ =
-      !q ||
-      norm(f.nombre).includes(q) ||
-      norm(f.codigo).includes(q) ||
-      norm(f.numero).includes(q) ||
-      norm(f.program?.nombre).includes(q) ||
-      norm(instructorNombre).includes(q)
-    const coincideEstado = filtroEstado === 'todos' || f.estado === filtroEstado
-    const coincideInstructor = filtroInstructor === 'todos' || String(f.id_instructor || '') === String(filtroInstructor)
-    const coincidePrograma = filtroPrograma === 'todos' || String(f.id_programa || '') === String(filtroPrograma)
-    const coincideRed = filtroRed === 'todos' || String(f.program?.knowledge_network_id || '') === String(filtroRed)
-    const fecha = String(f.created_at || '').slice(0, 10)
-    const coincideFecha = (!desde || fecha >= desde) && (!hasta || fecha <= hasta)
-    return coincideQ && coincideEstado && coincideInstructor && coincidePrograma && coincideRed && coincideFecha
-  })
+  const filtradas = useMemo(
+    () => listaFichas.filter((f) => {
+      const q = norm(busqueda.trim())
+      const instructorNombre = nombreCompleto(f.instructor?.generalUser)
+      const coincideQ =
+        !q ||
+        norm(f.nombre).includes(q) ||
+        norm(f.codigo).includes(q) ||
+        norm(f.numero).includes(q) ||
+        norm(f.program?.nombre).includes(q) ||
+        norm(instructorNombre).includes(q)
+      const coincideEstado = filtroEstado === 'todos' || f.estado === filtroEstado
+      const coincideInstructor = filtroInstructor === 'todos' || String(f.id_instructor || '') === String(filtroInstructor)
+      const coincidePrograma = filtroPrograma === 'todos' || String(f.id_programa || '') === String(filtroPrograma)
+      const coincideRed = filtroRed === 'todos' || String(f.program?.knowledge_network_id || '') === String(filtroRed)
+      const fecha = String(f.created_at || '').slice(0, 10)
+      const coincideFecha = (!desde || fecha >= desde) && (!hasta || fecha <= hasta)
+      return coincideQ && coincideEstado && coincideInstructor && coincidePrograma && coincideRed && coincideFecha
+    }),
+    [listaFichas, busqueda, filtroEstado, filtroInstructor, filtroPrograma, filtroRed, desde, hasta]
+  )
 
-  const paginadas = filtradas.slice(
-    (pagina - 1) * ITEMS_POR_PAGINA,
-    pagina * ITEMS_POR_PAGINA
+  const paginadas = useMemo(
+    () => filtradas.slice((pagina - 1) * ITEMS_POR_PAGINA, pagina * ITEMS_POR_PAGINA),
+    [filtradas, pagina]
   )
 
   const limpiarFiltros = () => {
@@ -119,6 +125,17 @@ export default function FichasAdmin() {
     setHasta('')
     setPagina(1)
   }
+
+  // Resumen legible de los filtros activos (visible con el panel plegado).
+  const chipsActivos = [
+    busqueda.trim() && `Búsqueda: "${busqueda.trim()}"`,
+    filtroEstado !== 'todos' && `Estado: ${ESTADO_LABEL[filtroEstado] || filtroEstado}`,
+    filtroInstructor !== 'todos' && 'Instructor',
+    filtroPrograma !== 'todos' && 'Programa',
+    filtroRed !== 'todos' && 'Red',
+    desde && `Desde ${desde}`,
+    hasta && `Hasta ${hasta}`,
+  ].filter(Boolean)
 
   useEffect(() => () => { if (msgTimer.current) clearTimeout(msgTimer.current) }, [])
 
@@ -371,7 +388,7 @@ export default function FichasAdmin() {
               <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
             )}
 
-            <FilterBar title="Buscar y filtrar">
+            <FilterBar title="Buscar y filtrar" activeCount={chipsActivos.length} chips={chipsActivos}>
               <label className={s.field}>
                 <span className={s.label}>Buscar</span>
                 <Input

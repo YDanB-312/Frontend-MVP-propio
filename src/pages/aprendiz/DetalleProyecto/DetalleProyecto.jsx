@@ -15,6 +15,7 @@ import ApiState from '../../../components/ApiState/ApiState'
 import ObservacionHilo from
 '../../../components/ObservacionHilo/ObservacionHilo'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import Tabs from '../../../components/Tabs/Tabs'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, observaciones as observacionesApi, aprendices } from '../../../lib/recursos'
@@ -65,6 +66,7 @@ export default function DetalleProyecto() {
   )
   const { data: rosterApi } = useApi(() => aprendices.listar(), [], { inicial: [] })
 
+  const [tab, setTab] = useState('resumen')
   const [texto, setTexto] = useState('')
   const [respondiendoA, setRespondiendoA] = useState(null)
   const [enviando, setEnviando] = useState(false)
@@ -340,8 +342,23 @@ export default function DetalleProyecto() {
 
         {soloLectura && <Alert variant="info">{motivoSoloLectura}</Alert>}
 
+        {esPropio && (
+          <Tabs
+            className={s.tabsMovil}
+            active={tab}
+            onChange={setTab}
+            ariaLabel="Secciones de la propuesta"
+            tabs={[
+              { id: 'resumen', label: 'Resumen' },
+              { id: 'similitudes', label: 'Similitudes' },
+              { id: 'observaciones', label: 'Observaciones' },
+              { id: 'equipo', label: 'Integrantes' },
+            ]}
+          />
+        )}
+
         <div className={esPropio ? s.dossier : s.dossierSolo}>
-          <div className={s.colPrincipal}>
+          <div className={`${s.colPrincipal} ${esPropio && tab !== 'resumen' ? s.ocultoMovil : ''}`}>
             <DataPanel title="Información del proyecto" icon={<FileText />}>
               {editando ? (
                 <form className={n.form} onSubmit={guardarEdicion} noValidate>
@@ -409,7 +426,7 @@ export default function DetalleProyecto() {
 
           {esPropio && (
             <aside className={s.rail} aria-label="Similitudes y observaciones">
-              <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
+              <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />} className={tab !== 'similitudes' ? s.ocultoMovil : ''}>
                 {similitudes.length === 0 ? (
                   <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
                 ) : (
@@ -434,7 +451,7 @@ export default function DetalleProyecto() {
                 )}
               </DataPanel>
 
-              <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
+              <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />} className={tab !== 'observaciones' ? s.ocultoMovil : ''}>
                 {respondiendoA && (
                   <div className={s.respondiendoChip}>
                     Respondiendo a {String(respondiendoA.autor).split(' | ')[0]}
@@ -472,7 +489,7 @@ export default function DetalleProyecto() {
                 )}
               </DataPanel>
 
-              <DataPanel title="Equipo" icon={<UsersThree />}>
+              <DataPanel title="Equipo" icon={<UsersThree />} className={tab !== 'equipo' ? s.ocultoMovil : ''}>
                 {equipoError && <Alert variant="danger">{equipoError}</Alert>}
 
                 <ul className={s.simList}>

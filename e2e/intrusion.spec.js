@@ -38,27 +38,26 @@ test.describe('Autorización: instructor vs recursos ajenos', () => {
   })
 
 
-  test('las similitudes son globales: cualquier instructor las ve', async ({ page }) => {
-    await login(page, 'otro')
+  test('el instructor ve las similitudes de sus aprendices', async ({ page }) => {
+    await login(page, 'instructor') // Carlos Ruiz (ficha 1)
     await page.goto('/instructor/similitudes')
 
-    // El listado institucional muestra las coincidencias detectadas
+    // El listado muestra las coincidencias de sus fichas.
     await expect(page.locator('table tbody tr').first()).toBeVisible()
   })
 
-  test('en similitud del mismo programa, Ver proyecto lleva a modo lectura', async ({ page }) => {
-    // Carlos Rodríguez Díaz (fichas 2 y 3, con ADSO) abre la similitud 2
-    // (proyectos de ficha 1, también ADSO): regla intra-programa visible
-    await login(page, 'otro')
+  test('el detalle de una similitud muestra las tarjetas A/B en modo lectura', async ({ page }) => {
+    // Carlos Ruiz abre una coincidencia de su ficha (2: Ventas ↔ Inventarios).
+    await login(page, 'instructor')
     await page.goto('/instructor/detalle-similitud/2')
 
-    // El contexto de la coincidencia SÍ es visible (tarjetas A/B)
+    // El contexto de la coincidencia es visible (tarjetas A/B)
     await expect(page.getByText(/Propuesta A/).first()).toBeVisible()
 
-    // Mismo programa → enlaces visibles hacia las propuestas (detalle en lectura)
+    // Enlaces visibles hacia las propuestas (detalle en lectura)
     await expect(page.getByRole('link', { name: /Ver proyecto/i })).toHaveCount(2)
 
-    // Y sin formulario de observación
+    // Y sin formulario de observación en el detalle
     await expect(page.locator('textarea')).toHaveCount(0)
   })
 

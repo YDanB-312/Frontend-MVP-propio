@@ -14,13 +14,13 @@ import ApiState from '../../../components/ApiState/ApiState'
 import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import Tabs from '../../../components/Tabs/Tabs'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import {
   proyectos,
   similitudes as similitudesApi,
   observaciones as observacionesApi,
-  notificaciones,
   fichas,
   instructores,
 } from '../../../lib/recursos'
@@ -53,6 +53,7 @@ function nombreCompleto(usuario) {
 }
 
 export default function DetalleProyectoInstructor() {
+  const [tab, setTab] = useState('resumen')
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -160,16 +161,7 @@ export default function DetalleProyectoInstructor() {
       // 1) Actualiza el estado (PUT exige el objeto completo).
       await proyectos.actualizar(proyecto.id, { ...proyecto, estado })
 
-      // 2) Notifica al creador.
-      await notificaciones.crear({
-        titulo: `Tu proyecto '${proyecto.titulo}' ha pasado a ${estado === 'aprobado' ? 'Aprobado' : 'Rechazado'}`,
-        tipo: 'revision',
-        enlace: `proyecto:${proyecto.id}`,
-        fecha: new Date().toISOString(),
-        id_usuario: proyecto.id_creador,
-      })
-
-      // 3) Al aprobar, el motor del backend calcula las coincidencias.
+      // 2) Al aprobar, el motor del backend calcula las coincidencias.
       if (estado === 'aprobado') {
         try {
           await similitudesApi.detectar(proyecto.id)
@@ -229,8 +221,21 @@ export default function DetalleProyectoInstructor() {
           </div>
         )}
 
+        <Tabs
+          className={s.tabsMovil}
+          active={tab}
+          onChange={setTab}
+          ariaLabel="Secciones de la propuesta"
+          tabs={[
+            { id: 'resumen', label: 'Resumen' },
+            { id: 'aprendiz', label: 'Aprendiz' },
+            { id: 'similitudes', label: 'Similitudes' },
+            { id: 'observaciones', label: 'Observaciones' },
+          ]}
+        />
+
         <div className={s.dossier}>
-        <div className={s.colPrincipal}>
+        <div className={`${s.colPrincipal} ${tab !== 'resumen' ? s.ocultoMovil : ''}`}>
         <DataPanel
           title="Información del proyecto"
           icon={<FileText />}
@@ -253,7 +258,7 @@ export default function DetalleProyectoInstructor() {
 
         <aside className={s.rail} aria-label="Aprendiz, similitudes y observaciones">
 
-        <DataPanel title="Información del aprendiz" icon={<GraduationCap />}>
+        <DataPanel title="Información del aprendiz" icon={<GraduationCap />} className={tab !== 'aprendiz' ? s.ocultoMovil : ''}>
           {estudiante ? (
             <div className={s.personCard}>
               {estudiante.foto_url ? (
@@ -281,7 +286,7 @@ export default function DetalleProyectoInstructor() {
         </DataPanel>
 
         {enMiCargo && (
-        <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
+        <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />} className={tab !== 'similitudes' ? s.ocultoMovil : ''}>
           {similitudes.length === 0 ? (
             <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
           ) : (
@@ -310,7 +315,7 @@ export default function DetalleProyectoInstructor() {
         )}
 
         {enMiCargo && (
-        <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
+        <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />} className={tab !== 'observaciones' ? s.ocultoMovil : ''}>
           {respondiendoA && (
             <div className={s.respondiendoChip}>
               Respondiendo a {String(respondiendoA.autor).split(' | ')[0]}

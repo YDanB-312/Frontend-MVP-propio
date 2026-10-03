@@ -16,10 +16,11 @@ import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import ApiState from '../../../components/ApiState/ApiState'
 import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import Tabs from '../../../components/Tabs/Tabs'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes, observaciones, notificaciones } from '../../../lib/recursos'
-import { agruparObservaciones, fechaDesdeApi, fechaHoyLocal } from '../../../utils/helpers'
+import { proyectos, similitudes, observaciones } from '../../../lib/recursos'
+import { agruparObservaciones, fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 
@@ -52,6 +53,7 @@ function payloadProyecto(proyecto, extra = {}) {
 }
 
 export default function DetalleProyectoAdmin() {
+  const [tab, setTab] = useState('resumen')
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -145,16 +147,8 @@ export default function DetalleProyectoAdmin() {
     if (nuevoEstado === proyecto.estado) return
     setAccionMsg(null)
     try {
+      // El aviso al creador lo genera el servidor al cambiar el estado.
       await proyectos.actualizar(proyecto.id, payloadProyecto(proyecto, { estado: nuevoEstado }))
-      // Aviso al creador (best-effort): no bloquea la actualización.
-      await notificaciones.crear({
-        titulo: `Tu proyecto '${proyecto.titulo}' ha pasado a ${ESTADO_LABEL[nuevoEstado] || nuevoEstado}`,
-        tipo: 'revision',
-        enlace: `proyecto:${proyecto.id}`,
-        leida: false,
-        fecha: fechaHoyLocal(),
-        id_usuario: proyecto.id_creador,
-      }).catch(() => null)
       await recargar()
       setGuardado(true)
       setTimeout(() => setGuardado(false), 3000)
@@ -261,8 +255,21 @@ export default function DetalleProyectoAdmin() {
           <Alert variant="danger"><Warning size={14} /> {accionMsg}</Alert>
         )}
 
+        <Tabs
+          className={s.tabsMovil}
+          active={tab}
+          onChange={setTab}
+          ariaLabel="Secciones de la propuesta"
+          tabs={[
+            { id: 'resumen', label: 'Resumen' },
+            { id: 'aprendiz', label: 'Aprendiz' },
+            { id: 'similitudes', label: 'Similitudes' },
+            { id: 'observaciones', label: 'Observaciones' },
+          ]}
+        />
+
         <div className={s.dossier}>
-          <div className={s.colPrincipal}>
+          <div className={`${s.colPrincipal} ${tab !== 'resumen' ? s.ocultoMovil : ''}`}>
             <DataPanel
               title="Información del proyecto"
               icon={<FileText />}
@@ -335,7 +342,7 @@ export default function DetalleProyectoAdmin() {
           </div>
 
           <aside className={s.rail} aria-label="Aprendiz, similitudes y observaciones">
-            <DataPanel title="Información del aprendiz" icon={<GraduationCap />}>
+            <DataPanel title="Información del aprendiz" icon={<GraduationCap />} className={tab !== 'aprendiz' ? s.ocultoMovil : ''}>
               {estudiante ? (
                 <div className={s.personCard}>
                   {estudiante.foto_url ? (
@@ -358,7 +365,7 @@ export default function DetalleProyectoAdmin() {
               )}
             </DataPanel>
 
-            <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
+            <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />} className={tab !== 'similitudes' ? s.ocultoMovil : ''}>
               {similitudesProyecto.length === 0 ? (
                 <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
               ) : (
@@ -383,7 +390,7 @@ export default function DetalleProyectoAdmin() {
               )}
             </DataPanel>
 
-            <DataPanel title={`Observaciones (${observacionesMapeadas.length})`} icon={<ChatCircle />}>
+            <DataPanel title={`Observaciones (${observacionesMapeadas.length})`} icon={<ChatCircle />} className={tab !== 'observaciones' ? s.ocultoMovil : ''}>
               {respondiendoA && (
                 <div className={s.respondiendoChip}>
                   Respondiendo a {String(respondiendoA.autor).split(' | ')[0]}

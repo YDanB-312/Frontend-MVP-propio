@@ -203,11 +203,8 @@ export default function Propuestas() {
   }
 
   function empezar() {
-    // Crear una propuesta exige ficha: si no la tiene, se le guía a unirse.
-    if (!miFicha) {
-      navigate('/aprendiz/ficha')
-      return
-    }
+    // Crear una propuesta exige ficha asignada por el instructor/admin.
+    if (!miFicha) return
     setCreando(true)
   }
 
@@ -295,16 +292,14 @@ export default function Propuestas() {
 
   // El estado "sin ficha" solo bloquea cuando NO hay historial (usuario nuevo).
   // Si tiene propuestas propias, se muestran igual (trazabilidad).
-  if (!miAprendiz && proyectosMios.length === 0) {
+  if (!miFicha) {
     return (
       <DashboardLayout role="aprendiz" titulo="Mis Propuestas">
         <div className={s.page}>
           <EmptyState
             icon={<GraduationCap size={40} weight="light" />}
             title="Aún no perteneces a una ficha"
-            message="Únete a tu ficha con el código que te comparta tu instructor para poder registrar tus propuestas."
-            actionLabel="Unirme a una ficha"
-            onAction={() => navigate('/aprendiz/ficha')}
+            message="Tu instructor o el administrador deben asignarte a una ficha para poder registrar propuestas."
           />
         </div>
       </DashboardLayout>
@@ -385,7 +380,6 @@ export default function Propuestas() {
                     onChange={(e) => set('objetivoGeneral', e.target.value)}
                     placeholder="Ej: Optimizar el riego de cultivos pequeños mediante monitoreo automatizado de humedad del suelo."
                     maxLength={MAX_DESCRIPCION_CORTA}
-                    autoFocus
                   />
                 </FormField>
 

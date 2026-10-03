@@ -189,7 +189,8 @@ html[data-theme='light'] {
   --govbar-text:#ffffff;--govbar-text-dim:rgba(255,255,255,.75);
   --c-header-accent:var(--g-600);
 
-  --grad-primary:linear-gradient(135deg,var(--g-700),var(--g-600));
+  /* Oscurecido para que el texto blanco cumpla AA (antes terminaba en g-600). */
+  --grad-primary:linear-gradient(135deg,var(--g-800),var(--g-700));
   --grad-hero:linear-gradient(135deg,#e5f6d9 0%,#fafafa 55%,#ebf5f8 100%);
   --grad-surface:linear-gradient(135deg,rgba(57,169,0,.03),rgba(14,116,144,.02));
   --grad-wash:linear-gradient(90deg,rgba(57,169,0,.05),transparent 40%);
@@ -260,7 +261,7 @@ html[data-theme='light'] {
     --c-govbar:linear-gradient(180deg,var(--g-700),var(--g-800));
     --govbar-text:#ffffff;--govbar-text-dim:rgba(255,255,255,.75);
     --c-header-accent:var(--g-600);
-    --grad-primary:linear-gradient(135deg,var(--g-700),var(--g-600));
+    --grad-primary:linear-gradient(135deg,var(--g-800),var(--g-700));
     --grad-hero:linear-gradient(135deg,#e5f6d9 0%,#fafafa 55%,#ebf5f8 100%);
     --grad-surface:linear-gradient(135deg,rgba(57,169,0,.03),rgba(14,116,144,.02));
     --grad-wash:linear-gradient(90deg,rgba(57,169,0,.05),transparent 40%);

@@ -22,12 +22,14 @@ export function useApi(fn, deps = [], { inicial = null } = {}) {
   // Evita actualizar estado tras desmontar (p. ej. al navegar con una recarga
   // en vuelo).
   const montadoRef = useRef(true);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // StrictMode monta/desmonta/monta en desarrollo: hay que reactivar la ref
+    // al montar o `recargar()` nunca aplicaría datos tras el doble montaje.
+    montadoRef.current = true;
+    return () => {
       montadoRef.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
 
   useEffect(() => {
     let vivo = true;

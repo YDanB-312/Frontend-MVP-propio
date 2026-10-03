@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import { RUTA_POR_ROL } from '../constants/routes'
 import {
   apiFetch, apiLogin, apiLogout, apiMe, apiChangePassword,
-  EVENTO_SESION_EXPIRADA,
+  toFieldErrors, EVENTO_SESION_EXPIRADA,
 } from '../lib/api'
 
 // Sesión del usuario.
@@ -21,6 +21,8 @@ function aSesion(u) {
     correo: u.correo,
     nombre: [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo,
     rol: String(u.rol || '').toLowerCase(),
+    // Clave temporal del admin: obliga a cambiarla antes de usar la app.
+    debeCambiarPassword: !!u.debe_cambiar_password,
   }
 }
 
@@ -35,26 +37,60 @@ export function AuthProvider({ children }) {
       const { user: cuenta } = await apiLogin(correo.trim().toLowerCase(), password, recordarme)
       const sesion = aSesion(cuenta)
       setUser(sesion)
-      return { exito: true, ruta: RUTA_POR_ROL[sesion.rol] || '/' }
+      return { exito: true, ruta: RUTA_POR_ROL[sesion.rol] || '/', debeCambiarPassword: sesion.debeCambiarPassword }
     } catch (err) {
       const mensaje = err?.data?.message
         || (err?.status === 0 ? 'No se pudo conectar con el servidor.' : 'Credenciales incorrectas. Verifica tus datos.')
-      return { exito: false, mensaje }
+      return {
+        exito: false,
+        mensaje,
+        pendienteActivacion: !!err?.data?.pendiente_activacion,
+        correo: err?.data?.correo || null,
+      }
     }
   }, [])
 
   // ---------------------------------------------------------------- Registro
-  const register = useCallback(async ({ nombre, apellido, correo, password, rol }) => {
+  // El rol y la ficha los define el padrón; aquí solo se envían documento,
+  // correo y clave. Devuelve el código de activación cuando el backend lo expone.
+  const register = useCallback(async ({ tipo_documento, numero_documento, correo, password }) => {
     try {
-      await apiFetch('/general-users', {
+      const res = await apiFetch('/general-users', {
         method: 'POST',
         auth: false,
-        body: { nombre: nombre.trim(), apellido: apellido.trim(), correo: correo.trim().toLowerCase(), password, rol },
+        body: {
+          tipo_documento,
+          numero_documento: String(numero_documento).trim(),
+          correo: correo.trim().toLowerCase(),
+          password,
+          password_confirmation: password,
+        },
       })
-      return { exito: true, email: correo.trim().toLowerCase() }
+      return {
+        exito: true,
+        correo: res?.correo || correo.trim().toLowerCase(),
+        codigo: res?.codigo || null,
+      }
     } catch (err) {
-      if (err?.status === 422) return { exito: false, mensaje: 'Este correo ya está registrado.' }
-      return { exito: false, mensaje: err?.data?.message || 'No se pudo crear la cuenta.' }
+      return {
+        exito: false,
+        mensaje: err?.data?.message || 'No se pudo crear la cuenta.',
+        errores: toFieldErrors(err?.data),
+      }
+    }
+  }, [])
+
+  // ---------------------------------------------------------------- Activación
+  const activarCuenta = useCallback(async (correo, codigo) => {
+    try {
+      await apiFetch('/auth/activar', {
+        method: 'POST',
+        auth: false,
+        body: { correo: correo.trim().toLowerCase(), codigo: String(codigo).trim() },
+      })
+      return { exito: true }
+    } catch (err) {
+      return { exito: false, mensaje: err?.data?.message || 'No se pudo activar la cuenta.' }
     }
   }, [])
 
@@ -75,6 +111,11 @@ export function AuthProvider({ children }) {
     // estado; si no, un refresco inmediato podría reautenticar al usuario.
     await apiLogout()
     setUser(null)
+  }, [])
+
+  // Tras cambiar la clave temporal, la sesión deja de estar pendiente.
+  const marcarPasswordCambiada = useCallback(() => {
+    setUser((actual) => (actual ? { ...actual, debeCambiarPassword: false } : actual))
   }, [])
 
   // Refresca nombre/correo en memoria tras editar el perfil.
@@ -110,7 +151,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, cargando, login, register, cambiarMiContrasena, sincronizarSesion, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, cargando, login, register, activarCuenta, cambiarMiContrasena, marcarPasswordCambiada, sincronizarSesion, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   )

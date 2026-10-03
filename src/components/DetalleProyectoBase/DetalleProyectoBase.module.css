@@ -21,6 +21,27 @@
   min-width: 0;
 }
 
+/* Pestañas móviles del detalle: en escritorio manda el dossier de 2 columnas */
+.tabsMovil {
+  display: flex;
+}
+
+.ocultoMovil {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .tabsMovil {
+    display: none;
+  }
+  .ocultoMovil {
+    display: block;
+  }
+  .colPrincipal.ocultoMovil {
+    display: flex;
+  }
+}
+
 /* Dossier de lectura (detalle aprendiz): contenido + rail derecho */
 .dossier {
   display: grid;

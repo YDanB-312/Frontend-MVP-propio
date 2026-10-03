@@ -1,4 +1,6 @@
 import { NavLink, matchPath, useLocation } from 'react-router-dom'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import s from './Sidebar.module.css'
 
 function CloseIcon() {
@@ -9,17 +11,32 @@ function CloseIcon() {
   )
 }
 
-// Navegación lateral: iconos + etiquetas, nada más.
+// Navegación lateral: iconos + etiquetas, nada más. En escritorio es una
+// columna fija; en móvil se abre como diálogo modal (foco atrapado, Escape
+// para cerrar y retorno del foco al botón que lo abrió).
 export default function Sidebar({ isOpen = false, onClose, role = '', links = [] }) {
   const { pathname } = useLocation()
+  const esEscritorio = useMediaQuery('(min-width: 1024px)')
+  const modal = isOpen && !esEscritorio
+  const ref = useFocusTrap({ active: modal, onEscape: onClose })
   const items = links
   const activoExtra = (link) =>
     (link.activeFor || []).some((p) => matchPath({ path: `${p}/*`, end: false }, pathname))
+
   return (
     <>
       {isOpen && <div className={s.overlay} onClick={onClose} aria-hidden="true" />}
 
-      <aside className={`${s.sidebar} ${isOpen ? s.isOpen : ''}`} aria-label={`Navegación principal (${role})`}>
+      <aside
+        ref={ref}
+        id="menu-principal"
+        className={`${s.sidebar} ${isOpen ? s.isOpen : ''}`}
+        role={modal ? 'dialog' : undefined}
+        aria-modal={modal || undefined}
+        aria-label={`Navegación principal (${role})`}
+        aria-hidden={!esEscritorio && !isOpen ? true : undefined}
+        inert={!esEscritorio && !isOpen ? true : undefined}
+      >
         <button type="button" className={s.closeBtn} onClick={onClose} aria-label="Cerrar menú">
           <CloseIcon />
         </button>

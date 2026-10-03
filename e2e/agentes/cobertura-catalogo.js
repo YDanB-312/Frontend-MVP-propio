@@ -24,7 +24,6 @@ export const CUBIERTOS = [
   /crear ficha|crear usuario|crear centro|crear red|crear/i,
   /guardar cambios|guardar contenido|guardar par|guardar estado|guardar/i,
   /agregar observaci|agregar|a[ñn]adir/i,
-  /unirme a esta ficha|buscar ficha|salir de la ficha|unir/i,
   /marcar todas como le|marcar como le/i,
   /restablecer|activar cuenta|aprobar|rechazar|suspender|recalcular/i,
   /usar valor por defecto|valor por defecto/i,

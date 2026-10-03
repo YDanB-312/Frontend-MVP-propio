@@ -109,6 +109,41 @@
   text-decoration: underline;
 }
 
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-3);
+  background: var(--c-danger-bg);
+  border: 1px solid var(--red-100);
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  color: var(--red-700);
+}
+
+.persona {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--c-success-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  color: var(--c-text);
+}
+
+.personaNombre {
+  margin: 0;
+  font-weight: 700;
+}
+
+.personaMeta {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--c-text-2);
+}
+
 @media (min-width: 768px) {
   .grid2 {
     grid-template-columns: 1fr 1fr;

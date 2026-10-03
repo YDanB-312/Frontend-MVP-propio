@@ -4,6 +4,29 @@
   flex-direction: column;
 }
 
+/* Enlace de salto: visible solo al enfocar con teclado (WCAG 2.4.1). */
+.skipLink {
+  position: fixed;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: 1100;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--c-surface-raised);
+  color: var(--c-text);
+  border: 1px solid var(--c-border-h);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-lg);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skipLink:focus-visible {
+  transform: translateY(0);
+  outline: none;
+  box-shadow: var(--sh-ring);
+}
+
 .body {
   flex: 1;
   display: flex;

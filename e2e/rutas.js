@@ -2,7 +2,6 @@ export const RUTAS_POR_ROL = {
   aprendiz: [
     '/aprendiz/dashboard',
     '/aprendiz/propuestas',
-    '/aprendiz/ficha',
     '/aprendiz/similitudes',
     '/aprendiz/alertas',
     '/aprendiz/reportar-falla',

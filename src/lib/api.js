@@ -170,14 +170,27 @@ export async function apiFetch(
 
 // ---------------------------------------------------------------- Sesión
 
-export async function apiLogin(correo, password, remember = false) {
-  // La sesión queda en la cookie httpOnly que devuelve el servidor.
-  return apiFetch("/auth/login", {
+// Identificador: correo institucional o número de documento (SOFIA Plus acepta
+// ambos). La sesión queda en la cookie httpOnly que devuelve el servidor.
+export async function apiLogin(identificador, password, remember = false) {
+  const valor = String(identificador || "").trim();
+  const body = valor.includes("@")
+    ? { correo: valor, password, recordarme: !!remember }
+    : { identificador: valor, password, recordarme: !!remember };
+  return apiFetch("/auth/login", { method: "POST", body, auth: false });
+}
+
+// Registro institucional (público): valida contra el padrón antes de crear la
+// cuenta; la activación posterior usa un código de un solo uso.
+export function apiValidarPadron({ tipo_documento, numero_documento, correo }) {
+  return apiFetch("/auth/validar-padron", {
     method: "POST",
-    body: { correo, password, recordarme: !!remember },
+    body: { tipo_documento, numero_documento, correo },
     auth: false,
   });
 }
+
+
 
 export function apiLogout() {
   return apiFetch("/auth/logout", { method: "POST" }).catch(() => null);

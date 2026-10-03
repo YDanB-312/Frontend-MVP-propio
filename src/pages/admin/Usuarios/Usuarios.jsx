@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -16,11 +16,11 @@ import { Input, PasswordInput, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
-import { norm } from '../../../utils/helpers'
-import { Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise, Warning } from 'phosphor-react'
+import PadronPanel from '../../../components/PadronPanel/PadronPanel'
+import { Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise, Warning, ShieldCheck } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { usuarios, aprendices, fichas, programas } from '../../../lib/recursos'
+import { usuarios, fichas, programas } from '../../../lib/recursos'
 import { esEmailValido, esPasswordValida, MAX_NOMBRE } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
@@ -58,6 +58,7 @@ export default function Usuarios() {
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
+  const [verPadron, setVerPadron] = useState(false)
 
   // Reacciona si se navega a ?crear=1 ya estando en la lista
   useEffect(() => {
@@ -79,63 +80,72 @@ export default function Usuarios() {
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
-  // Fuente única: la API. Se traen usuarios y los catálogos que resuelven ficha/centro/programa.
+  // Búsqueda con retardo: no se consulta al servidor en cada tecla.
+  const [busquedaDebounced, setBusquedaDebounced] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda.trim()), 300)
+    return () => clearTimeout(t)
+  }, [busqueda])
+
+  // Paginación y filtros en el servidor: solo viaja la página visible.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [listaUsuarios, listaAprendices, listaFichas, listaProgramas] = await Promise.all([
-        usuarios.listar(),
-        aprendices.listar('generalUser,classGroup.program'),
+      const [listaUsuarios, listaFichas, listaProgramas] = await Promise.all([
+        usuarios.pagina({
+          page: pagina,
+          per_page: ITEMS_POR_PAGINA,
+          included: 'apprentice.classGroup.program',
+          search: busquedaDebounced || undefined,
+          role: filtroRol,
+          estado: filtroEstado,
+          ficha_id: filtroFicha,
+          programa: filtroPrograma,
+        }),
         fichas.listar('program', {}),
         programas.listar(),
       ])
-      return { listaUsuarios, listaAprendices, listaFichas, listaProgramas }
+      return { listaUsuarios, listaFichas, listaProgramas }
     },
-    [],
+    [pagina, busquedaDebounced, filtroRol, filtroEstado, filtroFicha, filtroPrograma],
     { inicial: null }
   )
 
-  const usuariosLista = data?.listaUsuarios || []
-  const aprendicesLista = data?.listaAprendices || []
-  const fichasLista = data?.listaFichas || []
-  const programasLista = data?.listaProgramas || []
+  const usuariosLista = useMemo(() => data?.listaUsuarios?.filas || [], [data])
+  const total = data?.listaUsuarios?.total ?? 0
+  const fichasLista = useMemo(() => data?.listaFichas || [], [data])
+  const programasLista = useMemo(() => data?.listaProgramas || [], [data])
 
   // Índices para resolver relaciones sin recorrer arrays en cada celda.
-  const aprendicesPorUsuario = new Map(aprendicesLista.map((a) => [Number(a.id_usuario), a]))
-  const fichasPorId = new Map(fichasLista.map((f) => [Number(f.id), f]))
+  const fichasPorId = useMemo(
+    () => new Map(fichasLista.map((f) => [Number(f.id), f])),
+    [fichasLista]
+  )
 
-  const fichaDeUsuario = (usr) => {
-    const perfil = aprendicesPorUsuario.get(Number(usr.id))
+  // La fila trae su perfil anidado (apprentice.classGroup.program).
+  const fichaDeUsuario = useCallback((usr) => {
+    const perfil = usr.apprentice
     if (!perfil) return null
     return perfil.classGroup || fichasPorId.get(Number(perfil.id_class_group)) || null
-  }
+  }, [fichasPorId])
 
   const fichasFiltro = fichasLista
-  const programasFiltro = [...new Set(programasLista.map((p) => p.nombre))].sort()
-
-  const filtrados = usuariosLista.filter((usr) => {
-    const q = norm(busqueda.trim())
-    const nombreCompleto = `${usr.nombre || ''} ${usr.apellido || ''}`
-    const coincideId = busqueda.trim() !== '' && String(usr.id) === busqueda.trim()
-    const coincideQ = !q || norm(nombreCompleto).includes(q) || norm(usr.correo).includes(q) || coincideId
-    const coincideRol = filtroRol === 'todos' || usr.rol === filtroRol
-    const estado = usr.estado === false ? 'suspendido' : 'activo'
-    const coincideEstado = filtroEstado === 'todos' || estado === filtroEstado
-    const perfil = aprendicesPorUsuario.get(Number(usr.id))
-    const ficha = fichaDeUsuario(usr)
-    const coincideFicha =
-      filtroFicha === 'todos' ||
-      (filtroFicha === 'sin'
-        ? !perfil?.id_class_group
-        : String(perfil?.id_class_group || '') === String(filtroFicha))
-    const programa = perfil?.program?.nombre || ficha?.program?.nombre || ''
-    const coincidePrograma = filtroPrograma === 'todos' || programa === filtroPrograma
-    return coincideQ && coincideRol && coincideEstado && coincideFicha && coincidePrograma
-  })
-
-  const paginados = filtrados.slice(
-    (pagina - 1) * ITEMS_POR_PAGINA,
-    pagina * ITEMS_POR_PAGINA
+  const programasFiltro = useMemo(
+    () => [...new Set(programasLista.map((p) => p.nombre))].sort(),
+    [programasLista]
   )
+
+  const hayFiltros = busqueda.trim() !== ''
+    || filtroRol !== 'todos'
+    || filtroEstado !== 'todos'
+    || filtroFicha !== 'todos'
+    || filtroPrograma !== 'todos'
+  const filtrosActivos = [
+    busqueda.trim() !== '',
+    filtroRol !== 'todos',
+    filtroEstado !== 'todos',
+    filtroFicha !== 'todos',
+    filtroPrograma !== 'todos',
+  ].filter(Boolean).length
 
   const limpiarFiltros = () => {
     setBusqueda('')
@@ -174,7 +184,7 @@ export default function Usuarios() {
     else if (!esEmailValido(form.email.trim())) err.email = 'Ingresa un correo válido.'
 
     if (!form.password) err.password = 'La contraseña es obligatoria.'
-    else if (!esPasswordValida(form.password)) err.password = 'La contraseña debe tener al menos 6 caracteres.'
+    else if (!esPasswordValida(form.password)) err.password = 'La contraseña debe tener al menos 8 caracteres.'
 
     if (!form.role) err.role = 'Selecciona un rol.'
     return err
@@ -249,15 +259,24 @@ export default function Usuarios() {
           onBack={creando ? () => setCreando(false) : undefined}
           actions={
             !creando ? (
-              <Button
-                type="button"
-                onClick={() => { setCreadoMsg(false); setCreando(true) }}
-              >
-                <Plus size={14} /> Nuevo Usuario
-              </Button>
+              <>
+                <Button type="button" variant="secondary" onClick={() => setVerPadron((v) => !v)}>
+                  <ShieldCheck size={14} /> Padrón
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => { setCreadoMsg(false); setCreando(true) }}
+                >
+                  <Plus size={14} /> Nuevo Usuario
+                </Button>
+              </>
             ) : undefined
           }
         />
+
+        {verPadron && !creando && (
+          <PadronPanel onClose={() => setVerPadron(false)} onChanged={recargar} />
+        )}
 
         {creando ? (
           <DataPanel title="Datos del usuario" icon={<Code />}>
@@ -289,7 +308,7 @@ export default function Usuarios() {
                   label="Contraseña temporal"
                   required
                   error={errores.password}
-                  help="Mínimo 6 caracteres. El usuario podrá cambiarla después."
+                  help="Mínimo 8 caracteres. El usuario podrá cambiarla después."
                 >
                   <PasswordInput
                     name="password"
@@ -335,8 +354,9 @@ export default function Usuarios() {
 
             <FilterBar
               title="Buscar y filtrar"
+              activeCount={filtrosActivos}
               actions={
-                filtrados.length > 0 && (
+                hayFiltros && total > 0 && (
                   <Button type="button" variant="secondary" size="sm" onClick={limpiarFiltros}>
                     Limpiar filtros
                   </Button>
@@ -419,21 +439,21 @@ export default function Usuarios() {
                 </Select>
               </label>
               <p className={s.info}>
-                {filtrados.length} usuario{filtrados.length !== 1 ? 's' : ''}
+                {total} usuario{total !== 1 ? 's' : ''}
               </p>
             </FilterBar>
 
-            {paginados.length === 0 ? (
+            {usuariosLista.length === 0 ? (
               <EmptyState
                 icon={<Users />}
                 title="Sin usuarios"
                 message={
-                  usuariosLista.length === 0
-                    ? 'No hay usuarios registrados en la plataforma. Crea el primero para comenzar.'
-                    : 'Ningún usuario coincide con los filtros aplicados.'
+                  hayFiltros
+                    ? 'Ningún usuario coincide con los filtros aplicados.'
+                    : 'No hay usuarios registrados en la plataforma. Crea el primero para comenzar.'
                 }
-                actionLabel={usuariosLista.length === 0 ? 'Crear primer usuario' : 'Limpiar filtros'}
-                onAction={usuariosLista.length === 0 ? () => setCreando(true) : limpiarFiltros}
+                actionLabel={hayFiltros ? 'Limpiar filtros' : 'Crear primer usuario'}
+                onAction={hayFiltros ? limpiarFiltros : () => setCreando(true)}
               />
             ) : (
               <>
@@ -472,7 +492,7 @@ export default function Usuarios() {
                       key: 'programa',
                       header: 'Programa',
                       render: (usr) => {
-                        const perfil = aprendicesPorUsuario.get(Number(usr.id))
+                        const perfil = usr.apprentice
                         const ficha = fichaDeUsuario(usr)
                         return perfil?.program?.nombre || ficha?.program?.nombre || <span className={s.muted}>—</span>
                       },
@@ -530,17 +550,16 @@ export default function Usuarios() {
                       ),
                     },
                   ]}
-                  rows={paginados}
+                  rows={usuariosLista}
                   keyOf={(usr) => usr.id}
                 />
 
                 <Pagination
-                  totalItems={filtrados.length}
+                  totalItems={total}
                   itemsPerPage={ITEMS_POR_PAGINA}
                   paginaActual={pagina}
                   setPaginaActual={setPagina}
                   itemName="usuarios"
-                  filteredCount={filtrados.length}
                 />
               </>
             )}

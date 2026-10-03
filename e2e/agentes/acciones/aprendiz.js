@@ -44,21 +44,6 @@ export async function aprendiz(h) {
     await h.esperar(`Comentario del agente ${h.sufijo}.`)
   })
 
-  await h.paso('salir y unirse a otra ficha', async () => {
-    await h.ir('/aprendiz/ficha')
-    await h.auditar()
-    h.usar('Salir de la ficha')
-    await page.getByRole('button', { name: /Salir de la ficha/i }).click()
-    await page.getByRole('button', { name: /Sí, salir/i }).click()
-
-    h.usar('Buscar ficha')
-    await page.getByLabel(/Código de la ficha/i).fill('bnt-jhsa')
-    await page.getByRole('button', { name: /Buscar ficha/i }).click()
-    h.usar('Unirme a esta ficha')
-    await page.getByRole('button', { name: /Unirme a esta ficha/i }).click()
-    await h.esperar('Analisis y Desarrollo 2634', 15000)
-  })
-
   await h.paso('marcar alertas como leídas', async () => {
     await h.ir('/aprendiz/alertas')
     const btn = page.getByRole('button', { name: /Marcar todas como leídas/i })
