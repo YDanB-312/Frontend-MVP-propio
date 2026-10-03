@@ -20,10 +20,10 @@ test.describe('Admin: precisión y botones', () => {
   test('búsqueda ignora tildes y limpiar filtros restaura', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/usuarios')
-    await page.getByPlaceholder('Nombre o correo…').fill('maria')
+    await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill('maria')
     await expect(page.getByText('María González')).toBeVisible()
 
-    await page.getByPlaceholder('Nombre o correo…').fill('zzz-sin-resultados')
+    await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill('zzz-sin-resultados')
     await expect(page.getByText('María González')).toHaveCount(0)
     await page.getByRole('button', { name: /Limpiar filtros/i }).click()
     await expect(page.getByText('María González')).toBeVisible()

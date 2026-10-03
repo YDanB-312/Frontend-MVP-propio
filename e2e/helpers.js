@@ -1,18 +1,17 @@
 import { test, expect } from '@playwright/test'
-import { Buffer } from 'node:buffer'
 
 const CUENTAS = {
-  aprendiz: { email: 'maria.gonzalez@soy.sena.edu.co', password: '123456', home: '/aprendiz/dashboard', nombre: 'María' },
-  instructor: { email: 'carlos.ruiz@sena.edu.co', password: '123456', home: '/instructor/dashboard', nombre: 'Carlos' },
-  admin: { email: 'admin@sena.edu.co', password: 'admin123', home: '/admin/dashboard', nombre: 'admin' },
-  otro: { email: 'carlos.rodriguez@sena.edu.co', password: '123456', home: '/instructor/dashboard', nombre: 'Carlos R' },
+  aprendiz: { username: 'mgonzalez', password: '123456', home: '/aprendiz/dashboard', nombre: 'María' },
+  instructor: { username: 'cruiz', password: '123456', home: '/instructor/dashboard', nombre: 'Carlos' },
+  admin: { username: 'a', password: 'admin123', home: '/admin/dashboard', nombre: 'admin' },
+  otro: { username: 'crodriguez', password: '123456', home: '/instructor/dashboard', nombre: 'Carlos R' },
 }
 
 // Login genérico con credenciales explícitas (sirve para cuentas creadas en
 // tiempo de ejecución, p. ej. la simulación cruzada).
-export async function entrar(page, email, password, home) {
+export async function entrar(page, username, password, home) {
   await page.goto('/login')
-  await page.getByPlaceholder(/Correo electr/i).fill(email)
+  await page.getByPlaceholder('Usuario').fill(username)
   await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
   await page.waitForURL(`**${home}`, { timeout: 15000 })
@@ -20,7 +19,7 @@ export async function entrar(page, email, password, home) {
 
 export async function login(page, role) {
   const cta = CUENTAS[role]
-  await entrar(page, cta.email, cta.password, cta.home)
+  await entrar(page, cta.username, cta.password, cta.home)
   return cta
 }
 
@@ -29,36 +28,56 @@ export async function logout(page) {
   await page.waitForURL('**/login')
 }
 
-// Adjunta el PDF obligatorio del registro (el input es invisible por diseño).
-export async function adjuntarPdfSoporte(page, nombre = 'soporte.pdf') {
-  await page.locator('input[aria-label="Documento de soporte"]').setInputFiles({
-    name: nombre,
-    mimeType: 'application/pdf',
-    buffer: Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF'),
-  })
-}
-
-// Crea una cuenta vía API como administrador (nace verificada, sin documento).
-// Devuelve el correo para encadenar el flujo que la use.
+// Crea una cuenta desde el admin (username y contraseña temporal generados),
+// hace el primer ingreso con la temporal y la cambia por una conocida para el
+// resto del flujo. Devuelve { username, password, correo }.
 export async function crearUsuarioApi(request, {
   nombre = 'E2E',
   apellido = 'Prueba',
   correo,
   password = 'clave123',
   rol = 'aprendiz',
-}) {
+} = {}) {
   const acceso = await request.post('/v1/auth/login', {
-    data: { correo: CUENTAS.admin.email, password: CUENTAS.admin.password },
+    data: { username: CUENTAS.admin.username, password: CUENTAS.admin.password },
   })
   expect(acceso.ok()).toBeTruthy()
   const { token } = await acceso.json()
 
   const alta = await request.post('/v1/general-users', {
     headers: { Authorization: `Bearer ${token}` },
-    data: { nombre, apellido, correo, password, rol },
+    data: {
+      nombre,
+      apellido,
+      tipo_documento: 'CC',
+      numero_documento: `${Date.now()}${Math.floor(Math.random() * 10)}`,
+      correo: correo || `e2e.${Date.now()}@correo.com`,
+      rol,
+    },
   })
   expect(alta.ok()).toBeTruthy()
-  return correo
+  const body = await alta.json()
+  const username = body.credenciales.username
+  const temporal = body.credenciales.password_temporal
+
+  // Primer ingreso: la temporal obliga al cambio.
+  const primerLogin = await request.post('/v1/auth/login', {
+    data: { username, password: temporal },
+  })
+  expect(primerLogin.ok()).toBeTruthy()
+  const tokenTemporal = (await primerLogin.json()).token
+
+  const cambio = await request.put('/v1/auth/password', {
+    headers: { Authorization: `Bearer ${tokenTemporal}` },
+    data: {
+      password_actual: temporal,
+      password,
+      password_confirmation: password,
+    },
+  })
+  expect(cambio.ok()).toBeTruthy()
+
+  return { username, password, correo: body.usuario.correo }
 }
 
 export async function esperarDashboard(page, role) {

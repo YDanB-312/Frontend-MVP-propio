@@ -3,14 +3,10 @@ import { test, expect, crearUsuarioApi } from './helpers'
 // Recuperación de contraseña por correo. En local el correo se escribe en el log
 // y la API devuelve `reset_url`, así que el flujo completo es probable.
 
-const unico = () => `reset.e2e.${Date.now()}@soy.sena.edu.co`
-
-// El registro público queda pendiente de verificación; para este flujo se crea
-// la cuenta desde el admin (nace verificada) y así el login funciona.
+// El registro público no existe; para este flujo se crea la cuenta desde el
+// admin y se recupera la contraseña con el correo personal registrado.
 async function crearAprendiz(request) {
-  const email = unico()
-  await crearUsuarioApi(request, { nombre: 'Reset E2E', apellido: 'Prueba', correo: email })
-  return email
+  return crearUsuarioApi(request, { nombre: 'Reset E2E', apellido: 'Prueba' })
 }
 
 test.describe('Recuperar contraseña', () => {
@@ -29,11 +25,11 @@ test.describe('Recuperar contraseña', () => {
 
 test.describe('Restablecer contraseña', () => {
   test('flujo completo: enlace, nueva clave y login', async ({ page, request }) => {
-    const email = await crearAprendiz(request)
+    const { username, correo } = await crearAprendiz(request)
 
     // Solicita el enlace y lo toma del aviso de modo local.
     await page.goto('/recuperar-contrasena')
-    await page.getByPlaceholder(/Correo electr/i).fill(email)
+    await page.getByPlaceholder(/Correo electr/i).fill(correo)
     await page.getByRole('button', { name: /Enviar enlace/i }).click()
 
     const enlace = page.getByRole('link', { name: /abrir enlace de restablecimiento/i })
@@ -52,7 +48,7 @@ test.describe('Restablecer contraseña', () => {
     // La nueva contraseña queda activa.
     await page.getByRole('link', { name: /Ir al login/i }).click()
     await page.waitForURL('**/login')
-    await page.getByPlaceholder(/Correo electr/i).fill(email)
+    await page.getByPlaceholder('Usuario').fill(username)
     await page.locator('input[type="password"]').fill('nuevaClave123')
     await page.getByRole('button', { name: /Iniciar Sesi/i }).click()
     await page.waitForURL('**/aprendiz/dashboard', { timeout: 15000 })

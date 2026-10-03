@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { RUTA_POR_ROL } from '../constants/routes'
 import {
-  apiRegistro, apiLogin, apiLogout, apiMe, apiChangePassword,
+  apiLogin, apiLogout, apiMe, apiChangePassword,
   EVENTO_SESION_EXPIRADA,
 } from '../lib/api'
 
@@ -19,9 +19,10 @@ function aSesion(u) {
   return {
     id: u.id,
     correo: u.correo,
+    username: u.username,
     nombre: [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo,
     rol: String(u.rol || '').toLowerCase(),
-    estadoVerificacion: u.estado_verificacion || 'verificado',
+    mustChangePassword: !!u.must_change_password,
   }
 }
 
@@ -31,12 +32,16 @@ export function AuthProvider({ children }) {
   const [cargando, setCargando] = useState(true)
 
   // ---------------------------------------------------------------- Login
-  const login = useCallback(async (correo, password, recordarme) => {
+  const login = useCallback(async (username, password, recordarme) => {
     try {
-      const { user: cuenta } = await apiLogin(correo.trim().toLowerCase(), password, recordarme)
+      const { user: cuenta } = await apiLogin(username.trim().toLowerCase(), password, recordarme)
       const sesion = aSesion(cuenta)
       setUser(sesion)
-      return { exito: true, ruta: RUTA_POR_ROL[sesion.rol] || '/' }
+      return {
+        exito: true,
+        // La contraseña temporal obliga a cambiarla antes de usar el sistema.
+        ruta: sesion.mustChangePassword ? '/cambio-obligatorio' : (RUTA_POR_ROL[sesion.rol] || '/'),
+      }
     } catch (err) {
       const mensaje = err?.data?.message
         || (err?.status === 0 ? 'No se pudo conectar con el servidor.' : 'Credenciales incorrectas. Verifica tus datos.')
@@ -45,37 +50,15 @@ export function AuthProvider({ children }) {
   }, [])
 
   // ---------------------------------------------------------------- Registro
-  const register = useCallback(async ({ nombre, apellido, correo, password, rol, soporte }) => {
-    try {
-      await apiRegistro(
-        {
-          nombre: nombre.trim(),
-          apellido: apellido.trim(),
-          correo: correo.trim().toLowerCase(),
-          password,
-          rol,
-        },
-        soporte
-      )
-      return { exito: true, email: correo.trim().toLowerCase() }
-    } catch (err) {
-      const errores = err?.data?.errors
-      // El correo es el único campo que el cliente no puede validar solo.
-      if (err?.status === 422 && errores?.correo) {
-        return { exito: false, mensaje: 'Este correo ya está registrado.' }
-      }
-      const mensaje = errores?.soporte?.[0]
-        || err?.data?.message
-        || 'No se pudo crear la cuenta.'
-      return { exito: false, mensaje }
-    }
-  }, [])
+  // (El registro público no existe: las cuentas las crea el administrador.)
 
   // ---------------------------------------------------------------- Contraseñas
   const cambiarMiContrasena = useCallback(async (actual, nueva) => {
     if (!user?.id) return { exito: false, mensaje: 'Sesión no válida. Inicia sesión de nuevo.' }
     try {
       await apiChangePassword(actual, nueva)
+      // La contraseña definitiva libera el primer ingreso.
+      setUser((u) => (u ? { ...u, mustChangePassword: false } : u))
       return { exito: true }
     } catch (err) {
       return { exito: false, mensaje: err?.data?.message || 'No se pudo actualizar la contraseña.' }
@@ -123,7 +106,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, cargando, login, register, cambiarMiContrasena, sincronizarSesion, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, cargando, login, cambiarMiContrasena, sincronizarSesion, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   )

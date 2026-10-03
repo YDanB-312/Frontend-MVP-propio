@@ -73,9 +73,6 @@ export default function Fichas() {
     [instructoresApi, user?.id]
   )
 
-  // Solo un instructor verificado por el admin puede crear/gestionar fichas.
-  const verificado = user?.estadoVerificacion === 'verificado'
-
   // Modelo Classroom: solo las fichas creadas por este instructor.
   const fichasPropias = useMemo(
     () => fichasApi.filter((f) => Number(f.instructor?.id) === Number(miFila?.id)),
@@ -262,24 +259,12 @@ export default function Fichas() {
           onBack={creando ? () => setCreando(false) : undefined}
           actions={
             !creando ? (
-              <Button
-                type="button"
-                onClick={abrirCreacion}
-                disabled={!verificado}
-                title={verificado ? undefined : 'Tu cuenta de instructor está pendiente de verificación.'}
-              >
+              <Button type="button" onClick={abrirCreacion}>
                 <Plus size={14} /> Crear Ficha
               </Button>
             ) : undefined
           }
         />
-
-        {!verificado && (
-          <Alert variant="warning">
-            <Warning size={14} /> Tu cuenta está {user?.estadoVerificacion === 'rechazado' ? 'rechazada' : 'pendiente de verificación'}.
-            Un administrador debe verificarla para que puedas crear y gestionar fichas.
-          </Alert>
-        )}
 
         {creando ? (
           <DataPanel title="Datos de la ficha" icon={<Books />}>

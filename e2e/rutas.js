@@ -49,8 +49,6 @@ export const RUTAS_POR_ROL = {
 export const RUTAS_PUBLICAS = [
   '/',
   '/login',
-  '/register',
   '/recuperar-contrasena',
   '/restablecer-contrasena',
-  '/confirmacion',
 ]

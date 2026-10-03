@@ -15,9 +15,9 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { Books, ChartBar, CheckCircle, Eye, Lifebuoy, Plus, Trash, Warning } from 'phosphor-react'
+import { Books, ChartBar, CheckCircle, Eye, Lifebuoy, Plus, Trash, Warning, DownloadSimple } from 'phosphor-react'
 import { useApi } from '../../../lib/useApi'
-import { fichas, programas, redes, instructores, proyectos } from '../../../lib/recursos'
+import { fichas, programas, redes, instructores, proyectos, usuarios } from '../../../lib/recursos'
 import { toFieldErrors } from '../../../lib/api'
 import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import { FICHA_ESTADO_VARIANT as ESTADO_VARIANT } from '../../../constants/badgeVariants'
@@ -58,17 +58,18 @@ export default function FichasAdmin() {
   const [pagina, setPagina] = useState(1)
   const [aEliminar, setAEliminar] = useState(null)
 
-  // Fuente única: la API. Fichas + catálogos + propuestas (conteo).
+  // Fuente única: la API. Fichas + catálogos + propuestas (conteo) + aprendices.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [listaFichas, listaProgramas, listaRedes, listaInstructores, listaProyectos] = await Promise.all([
+      const [listaFichas, listaProgramas, listaRedes, listaInstructores, listaProyectos, listaAprendices] = await Promise.all([
         fichas.listar('program,instructor.generalUser,apprentices.generalUser'),
         programas.listar(),
         redes.listar(),
         instructores.listar('generalUser'),
         proyectos.listar(),
+        usuarios.listar({ role: 'aprendiz' }),
       ])
-      return { listaFichas, listaProgramas, listaRedes, listaInstructores, listaProyectos }
+      return { listaFichas, listaProgramas, listaRedes, listaInstructores, listaProyectos, listaAprendices }
     },
     [],
     { inicial: null }
@@ -79,6 +80,7 @@ export default function FichasAdmin() {
   const listaRedes = data?.listaRedes || []
   const listaInstructores = data?.listaInstructores || []
   const listaProyectos = data?.listaProyectos || []
+  const listaAprendices = data?.listaAprendices || []
 
   // Propuestas por ficha (id_class_group).
   const propuestasPorFicha = new Map()
@@ -143,8 +145,17 @@ export default function FichasAdmin() {
     setCreando(true)
   }
 
-  const confirmarEliminar = async () => {
-    if (!aEliminar) return
+  // Exporta el PDF con las credenciales iniciales de la ficha (solo admin).
+  const exportarCredenciales = async (id) => {
+    setAccionMsg(null)
+    try {
+      await fichas.exportarCredenciales(id)
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudieron exportar las credenciales.')
+    }
+  }
+
+  const confirmarEliminar = async () => {    if (!aEliminar) return
     setAccionMsg(null)
     try {
       const resp = await fichas.eliminar(aEliminar.id)
@@ -169,6 +180,20 @@ export default function FichasAdmin() {
   const [guardando, setGuardando] = useState(false)
   // Número que chocó con una ficha existente (habilita pedir soporte).
   const [numeroDuplicado, setNumeroDuplicado] = useState(null)
+  // Aprendices seleccionados para la ficha nueva y su buscador.
+  const [aprendicesSel, setAprendicesSel] = useState([])
+  const [busquedaAprendiz, setBusquedaAprendiz] = useState('')
+
+  const alternarAprendiz = (id) => {
+    setAprendicesSel((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]))
+  }
+
+  const aprendicesFiltrados = listaAprendices.filter((a) => {
+    const q = norm(busquedaAprendiz.trim())
+    if (!q) return true
+    const nombre = `${a.nombre || ''} ${a.apellido || ''} ${a.username || ''} ${a.numero_documento || ''}`
+    return norm(nombre).includes(q)
+  })
 
   const onChange = (e) => {
     const { name, value } = e.target
@@ -216,6 +241,8 @@ export default function FichasAdmin() {
       estado: 'activo',
       id_programa: Number(form.programa),
       id_instructor: form.instructorId === '' ? null : Number(form.instructorId),
+      // Pertenencia de los aprendices seleccionados (relación aprendiz-ficha).
+      aprendices: aprendicesSel,
     }
     setGuardando(true)
     setNumeroDuplicado(null)
@@ -224,6 +251,8 @@ export default function FichasAdmin() {
       await fichas.crear(payload)
       await recargar()
       setForm({ red: '', programa: '', nombre: '', numero: '', instructorId: '' })
+      setAprendicesSel([])
+      setBusquedaAprendiz('')
       setErrores({})
       setCreando(false)
       mostrarCreada()
@@ -311,6 +340,36 @@ export default function FichasAdmin() {
                     </option>
                   ))}
                 </Select>
+              </FormField>
+
+              <FormField
+                label={`Aprendices de la ficha${aprendicesSel.length ? ` (${aprendicesSel.length})` : ''}`}
+                help="Marca los aprendices que pertenecen a esta ficha. Se pueden agregar o retirar después."
+              >
+                <Input
+                  value={busquedaAprendiz}
+                  onChange={(e) => setBusquedaAprendiz(e.target.value)}
+                  placeholder="Buscar por nombre, usuario o documento…"
+                />
+                <div className={c.listaAprendices}>
+                  {aprendicesFiltrados.length === 0 ? (
+                    <p className={c.hint}>No hay aprendices que coincidan. Créalos primero en Usuarios.</p>
+                  ) : (
+                    aprendicesFiltrados.slice(0, 60).map((a) => (
+                      <label key={a.id} className={c.aprendizItem}>
+                        <input
+                          type="checkbox"
+                          checked={aprendicesSel.includes(a.id)}
+                          onChange={() => alternarAprendiz(a.id)}
+                        />
+                        <span>
+                          {nombreCompleto(a)} · {a.username}
+                          {a.numero_documento ? ` · ${a.numero_documento}` : ''}
+                        </span>
+                      </label>
+                    ))
+                  )}
+                </div>
               </FormField>
 
               <FormField label="Nombre de la ficha" required error={errores.nombre}>
@@ -537,6 +596,15 @@ export default function FichasAdmin() {
                       align: 'end',
                       render: (f) => (
                         <div className={s.actions}>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            title="Exportar credenciales de la ficha"
+                            onClick={() => exportarCredenciales(f.id)}
+                          >
+                            <DownloadSimple size={14} /> Credenciales
+                          </Button>
                           <Button
                             as="link"
                             to={`/admin/detalle-ficha/${f.id}`}

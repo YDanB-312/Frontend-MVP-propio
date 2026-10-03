@@ -17,21 +17,32 @@ export async function simulacion(h) {
   const nombreFicha = `Ficha Simulación ${h.sufijo}`
   const tituloPropuesta = `Propuesta Simulación ${h.sufijo}`
   let codigoFicha = null
+  let usernameInstructor = null
+  let temporalInstructor = null
 
   await h.paso('admin: crear instructor y ficha', async () => {
-    await entrar(page, 'admin@sena.edu.co', 'admin123', '/admin/dashboard')
+    await entrar(page, 'a', 'admin123', '/admin/dashboard')
     await h.auditar()
 
-    // Instructor nuevo.
+    // Instructor nuevo (el sistema genera usuario y contraseña temporal).
     await h.ir('/admin/usuarios')
     await page.getByRole('button', { name: /Nuevo Usuario/i }).click()
     const form = page.locator('form')
-    await form.getByPlaceholder('Ej. María González').fill(nombreInstructor)
-    await form.getByPlaceholder(/Correo electr/i).fill(correoInstructor)
-    await form.locator('input[name="password"]').fill('123456')
-    await form.locator('select[name="role"]').selectOption('instructor')
-    await form.getByRole('button', { name: /Crear usuario/i }).click()
-    await h.esperar('Usuario creado correctamente.', 10000)
+    await form.getByPlaceholder('Ej. María José').fill('Instructor Sim')
+    await form.getByPlaceholder('Ej. González Ruiz').fill(h.sufijo)
+    await form.locator('select[name="tipoDocumento"]').selectOption('CC')
+    await form.getByPlaceholder('Ej. 1234567890').fill('9' + h.sufijo)
+    await form.getByPlaceholder('Correo personal').fill(correoInstructor)
+    await form.locator('select[name="rol"]').selectOption('instructor')
+    const creadoInstructor = await h.capturar('POST', '/v1/general-users', () =>
+      form.getByRole('button', { name: /Crear usuario/i }).click()
+    )
+    usernameInstructor = creadoInstructor?.credenciales?.username
+    temporalInstructor = creadoInstructor?.credenciales?.password_temporal
+    await h.esperar('creado.', 10000)
+    if (!usernameInstructor || !temporalInstructor) {
+      throw new Error('no se obtuvieron las credenciales del instructor')
+    }
 
     // Ficha a cargo del instructor nuevo.
     await h.ir('/admin/fichas')
@@ -52,14 +63,21 @@ export async function simulacion(h) {
 
   await h.paso('instructor nuevo: ver su ficha asignada', async () => {
     await logout(page)
-    await entrar(page, correoInstructor, '123456', '/instructor/dashboard')
+    // Primer ingreso: cambia la temporal por una conocida.
+    await entrar(page, usernameInstructor, temporalInstructor, '/cambio-obligatorio')
+    await page.getByLabel(/Contraseña temporal/i).fill(temporalInstructor)
+    await page.getByLabel(/^Nueva contraseña/i).fill('123456')
+    await page.getByLabel(/Confirmar nueva contraseña/i).fill('123456')
+    await page.getByRole('button', { name: /Establecer contraseña/i }).click()
+    await page.waitForURL('**/instructor/dashboard', { timeout: 15000 })
+
     await h.ir('/instructor/fichas')
     await h.esperar(nombreFicha, 15000)
   })
 
   await h.paso('aprendiz: unirse por código y registrar propuesta', async () => {
     await logout(page)
-    await entrar(page, 'maria.gonzalez@soy.sena.edu.co', '123456', '/aprendiz/dashboard')
+    await entrar(page, 'mgonzalez', '123456', '/aprendiz/dashboard')
 
     await h.ir('/aprendiz/ficha')
     const salir = page.getByRole('button', { name: /Salir de la ficha/i })
@@ -93,7 +111,7 @@ export async function simulacion(h) {
 
   await h.paso('instructor nuevo: aprobar la propuesta del aprendiz', async () => {
     await logout(page)
-    await entrar(page, correoInstructor, '123456', '/instructor/dashboard')
+    await entrar(page, usernameInstructor, '123456', '/instructor/dashboard')
     await h.ir('/instructor/revision-propuestas')
 
     const nodo = page
@@ -108,7 +126,7 @@ export async function simulacion(h) {
 
   await h.paso('aprendiz: comprobar que su propuesta quedó aprobada', async () => {
     await logout(page)
-    await entrar(page, 'maria.gonzalez@soy.sena.edu.co', '123456', '/aprendiz/dashboard')
+    await entrar(page, 'mgonzalez', '123456', '/aprendiz/dashboard')
     await h.ir('/aprendiz/propuestas')
     await page.getByText(tituloPropuesta).first().click()
     await page.waitForURL('**/aprendiz/detalle-proyecto/**')

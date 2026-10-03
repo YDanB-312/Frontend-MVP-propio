@@ -7,10 +7,9 @@ import SafeRoute from './components/SafeRoute/SafeRoute'
 // Public
 const Home = lazy(() => import('./pages/public/Home'))
 const Login = lazy(() => import('./pages/public/Login'))
-const Register = lazy(() => import('./pages/public/Register'))
+const CambioObligatorio = lazy(() => import('./pages/public/CambioObligatorio'))
 const RecuperarContrasena = lazy(() => import('./pages/public/RecuperarContrasena'))
 const RestablecerContrasena = lazy(() => import('./pages/public/RestablecerContrasena'))
-const Confirmacion = lazy(() => import('./pages/public/Confirmacion'))
 const PaginaNoEncontrada = lazy(() => import('./pages/public/PaginaNoEncontrada'))
 
 // Aprendiz
@@ -68,10 +67,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
         <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
-        <Route path="/confirmacion" element={<Confirmacion />} />
+        <Route path="/cambio-obligatorio" element={<ProtectedRoute><SafeRoute><CambioObligatorio /></SafeRoute></ProtectedRoute>} />
 
         <Route path="/aprendiz/dashboard" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><DashboardAprendiz /></SafeRoute></ProtectedRoute>} />
         <Route path="/aprendiz/mis-proyectos" element={<Navigate to="/aprendiz/propuestas" replace />} />

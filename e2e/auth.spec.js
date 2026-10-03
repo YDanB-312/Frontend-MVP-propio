@@ -11,7 +11,7 @@ test.describe('Autenticación por rol', () => {
 
   test('credenciales inválidas muestran error y no ingresan', async ({ page }) => {
     await page.goto('/login')
-    await page.getByPlaceholder(/Correo electr/i).fill('maria.gonzalez@soy.sena.edu.co')
+    await page.getByPlaceholder('Usuario').fill('mgonzalez')
     await page.locator('input[type="password"]').fill('incorrecta')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await expect(page.locator('[role="alert"], .error')).toBeVisible()
@@ -84,7 +84,7 @@ test.describe('Seguridad de la cuenta', () => {
 
     // La nueva contraseña queda activa; la vieja ya no sirve
     await logout(page)
-    await page.getByPlaceholder(/Correo electr/i).fill('maria.gonzalez@soy.sena.edu.co')
+    await page.getByPlaceholder('Usuario').fill('mgonzalez')
     await page.locator('input[type="password"]').fill('123456')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await expect(page.locator('[role="alert"], .error')).toBeVisible()
@@ -96,12 +96,10 @@ test.describe('Seguridad de la cuenta', () => {
 
   test('cambiar el correo exige la contraseña actual y solo entonces se guarda', async ({ page, request }) => {
     // Usuario nuevo para no alterar las cuentas del seed que usan los demás specs.
-    // Se crea desde el admin (verificado) porque el registro público queda pendiente.
-    const email = `correo.e2e.${Date.now()}@soy.sena.edu.co`
-    await crearUsuarioApi(request, { nombre: 'Correo E2E', apellido: 'Prueba', correo: email })
+    const { username } = await crearUsuarioApi(request, { nombre: 'Correo E2E', apellido: 'Prueba' })
 
     await page.goto('/login')
-    await page.getByPlaceholder(/Correo electr/i).fill(email)
+    await page.getByPlaceholder('Usuario').fill(username)
     await page.locator('input[type="password"]').fill('clave123')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await page.waitForURL('**/aprendiz/dashboard')

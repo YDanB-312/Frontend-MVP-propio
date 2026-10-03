@@ -113,3 +113,30 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Selección de aprendices al crear una ficha (admin) */
+.listaAprendices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.aprendizItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+
+.aprendizItem:hover {
+  background: var(--c-chip-hover);
+}

@@ -8,7 +8,7 @@ export async function simulacionReporte(h) {
   const titulo = `Soporte simulación ${h.sufijo}`
 
   await h.paso('aprendiz: solicitar soporte', async () => {
-    await entrar(page, 'maria.gonzalez@soy.sena.edu.co', '123456', '/aprendiz/dashboard')
+    await entrar(page, 'mgonzalez', '123456', '/aprendiz/dashboard')
     await h.ir('/aprendiz/reportar-falla')
     await page.getByLabel(/Título de la solicitud/i).fill(titulo)
     await page.getByLabel(/Descripción/i).fill('Solicitud creada en la simulación cruzada para validar la notificación al solicitante.')
@@ -21,7 +21,7 @@ export async function simulacionReporte(h) {
 
   await h.paso('admin: cerrar la solicitud y notificar', async () => {
     await logout(page)
-    await entrar(page, 'admin@sena.edu.co', 'admin123', '/admin/dashboard')
+    await entrar(page, 'a', 'admin123', '/admin/dashboard')
     await h.ir('/admin/reportes-fallas')
     await page.getByPlaceholder(/Título, número de ficha, #id o reportante/i).fill(titulo)
     await page.locator('tbody tr', { hasText: titulo }).getByRole('link', { name: /Ver/i }).click()
@@ -35,7 +35,7 @@ export async function simulacionReporte(h) {
 
   await h.paso('aprendiz: recibe la alerta de la solicitud', async () => {
     await logout(page)
-    await entrar(page, 'maria.gonzalez@soy.sena.edu.co', '123456', '/aprendiz/dashboard')
+    await entrar(page, 'mgonzalez', '123456', '/aprendiz/dashboard')
     await h.ir('/aprendiz/alertas')
     await h.esperar('fue atendida', 15000)
   })

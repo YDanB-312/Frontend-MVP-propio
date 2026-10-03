@@ -29,7 +29,7 @@ test.describe('Admin: eliminar usuarios', () => {
     await expect(page.getByText(/Eliminar usuario/i)).toBeVisible()
     await confirmarBorrado(page, 'ELIMINAR')
     await page.waitForURL('**/admin/usuarios')
-    await page.getByPlaceholder('Nombre o correo…').fill('maria.torres@sena.edu.co')
+    await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill('maria.torres@sena.edu.co')
     await expect(page.locator('tbody tr')).toHaveCount(0)
   })
 

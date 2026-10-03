@@ -38,19 +38,19 @@ export async function simulacionSimilitud(h) {
   const tituloAna = `Inventarios Ana ${h.sufijo}`
 
   await h.paso('aprendiz María: registrar propuesta', async () => {
-    await entrar(page, 'maria.gonzalez@soy.sena.edu.co', '123456', '/aprendiz/dashboard')
+    await entrar(page, 'mgonzalez', '123456', '/aprendiz/dashboard')
     await crearPropuesta(page, h, tituloMaria)
   })
 
   await h.paso('aprendiz Ana: registrar propuesta similar', async () => {
     await logout(page)
-    await entrar(page, 'ana.martinez@soy.sena.edu.co', '123456', '/aprendiz/dashboard')
+    await entrar(page, 'amartinez', '123456', '/aprendiz/dashboard')
     await crearPropuesta(page, h, tituloAna)
   })
 
   await h.paso('instructor: aprobar ambas y detectar la coincidencia', async () => {
     await logout(page)
-    await entrar(page, 'carlos.ruiz@sena.edu.co', '123456', '/instructor/dashboard')
+    await entrar(page, 'cruiz', '123456', '/instructor/dashboard')
     await aprobar(page, h, tituloMaria)
     await aprobar(page, h, tituloAna)
     // Al aprobar la segunda, el motor reporta las coincidencias detectadas.
@@ -64,7 +64,7 @@ export async function simulacionSimilitud(h) {
 
   await h.paso('aprendiz María: ver su coincidencia con Ana', async () => {
     await logout(page)
-    await entrar(page, 'maria.gonzalez@soy.sena.edu.co', '123456', '/aprendiz/dashboard')
+    await entrar(page, 'mgonzalez', '123456', '/aprendiz/dashboard')
     await h.ir('/aprendiz/similitudes')
 
     const grupo = page

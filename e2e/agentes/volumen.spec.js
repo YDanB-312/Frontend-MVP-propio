@@ -21,7 +21,7 @@ test('usuarios: paginación, filtro por rol y búsqueda con volumen', async ({ p
   await expect(nav.getByText(/Mostrando 1–8 de \d+ usuarios/)).toBeVisible()
 
   // Búsqueda por el apellido de las cuentas de volumen.
-  await page.getByPlaceholder('Nombre o correo…').fill('volumen')
+  await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill('volumen')
   await expect(page.locator('tbody').getByText(/Volumen/).first()).toBeVisible({ timeout: 10000 })
 })
 

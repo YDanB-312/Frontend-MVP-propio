@@ -12,16 +12,18 @@ import Alert from '../../../components/Alert/Alert'
 import Button from '../../../components/Button/Button'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import Actions from '../../../components/Actions/Actions'
-import { Input, PasswordInput, Select } from '../../../components/Input/Input'
+import { Input, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
-import { norm } from '../../../utils/helpers'
-import { Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise, Warning } from 'phosphor-react'
+import {
+  Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise,
+  Warning, Copy, DownloadSimple,
+} from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { usuarios, aprendices, fichas, programas } from '../../../lib/recursos'
-import { esEmailValido, esPasswordValida, MAX_NOMBRE } from '../../../utils/validation'
+import { esEmailValido, MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
 // Estilos reutilizados de las páginas originales (lista + formulario)
@@ -35,16 +37,7 @@ const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admi
 const ESTADO_VARIANT = { activo: 'success', suspendido: 'danger' }
 const ESTADO_LABEL = { activo: 'Activo', suspendido: 'Suspendido' }
 
-// Estado de la verificación administrativa del instructor.
-const VERIF_VARIANT = { pendiente: 'warning', verificado: 'success', rechazado: 'danger' }
-const VERIF_LABEL = { pendiente: 'Pendiente', verificado: 'Verificado', rechazado: 'Rechazada' }
-
-// Nombre completo -> { nombre, apellido } (la API exige ambos campos).
-function splitNombre(texto) {
-  const partes = String(texto || '').trim().split(/\s+/).filter(Boolean)
-  const nombre = partes.shift() || ''
-  return { nombre, apellido: partes.join(' ') || nombre }
-}
+const TIPOS_DOCUMENTO = ['CC', 'TI', 'CE', 'PPT']
 
 // Campos que acepta PUT /general-users (requiere los escalares obligatorios).
 function payloadCuenta(cuenta, extra = {}) {
@@ -70,40 +63,69 @@ export default function Usuarios() {
       setCreando(true)
     }
   }, [searchParams])
-  const [creadoMsg, setCreadoMsg] = useState(false)
+
   const [accionMsg, setAccionMsg] = useState(null)
   const [suspender, setSuspender] = useState(null)
+  // Credenciales recién generadas (se muestran una sola vez tras crear).
+  const [credenciales, setCredenciales] = useState(null)
+  const [exportando, setExportando] = useState(false)
+  const [seleccionados, setSeleccionados] = useState([])
   const msgTimer = useRef(null)
 
-  /* ---------- Lista ---------- */
+  /* ---------- Lista (paginación del servidor) ---------- */
   const [busqueda, setBusqueda] = useState('')
+  const [busquedaServidor, setBusquedaServidor] = useState('')
   const [filtroRol, setFiltroRol] = useState('todos')
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroFicha, setFiltroFicha] = useState('todos')
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
 
-  // Fuente única: la API. Se traen usuarios y los catálogos que resuelven ficha/centro/programa.
-  const { data, cargando, error, recargar } = useApi(
+  // La búsqueda se envía al servidor con un pequeño retardo (evita una
+  // petición por tecla).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setBusquedaServidor(busqueda.trim())
+      setPagina(1)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [busqueda])
+
+  const { data: paginaUsuarios, cargando, error, recargar } = useApi(
+    () => usuarios.listarPaginado({
+      page: pagina,
+      por_pagina: ITEMS_POR_PAGINA,
+      search: busquedaServidor,
+      role: filtroRol,
+      estado: filtroEstado,
+      ficha_id: filtroFicha,
+      programa: filtroPrograma,
+    }),
+    [pagina, busquedaServidor, filtroRol, filtroEstado, filtroFicha, filtroPrograma],
+    { inicial: null }
+  )
+
+  const usuariosPagina = paginaUsuarios?.data || []
+  const totalUsuarios = paginaUsuarios?.total || 0
+
+  // Catálogos para resolver ficha/programa de cada fila.
+  const { data: catalogos } = useApi(
     async () => {
-      const [listaUsuarios, listaAprendices, listaFichas, listaProgramas] = await Promise.all([
-        usuarios.listar(),
+      const [listaAprendices, listaFichas, listaProgramas] = await Promise.all([
         aprendices.listar('generalUser,classGroup.program'),
         fichas.listar('program', {}),
         programas.listar(),
       ])
-      return { listaUsuarios, listaAprendices, listaFichas, listaProgramas }
+      return { listaAprendices, listaFichas, listaProgramas }
     },
     [],
     { inicial: null }
   )
 
-  const usuariosLista = data?.listaUsuarios || []
-  const aprendicesLista = data?.listaAprendices || []
-  const fichasLista = data?.listaFichas || []
-  const programasLista = data?.listaProgramas || []
+  const aprendicesLista = catalogos?.listaAprendices || []
+  const fichasLista = catalogos?.listaFichas || []
+  const programasLista = catalogos?.listaProgramas || []
 
-  // Índices para resolver relaciones sin recorrer arrays en cada celda.
   const aprendicesPorUsuario = new Map(aprendicesLista.map((a) => [Number(a.id_usuario), a]))
   const fichasPorId = new Map(fichasLista.map((f) => [Number(f.id), f]))
 
@@ -113,36 +135,11 @@ export default function Usuarios() {
     return perfil.classGroup || fichasPorId.get(Number(perfil.id_class_group)) || null
   }
 
-  const fichasFiltro = fichasLista
   const programasFiltro = [...new Set(programasLista.map((p) => p.nombre))].sort()
-
-  const filtrados = usuariosLista.filter((usr) => {
-    const q = norm(busqueda.trim())
-    const nombreCompleto = `${usr.nombre || ''} ${usr.apellido || ''}`
-    const coincideId = busqueda.trim() !== '' && String(usr.id) === busqueda.trim()
-    const coincideQ = !q || norm(nombreCompleto).includes(q) || norm(usr.correo).includes(q) || coincideId
-    const coincideRol = filtroRol === 'todos' || usr.rol === filtroRol
-    const estado = usr.estado === false ? 'suspendido' : 'activo'
-    const coincideEstado = filtroEstado === 'todos' || estado === filtroEstado
-    const perfil = aprendicesPorUsuario.get(Number(usr.id))
-    const ficha = fichaDeUsuario(usr)
-    const coincideFicha =
-      filtroFicha === 'todos' ||
-      (filtroFicha === 'sin'
-        ? !perfil?.id_class_group
-        : String(perfil?.id_class_group || '') === String(filtroFicha))
-    const programa = perfil?.program?.nombre || ficha?.program?.nombre || ''
-    const coincidePrograma = filtroPrograma === 'todos' || programa === filtroPrograma
-    return coincideQ && coincideRol && coincideEstado && coincideFicha && coincidePrograma
-  })
-
-  const paginados = filtrados.slice(
-    (pagina - 1) * ITEMS_POR_PAGINA,
-    pagina * ITEMS_POR_PAGINA
-  )
 
   const limpiarFiltros = () => {
     setBusqueda('')
+    setBusquedaServidor('')
     setFiltroRol('todos')
     setFiltroEstado('todos')
     setFiltroFicha('todos')
@@ -152,14 +149,38 @@ export default function Usuarios() {
 
   useEffect(() => () => { if (msgTimer.current) clearTimeout(msgTimer.current) }, [])
 
-  function mostrarCreado() {
-    setCreadoMsg(true)
-    if (msgTimer.current) clearTimeout(msgTimer.current)
-    msgTimer.current = setTimeout(() => setCreadoMsg(false), 3500)
+  /* ---------- Selección y exportación ---------- */
+  const alternarSeleccion = (id) => {
+    setSeleccionados((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]))
+  }
+
+  const exportar = async (ids) => {
+    setAccionMsg(null)
+    setExportando(true)
+    try {
+      await usuarios.exportarCredenciales(ids)
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudieron exportar las credenciales.')
+    } finally {
+      setExportando(false)
+    }
+  }
+
+  const copiarCredenciales = async () => {
+    if (!credenciales) return
+    try {
+      await navigator.clipboard.writeText(
+        `Usuario: ${credenciales.username}\nContraseña temporal: ${credenciales.password_temporal}`
+      )
+    } catch {
+      // Sin portapapeles disponible: el admin puede copiarlas a mano.
+    }
   }
 
   /* ---------- Creación ---------- */
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'aprendiz' })
+  const [form, setForm] = useState({
+    nombre: '', apellido: '', tipoDocumento: 'CC', numeroDocumento: '', correo: '', rol: 'aprendiz',
+  })
   const [errores, setErrores] = useState({})
   const [guardando, setGuardando] = useState(false)
 
@@ -171,16 +192,13 @@ export default function Usuarios() {
 
   const validar = () => {
     const err = {}
-    if (!form.name.trim()) err.name = 'El nombre es obligatorio.'
-    else if (form.name.trim().length < 3) err.name = 'El nombre debe tener al menos 3 caracteres.'
-
-    if (!form.email.trim()) err.email = 'El correo es obligatorio.'
-    else if (!esEmailValido(form.email.trim())) err.email = 'Ingresa un correo válido.'
-
-    if (!form.password) err.password = 'La contraseña es obligatoria.'
-    else if (!esPasswordValida(form.password)) err.password = 'La contraseña debe tener al menos 6 caracteres.'
-
-    if (!form.role) err.role = 'Selecciona un rol.'
+    if (!form.nombre.trim()) err.nombre = 'El nombre es obligatorio.'
+    if (!form.apellido.trim()) err.apellido = 'El apellido es obligatorio.'
+    if (!form.tipoDocumento) err.tipoDocumento = 'Selecciona el tipo de documento.'
+    if (!form.numeroDocumento.trim()) err.numeroDocumento = 'El número de documento es obligatorio.'
+    if (!form.correo.trim()) err.correo = 'El correo es obligatorio.'
+    else if (!esEmailValido(form.correo.trim())) err.correo = 'Ingresa un correo válido.'
+    if (!form.rol) err.rol = 'Selecciona un rol.'
     return err
   }
 
@@ -191,28 +209,52 @@ export default function Usuarios() {
       setErrores(err)
       return
     }
-    const partes = splitNombre(form.name)
     setGuardando(true)
+    setAccionMsg(null)
     try {
-      await usuarios.crear({
-        nombre: partes.nombre,
-        apellido: partes.apellido,
-        correo: form.email.trim().toLowerCase(),
-        password: form.password,
-        rol: form.role,
+      // El username y la contraseña temporal los genera el sistema.
+      const resp = await usuarios.crear({
+        nombre: form.nombre.trim(),
+        apellido: form.apellido.trim(),
+        tipo_documento: form.tipoDocumento,
+        numero_documento: form.numeroDocumento.trim(),
+        correo: form.correo.trim().toLowerCase(),
+        rol: form.rol,
         estado: true,
       })
-      await recargar()
-      setForm({ name: '', email: '', password: '', role: 'aprendiz' })
+      setCredenciales({
+        id: resp.usuario.id,
+        nombre: `${resp.usuario.nombre} ${resp.usuario.apellido}`.trim(),
+        username: resp.credenciales.username,
+        password_temporal: resp.credenciales.password_temporal,
+      })
+      setForm({ nombre: '', apellido: '', tipoDocumento: 'CC', numeroDocumento: '', correo: '', rol: 'aprendiz' })
       setErrores({})
       setCreando(false)
-      mostrarCreado()
+      await recargar()
     } catch (error) {
-      if (error?.status === 422) {
-        setErrores({ email: 'Ya existe un usuario con este correo o los datos no son válidos.' })
-        return
+      const campos = error?.data?.errors || {}
+      const traducidos = {
+        nombre: campos.nombre?.[0],
+        apellido: campos.apellido?.[0],
+        tipo_documento: campos.tipo_documento?.[0],
+        numero_documento: campos.numero_documento?.[0],
+        correo: campos.correo?.[0],
+        rol: campos.rol?.[0],
       }
-      setErrores({ email: error?.data?.message || 'No se pudo crear el usuario.' })
+      const limpios = Object.fromEntries(Object.entries(traducidos).filter(([, v]) => v))
+      if (Object.keys(limpios).length) {
+        setErrores({
+          nombre: limpios.nombre,
+          apellido: limpios.apellido,
+          tipoDocumento: limpios.tipo_documento,
+          numeroDocumento: limpios.numero_documento,
+          correo: limpios.correo,
+          rol: limpios.rol,
+        })
+      } else {
+        setAccionMsg(error?.data?.message || 'No se pudo crear el usuario.')
+      }
     } finally {
       setGuardando(false)
     }
@@ -237,8 +279,8 @@ export default function Usuarios() {
           title={creando ? 'Crear Nuevo Usuario' : 'Gestión de Usuarios'}
           subtitle={
             creando
-              ? 'Registra una cuenta de aprendiz, instructor o administrador en la plataforma.'
-              : 'Administra las cuentas de aprendices, instructores y administradores de la plataforma.'
+              ? 'El sistema genera el usuario y la contraseña temporal; el usuario la cambia al entrar.'
+              : 'Administra las cuentas de aprendices e instructores de la plataforma.'
           }
           icon={creando ? <Code /> : <Users />}
           breadcrumb={
@@ -253,12 +295,24 @@ export default function Usuarios() {
           onBack={creando ? () => setCreando(false) : undefined}
           actions={
             !creando ? (
-              <Button
-                type="button"
-                onClick={() => { setCreadoMsg(false); setCreando(true) }}
-              >
-                <Plus size={14} /> Nuevo Usuario
-              </Button>
+              <>
+                {seleccionados.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={exportando}
+                    onClick={() => exportar(seleccionados)}
+                  >
+                    <DownloadSimple size={14} /> Exportar credenciales ({seleccionados.length})
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  onClick={() => { setCredenciales(null); setCreando(true) }}
+                >
+                  <Plus size={14} /> Nuevo Usuario
+                </Button>
+              </>
             ) : undefined
           }
         />
@@ -267,48 +321,60 @@ export default function Usuarios() {
           <DataPanel title="Datos del usuario" icon={<Code />}>
             <form className={nu.form} onSubmit={onSubmit} noValidate>
               <div className={nu.grid2}>
-                <FormField label="Nombre completo" required error={errores.name}>
+                <FormField label="Nombres" required error={errores.nombre}>
                   <Input
-                    name="name"
-                    value={form.name}
+                    name="nombre"
+                    value={form.nombre}
                     onChange={onChange}
-                    placeholder="Ej. María González"
+                    placeholder="Ej. María José"
                     maxLength={MAX_NOMBRE}
                   />
                 </FormField>
-
-                <FormField label="Correo electrónico" required error={errores.email}>
+                <FormField label="Apellidos" required error={errores.apellido}>
                   <Input
-                    name="email"
-                    type="email"
-                    value={form.email}
+                    name="apellido"
+                    value={form.apellido}
                     onChange={onChange}
-                    placeholder="Correo electrónico"
+                    placeholder="Ej. González Ruiz"
+                    maxLength={MAX_NOMBRE}
                   />
                 </FormField>
               </div>
 
               <div className={nu.grid2}>
-                <FormField
-                  label="Contraseña temporal"
-                  required
-                  error={errores.password}
-                  help="Mínimo 6 caracteres. El usuario podrá cambiarla después."
-                >
-                  <PasswordInput
-                    name="password"
-                    value={form.password}
+                <FormField label="Tipo de documento" required error={errores.tipoDocumento}>
+                  <Select name="tipoDocumento" value={form.tipoDocumento} onChange={onChange}>
+                    {TIPOS_DOCUMENTO.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </Select>
+                </FormField>
+                <FormField label="Número de documento" required error={errores.numeroDocumento} help="Único: evita cuentas duplicadas.">
+                  <Input
+                    name="numeroDocumento"
+                    inputMode="numeric"
+                    value={form.numeroDocumento}
                     onChange={onChange}
-                    placeholder="••••••"
-                    autoComplete="new-password"
+                    placeholder="Ej. 1234567890"
+                    maxLength={MAX_NUMERO_FICHA}
                   />
                 </FormField>
+              </div>
 
-                <FormField label="Rol" required error={errores.role}>
-                  <Select name="role" value={form.role} onChange={onChange}>
+              <div className={nu.grid2}>
+                <FormField label="Correo personal" required error={errores.correo} help="Para recuperar la contraseña y comunicaciones.">
+                  <Input
+                    name="correo"
+                    type="email"
+                    value={form.correo}
+                    onChange={onChange}
+                    placeholder="Correo personal"
+                  />
+                </FormField>
+                <FormField label="Rol" required error={errores.rol}>
+                  <Select name="rol" value={form.rol} onChange={onChange}>
                     <option value="aprendiz">Aprendiz</option>
                     <option value="instructor">Instructor</option>
-                    <option value="admin">Administrador</option>
                   </Select>
                 </FormField>
               </div>
@@ -325,9 +391,25 @@ export default function Usuarios() {
           </DataPanel>
         ) : (
           <ApiState cargando={cargando} error={error} onReintentar={recargar}>
-            {creadoMsg && (
+            {credenciales && (
               <Alert>
-                <CheckCircle size={14} /> Usuario creado correctamente.
+                <CheckCircle size={14} /> Usuario <strong>{credenciales.nombre}</strong> creado.
+                <div className={s.actions} style={{ marginTop: 'var(--sp-2)' }}>
+                  Usuario: <code className={s.codigo}>{credenciales.username}</code>
+                  Contraseña temporal: <code className={s.codigo}>{credenciales.password_temporal}</code>
+                  <Button type="button" size="sm" variant="secondary" onClick={copiarCredenciales}>
+                    <Copy size={14} /> Copiar
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={exportando}
+                    onClick={() => exportar([credenciales.id])}
+                  >
+                    <DownloadSimple size={14} /> PDF
+                  </Button>
+                </div>
               </Alert>
             )}
 
@@ -340,7 +422,7 @@ export default function Usuarios() {
             <FilterBar
               title="Buscar y filtrar"
               actions={
-                filtrados.length > 0 && (
+                totalUsuarios > 0 && (
                   <Button type="button" variant="secondary" size="sm" onClick={limpiarFiltros}>
                     Limpiar filtros
                   </Button>
@@ -351,21 +433,15 @@ export default function Usuarios() {
                 <span className={s.label}>Buscar</span>
                 <Input
                   value={busqueda}
-                  onChange={(e) => {
-                    setBusqueda(e.target.value)
-                    setPagina(1)
-                  }}
-                  placeholder="Nombre o correo…"
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Nombre, documento, usuario o correo…"
                 />
               </label>
               <label className={s.field}>
                 <span className={s.label}>Rol</span>
                 <Select
                   value={filtroRol}
-                  onChange={(e) => {
-                    setFiltroRol(e.target.value)
-                    setPagina(1)
-                  }}
+                  onChange={(e) => { setFiltroRol(e.target.value); setPagina(1) }}
                 >
                   <option value="todos">Todos</option>
                   <option value="aprendiz">Aprendiz</option>
@@ -377,10 +453,7 @@ export default function Usuarios() {
                 <span className={s.label}>Estado</span>
                 <Select
                   value={filtroEstado}
-                  onChange={(e) => {
-                    setFiltroEstado(e.target.value)
-                    setPagina(1)
-                  }}
+                  onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1) }}
                 >
                   <option value="todos">Todos</option>
                   <option value="activo">Activo</option>
@@ -391,14 +464,11 @@ export default function Usuarios() {
                 <span className={s.label}>Ficha</span>
                 <Select
                   value={filtroFicha}
-                  onChange={(e) => {
-                    setFiltroFicha(e.target.value)
-                    setPagina(1)
-                  }}
+                  onChange={(e) => { setFiltroFicha(e.target.value); setPagina(1) }}
                 >
                   <option value="todos">Todas</option>
                   <option value="sin">Sin ficha</option>
-                  {fichasFiltro.map((f) => (
+                  {fichasLista.map((f) => (
                     <option key={f.id} value={String(f.id)}>
                       {f.codigo} · {f.nombre}
                     </option>
@@ -409,41 +479,48 @@ export default function Usuarios() {
                 <span className={s.label}>Programa</span>
                 <Select
                   value={filtroPrograma}
-                  onChange={(e) => {
-                    setFiltroPrograma(e.target.value)
-                    setPagina(1)
-                  }}
+                  onChange={(e) => { setFiltroPrograma(e.target.value); setPagina(1) }}
                 >
                   <option value="todos">Todos</option>
                   {programasFiltro.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
+                    <option key={p} value={p}>{p}</option>
                   ))}
                 </Select>
               </label>
               <p className={s.info}>
-                {filtrados.length} usuario{filtrados.length !== 1 ? 's' : ''}
+                {totalUsuarios} usuario{totalUsuarios !== 1 ? 's' : ''}
               </p>
             </FilterBar>
 
-            {paginados.length === 0 ? (
+            {usuariosPagina.length === 0 ? (
               <EmptyState
                 icon={<Users />}
                 title="Sin usuarios"
                 message={
-                  usuariosLista.length === 0
-                    ? 'No hay usuarios registrados en la plataforma. Crea el primero para comenzar.'
+                  totalUsuarios === 0
+                    ? 'No hay usuarios que coincidan. Crea el primero para comenzar.'
                     : 'Ningún usuario coincide con los filtros aplicados.'
                 }
-                actionLabel={usuariosLista.length === 0 ? 'Crear primer usuario' : 'Limpiar filtros'}
-                onAction={usuariosLista.length === 0 ? () => setCreando(true) : limpiarFiltros}
+                actionLabel="Limpiar filtros"
+                onAction={limpiarFiltros}
               />
             ) : (
               <>
                 <DataTable
                   ariaLabel="Usuarios registrados"
                   columns={[
+                    {
+                      key: 'sel',
+                      header: 'Sel.',
+                      render: (usr) => (
+                        <input
+                          type="checkbox"
+                          aria-label={`Seleccionar ${usr.nombre} ${usr.apellido}`}
+                          checked={seleccionados.includes(usr.id)}
+                          onChange={() => alternarSeleccion(usr.id)}
+                        />
+                      ),
+                    },
                     {
                       key: 'usuario',
                       header: 'Usuario',
@@ -453,6 +530,20 @@ export default function Usuarios() {
                           <span className={s.userName}>{`${usr.nombre || ''} ${usr.apellido || ''}`.trim()}</span>
                         </Link>
                       ),
+                    },
+                    {
+                      key: 'documento',
+                      header: 'Documento',
+                      render: (usr) => (
+                        usr.numero_documento
+                          ? <span>{usr.tipo_documento} {usr.numero_documento}</span>
+                          : <span className={s.muted}>—</span>
+                      ),
+                    },
+                    {
+                      key: 'username',
+                      header: 'Username',
+                      render: (usr) => <code className={s.codigo}>{usr.username}</code>,
                     },
                     { key: 'correo', header: 'Correo', render: (usr) => usr.correo },
                     {
@@ -470,28 +561,6 @@ export default function Usuarios() {
                       render: (usr) => {
                         const ficha = fichaDeUsuario(usr)
                         return ficha ? <code className={s.codigo}>{ficha.codigo}</code> : <span className={s.muted}>—</span>
-                      },
-                    },
-                    {
-                      key: 'programa',
-                      header: 'Programa',
-                      render: (usr) => {
-                        const perfil = aprendicesPorUsuario.get(Number(usr.id))
-                        const ficha = fichaDeUsuario(usr)
-                        return perfil?.program?.nombre || ficha?.program?.nombre || <span className={s.muted}>—</span>
-                      },
-                    },
-                    {
-                      key: 'verificacion',
-                      header: 'Verificación',
-                      render: (usr) => {
-                        if (usr.rol === 'admin') return <span className={s.muted}>—</span>
-                        const estado = usr.estado_verificacion || 'verificado'
-                        return (
-                          <Badge variant={VERIF_VARIANT[estado] || 'neutral'}>
-                            {VERIF_LABEL[estado] || estado}
-                          </Badge>
-                        )
                       },
                     },
                     {
@@ -547,17 +616,16 @@ export default function Usuarios() {
                       ),
                     },
                   ]}
-                  rows={paginados}
+                  rows={usuariosPagina}
                   keyOf={(usr) => usr.id}
                 />
 
                 <Pagination
-                  totalItems={filtrados.length}
+                  totalItems={totalUsuarios}
                   itemsPerPage={ITEMS_POR_PAGINA}
                   paginaActual={pagina}
                   setPaginaActual={setPagina}
                   itemName="usuarios"
-                  filteredCount={filtrados.length}
                 />
               </>
             )}

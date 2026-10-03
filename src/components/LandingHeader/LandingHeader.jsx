@@ -15,7 +15,7 @@ export default function LandingHeader() {
             <img className={s.senaLogo} src="/images/logo-sena-blanco.png" alt="SENA" />
           </span>
           <Button as="link" to="/login" variant="ghost" viewTransition>Iniciar Sesión</Button>
-          <Button as="link" to="/register" viewTransition>Crear Cuenta</Button>
+          <Button as="link" to="/login" viewTransition>Iniciar sesión</Button>
         </div>
       </div>
     </header>

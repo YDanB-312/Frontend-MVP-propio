@@ -121,7 +121,7 @@ export default function Home() {
               <li><CheckCircle size={16} weight="fill" /> Reportes claros para instructores</li>
             </ul>
             <div className={`${s.heroCta} fx-rise`} style={{ '--fx-i': 5 }}>
-              <Button as="link" to="/register" viewTransition>Crear cuenta</Button>
+              <Button as="link" to="/login" viewTransition>Iniciar sesión</Button>
               <Button as="link" to="/login" variant="ghost" viewTransition>Iniciar sesión</Button>
             </div>
           </div>

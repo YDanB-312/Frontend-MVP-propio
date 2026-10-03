@@ -4,7 +4,7 @@ test.describe('Admin: suspender y reactivar', () => {
   test('suspender bloquea el login y reactivar lo permite', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/usuarios')
-    await page.getByPlaceholder('Nombre o correo…').fill('juan.perez@soy.sena.edu.co')
+    await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill('juan.perez@soy.sena.edu.co')
     const fila = page.locator('tr', { hasText: 'juan.perez@soy.sena.edu.co' })
     await fila.getByRole('button', { name: /Suspender/i }).click()
     // La suspensión ahora se confirma en un modal.
@@ -13,7 +13,7 @@ test.describe('Admin: suspender y reactivar', () => {
 
     await logout(page)
     await page.goto('/login')
-    await page.getByPlaceholder(/Correo electr/i).fill('juan.perez@soy.sena.edu.co')
+    await page.getByPlaceholder('Usuario').fill('jperez')
     await page.locator('input[type="password"]').fill('123456')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await expect(page.locator('[role="alert"], .error')).toBeVisible()
@@ -21,7 +21,7 @@ test.describe('Admin: suspender y reactivar', () => {
 
     await login(page, 'admin')
     await page.goto('/admin/usuarios')
-    await page.getByPlaceholder('Nombre o correo…').fill('juan.perez@soy.sena.edu.co')
+    await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill('juan.perez@soy.sena.edu.co')
     await page.locator('tr', { hasText: 'juan.perez@soy.sena.edu.co' }).getByRole('button', { name: /Activar/i }).click()
     await expect(page.locator('tr', { hasText: 'juan.perez@soy.sena.edu.co' }).getByText('Activo')).toBeVisible()
   })
@@ -58,9 +58,16 @@ test.describe('Admin: rol y contraseña', () => {
 
     await logout(page)
     await page.goto('/login')
-    await page.getByPlaceholder(/Correo electr/i).fill('laura.sanchez@soy.sena.edu.co')
+    await page.getByPlaceholder('Usuario').fill('lsanchez')
     await page.locator('input[type="password"]').fill(temporal)
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
+
+    // La contraseña temporal obliga a cambiarla antes de usar el sistema.
+    await page.waitForURL('**/cambio-obligatorio', { timeout: 15000 })
+    await page.getByLabel(/Contraseña temporal/i).fill(temporal)
+    await page.getByLabel(/^Nueva contraseña/i).fill('nuevaClave123')
+    await page.getByLabel(/Confirmar nueva contraseña/i).fill('nuevaClave123')
+    await page.getByRole('button', { name: /Establecer contraseña/i }).click()
     await page.waitForURL('**/instructor/dashboard', { timeout: 15000 })
   })
 })

@@ -13,7 +13,7 @@ import { RUTA_POR_ROL } from '../../../constants/routes'
 export default function Login() {
   const { user, login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [recordarme, setRecordarme] = useState(false)
   const [error, setError] = useState('')
@@ -21,7 +21,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate(RUTA_POR_ROL[user.rol] || '/', { replace: true })
+      navigate(user.mustChangePassword ? '/cambio-obligatorio' : (RUTA_POR_ROL[user.rol] || '/'), { replace: true })
     }
   }, [isAuthenticated, user, navigate])
 
@@ -29,14 +29,14 @@ export default function Login() {
     e.preventDefault()
     setError('')
 
-    if (!email.trim() || !password) {
-      setError('Ingresa tu correo y contraseña.')
+    if (!username.trim() || !password) {
+      setError('Ingresa tu usuario y contraseña.')
       return
     }
 
     setCargando(true)
     try {
-      const resultado = await login(email, password, recordarme)
+      const resultado = await login(username, password, recordarme)
       if (resultado.exito) {
         navigate(resultado.ruta, { replace: true })
       } else {
@@ -64,13 +64,13 @@ export default function Login() {
             </p>
           )}
 
-          <FormField label="Correo electrónico" required>
+          <FormField label="Usuario" required help="El usuario que te entregó el administrador.">
             <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Correo electrónico"
-              autoComplete="email"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Usuario"
+              autoComplete="username"
               autoFocus
             />
           </FormField>
@@ -104,10 +104,7 @@ export default function Login() {
         </form>
 
         <p className={s.footer}>
-          ¿No tienes cuenta?{' '}
-          <Link to="/register" className={s.link}>
-            Crear cuenta
-          </Link>
+          ¿No tienes cuenta? Solicítala al administrador de tu centro.
         </p>
       </div>
     </AuthLayout>

@@ -13,7 +13,7 @@ test.describe('Paginación de listas', () => {
     await nav.getByRole('button', { name: /2/, exact: true }).click()
     await expect(nav.getByRole('button', { name: /2/, exact: true })).toHaveAttribute('aria-current', 'page')
 
-    await page.getByPlaceholder('Nombre o correo…').fill('maria')
+    await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill('maria')
     await expect(nav.getByText(/Mostrando 1–/)).toBeVisible()
     await expect(nav.getByRole('button', { name: /Página siguiente/i })).toBeDisabled()
   })

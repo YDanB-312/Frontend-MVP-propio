@@ -23,9 +23,9 @@ test.describe('Instructor: similitudes agrupadas por ficha', () => {
   })
 })
 
-async function entrarComo(page, correo, password) {
+async function entrarComo(page, username, password) {
   await page.goto('/login')
-  await page.getByPlaceholder(/Correo electr/i).fill(correo)
+  await page.getByPlaceholder('Usuario').fill(username)
   await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /Iniciar Sesi/i }).click()
   await page.waitForURL('**/aprendiz/dashboard', { timeout: 15000 })
@@ -34,7 +34,7 @@ async function entrarComo(page, correo, password) {
 test.describe('Aprendiz: mi propuesta siempre es la "A"', () => {
   test('la sonda pendiente pone su propuesta como A y la aprobada como B', async ({ page }) => {
     // Ana Martínez es dueña de "Sistema de Gestión de Inventarios" (pendiente).
-    await entrarComo(page, 'ana.martinez@soy.sena.edu.co', '123456')
+    await entrarComo(page, 'amartinez', '123456')
     // S5 = proyecto 9 (de Ana, pendiente) ↔ proyecto 10 (de Juan, aprobado).
     await page.goto('/aprendiz/detalle-similitud/5')
 
@@ -58,7 +58,7 @@ test.describe('Regla de perspectiva: una pendiente nunca es coincidencia ajena',
   })
 
   test('la dueña de la pendiente sí ve su coincidencia con la aprobada', async ({ page }) => {
-    await entrarComo(page, 'ana.martinez@soy.sena.edu.co', '123456')
+    await entrarComo(page, 'amartinez', '123456')
     await page.goto('/aprendiz/similitudes')
 
     // Su grupo es su propia propuesta; al expandirlo aparece la coincidencia

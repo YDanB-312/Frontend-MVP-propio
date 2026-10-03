@@ -14,17 +14,19 @@ export async function admin(h) {
     await page.getByRole('button', { name: /Nuevo Usuario/i }).click()
 
     const form = page.locator('form')
-    await form.getByPlaceholder('Ej. María González').fill(`Instructor Agente ${h.sufijo}`)
-    await form.getByPlaceholder(/Correo electr/i).fill(`agente.${h.sufijo}@sena.edu.co`)
-    await form.locator('input[name="password"]').fill('123456')
-    await form.locator('select[name="role"]').selectOption('instructor')
+    await form.getByPlaceholder('Ej. María José').fill('Instructor Agente')
+    await form.getByPlaceholder('Ej. González Ruiz').fill(h.sufijo)
+    await form.locator('select[name="tipoDocumento"]').selectOption('CC')
+    await form.getByPlaceholder('Ej. 1234567890').fill(String(h.sufijo))
+    await form.getByPlaceholder('Correo personal').fill(`agente.${h.sufijo}@correo.com`)
+    await form.locator('select[name="rol"]').selectOption('instructor')
 
     h.usar('Crear usuario')
     const creado = await h.capturar('POST', '/v1/general-users', () =>
       form.getByRole('button', { name: /Crear usuario/i }).click()
     )
-    if (!creado?.id) throw new Error('el usuario no se creó')
-    await h.esperar('Usuario creado correctamente.', 10000)
+    if (!creado?.usuario?.id) throw new Error('el usuario no se creó')
+    await h.esperar('creado.', 10000)
   })
 
   await h.paso('editar un usuario (transferir de ficha)', async () => {
@@ -47,7 +49,7 @@ export async function admin(h) {
 
   await h.paso('suspender y reactivar un usuario', async () => {
     await h.ir('/admin/usuarios')
-    await page.getByPlaceholder('Nombre o correo…').fill('juan.perez@soy.sena.edu.co')
+    await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill('juan.perez@soy.sena.edu.co')
     const fila = page.locator('tr', { hasText: 'juan.perez@soy.sena.edu.co' })
     h.usar('Suspender')
     await fila.getByRole('button', { name: /Suspender/i }).click()

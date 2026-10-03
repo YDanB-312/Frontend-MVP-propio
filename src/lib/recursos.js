@@ -3,7 +3,7 @@
 // Cada recurso expone funciones que devuelven directamente los datos del
 // servidor (columnas del backend). No hay mocks ni transformaciones ocultas:
 // las páginas piden lo que necesitan y resuelven las relaciones por `included`.
-import { apiFetch, qs } from "./api";
+import { apiFetch, apiDescargar, qs } from "./api";
 
 const lista = (data) => (Array.isArray(data) ? data : (data?.data ?? []));
 
@@ -11,6 +11,10 @@ const lista = (data) => (Array.isArray(data) ? data : (data?.data ?? []));
 export const usuarios = {
   listar: (filtros = {}) =>
     apiFetch(`/general-users${qs(filtros)}`).then(lista),
+  // Listado paginado del servidor (panel de administración): devuelve el
+  // paginador completo (data, total, last_page…) para no cargar todo.
+  listarPaginado: (filtros = {}) =>
+    apiFetch(`/general-users${qs({ paginado: 1, ...filtros })}`),
   obtener: (id, included = "apprentice,instructor,admin") =>
     apiFetch(`/general-users/${id}${qs({ included })}`),
   // Perfil público (vistas entre usuarios: compañero/instructor): solo datos básicos.
@@ -18,9 +22,13 @@ export const usuarios = {
   crear: (body) => apiFetch("/general-users", { method: "POST", body }),
   actualizar: (id, body) =>
     apiFetch(`/general-users/${id}`, { method: "PUT", body }),
-  // Verificación de cuentas autoregistradas (solo admin): aprobar/rechazar.
-  verificar: (id, body) =>
-    apiFetch(`/general-users/${id}/verificacion`, { method: "PUT", body }),
+  // Credenciales iniciales en PDF de los usuarios seleccionados (solo admin).
+  exportarCredenciales: (ids) =>
+    apiDescargar("/general-users/credenciales", {
+      method: "POST",
+      body: { ids },
+      nombre: "credenciales-usuarios.pdf",
+    }),
   // Cambio del propio correo: el backend exige la contraseña actual.
   cambiarCorreo: (correo, passwordActual) =>
     apiFetch("/auth/email", {
@@ -89,6 +97,11 @@ export const fichas = {
   actualizar: (id, body) =>
     apiFetch(`/class-groups/${id}`, { method: "PUT", body }),
   eliminar: (id) => apiFetch(`/class-groups/${id}`, { method: "DELETE" }),
+  // Credenciales iniciales de la ficha (aprendices + instructor) en PDF.
+  exportarCredenciales: (id) =>
+    apiDescargar(`/class-groups/${id}/credenciales`, {
+      nombre: `credenciales-ficha-${id}.pdf`,
+    }),
 };
 
 // ---------------------------------------------------------------- Propuestas

@@ -1,24 +1,12 @@
-import { test, expect, login, crearUsuarioApi } from './helpers'
+import { test, expect, login, entrar, crearUsuarioApi } from './helpers'
 
 // El aprendiz puede salir de su ficha cuando quiera y unirse a otra con el
 // código que le comparte un instructor.
 
-const unico = () => `aprend.e2e.${Date.now()}@soy.sena.edu.co`
-
-// Cuenta verificada creada por el admin (el registro público queda pendiente y
-// no puede iniciar sesión hasta la aprobación).
+// Cuenta creada desde el admin (username + temporal generados); el helper la
+// deja con una contraseña conocida para el resto del flujo.
 async function crearAprendiz(request) {
-  const email = unico()
-  await crearUsuarioApi(request, { nombre: 'Test E2E', apellido: 'Automatizado', correo: email })
-  return email
-}
-
-async function entrar(page, email, password) {
-  await page.goto('/login')
-  await page.getByPlaceholder(/Correo electr/i).fill(email)
-  await page.locator('input[type="password"]').fill(password)
-  await page.getByRole('button', { name: /Iniciar Sesi/i }).click()
-  await page.waitForURL('**/aprendiz/dashboard')
+  return crearUsuarioApi(request, { nombre: 'Test E2E', apellido: 'Automatizado' })
 }
 
 async function abrirFicha(page) {
@@ -28,8 +16,8 @@ async function abrirFicha(page) {
 
 test.describe('Mi Ficha: salir y unirse por código', () => {
   test('un aprendiz sin ficha se une con el código del instructor', async ({ page, request }) => {
-    const email = await crearAprendiz(request)
-    await entrar(page, email, 'clave123')
+    const { username, password } = await crearAprendiz(request)
+    await entrar(page, username, password, '/aprendiz/dashboard')
     await abrirFicha(page)
 
     // Recién registrado: no tiene ficha y ve el formulario del código.
@@ -48,8 +36,8 @@ test.describe('Mi Ficha: salir y unirse por código', () => {
   })
 
   test('un código inválido avisa y no une a nadie', async ({ page, request }) => {
-    const email = await crearAprendiz(request)
-    await entrar(page, email, 'clave123')
+    const { username, password } = await crearAprendiz(request)
+    await entrar(page, username, password, '/aprendiz/dashboard')
     await abrirFicha(page)
 
     await page.getByLabel(/Código de la ficha/i).fill('zzz-zzzz')
