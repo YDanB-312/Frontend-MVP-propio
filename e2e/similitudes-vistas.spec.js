@@ -71,6 +71,22 @@ test.describe('Regla de perspectiva: una pendiente nunca es coincidencia ajena',
   })
 })
 
+test.describe('Evidencia histórica: la versión anterior se puede consultar', () => {
+  test('el dueño de la aprobada abre la histórica 5↔15 aunque 15 esté pendiente', async ({ page }) => {
+    // María es dueña de la aprobada p5; la histórica #6 la compara con la p15
+    // (hoy pendiente tras reenviarse): la evidencia debe poder abrirse.
+    await login(page, 'aprendiz')
+    await page.goto('/aprendiz/detalle-proyecto/5')
+
+    await page.getByRole('link', { name: /Sistema de Gestión de Inventarios con trazabilidad/ }).click()
+
+    await expect(page).toHaveURL(/\/aprendiz\/detalle-similitud\/6/)
+    await expect(page.getByRole('heading', { name: /Similitud #6/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Similitud no autorizada/i })).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Sistema de Gestión de Inventarios con trazabilidad' })).toBeVisible()
+  })
+})
+
 test.describe('Admin: tira resumen de similitudes', () => {
   test('muestra pares, altas, programas y umbral', async ({ page }) => {
     await login(page, 'admin')

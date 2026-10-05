@@ -38,8 +38,11 @@ export default function DetalleSimilitud() {
 
   // Regla (misma que el backend): la contraparte AJENA debe estar aprobada; si
   // ambas propuestas del par son mías, se muestra aunque una esté pendiente.
+  // Evidencia histórica (vigente === false): si el par toca una propuesta mía,
+  // se puede consultar aunque la contraparte hoy esté pendiente/rechazada/borrador.
   const ambasMias = esMia(similitud?.project1) && esMia(similitud?.project2)
-  const autorizada = !!miPid && (ambasMias || !contraparte || contraparte.estado === 'aprobado')
+  const esHistorica = similitud?.vigente === false
+  const autorizada = !!miPid && (esHistorica || ambasMias || !contraparte || contraparte.estado === 'aprobado')
 
   const { data: comentariosApi } = useApi(
     () => (miPid ? observacionesApi.listar('user', { id_proyecto: miPid }) : Promise.resolve([])),

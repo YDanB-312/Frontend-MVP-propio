@@ -31,7 +31,7 @@ test.describe('Admin: filtros combinados', () => {
     await expect(page.getByText(/Ninguna propuesta coincide/i)).toBeVisible()
 
     await page.getByRole('button', { name: /Limpiar filtros/i }).click()
-    await expect(page.getByText(/Sistema de Gestión de Inventarios/i)).toBeVisible()
+    await expect(page.getByText('Sistema de Gestión de Inventarios', { exact: true })).toBeVisible()
   })
 })
 
