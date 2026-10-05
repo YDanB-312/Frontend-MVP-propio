@@ -13,13 +13,13 @@ import Alert from '../../../components/Alert/Alert'
 import ApiState from '../../../components/ApiState/ApiState'
 import { Input, Select, Textarea } from '../../../components/Input/Input'
 import FormField from '../../../components/FormField/FormField'
-import { CalendarBlank, ChartBar, FolderOpen, GraduationCap, Plus, Tray } from 'phosphor-react'
+import { CalendarBlank, ChartBar, FolderOpen, GraduationCap, PaperPlaneRight, Plus, Tray } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { toFieldErrors } from '../../../lib/api'
-import { proyectos, aprendices, fichas, similitudes as similitudesApi } from '../../../lib/recursos'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { fechaDesdeApi, norm } from '../../../utils/helpers'
+import { proyectos, aprendices, fichas, similitudes as similitudesApi, INCLUDE_PROYECTOS } from '../../../lib/recursos'
+import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
+import { fechaDesdeApi, norm, esPropietarioProyecto, infoSimilitud } from '../../../utils/helpers'
 import { PAGINA_TARJETAS } from '../../../constants/pagination'
 import { MAX_TITULO, MAX_DESCRIPCION, MAX_DESCRIPCION_CORTA } from '../../../utils/validation'
 // Estilos reutilizados de las páginas originales (lista + formulario)
@@ -29,7 +29,6 @@ import n from '../../../components/FormularioBase/FormularioBase.module.css'
 const ITEMS_POR_PAGINA = PAGINA_TARJETAS
 
 // Relaciones necesarias para detectar al equipo (pivote) en la lista.
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 const AREAS = [
   'Desarrollo Web',
@@ -39,7 +38,6 @@ const AREAS = [
   'Otro',
 ]
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
 // Errores 422 de la API (columnas del backend) → campos del formulario.
 const CAMPOS_API = {
@@ -52,24 +50,7 @@ const CAMPOS_API = {
 }
 
 // Una propuesta es del aprendiz si la creó o si figura en su equipo.
-function esMio(proyecto, userId) {
-  if (!proyecto) return false
-  if (Number(proyecto.id_creador) === Number(userId)) return true
-  return (proyecto.apprentices || []).some(
-    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
-  )
-}
-
-function infoSimilitud(lista, projectId) {
-  const pares = (lista || []).filter(
-    (x) => Number(x.id_proyecto_1) === Number(projectId) || Number(x.id_proyecto_2) === Number(projectId)
-  )
-  if (pares.length === 0) return null
-  return {
-    pct: Math.max(...pares.map((x) => Math.round(Number(x.porcentaje) || 0))),
-    count: pares.length,
-  }
-}
+const esMio = esPropietarioProyecto
 
 function nombreAprendiz(a) {
   const g = a?.generalUser || {}
@@ -165,6 +146,9 @@ export default function Propuestas() {
   const [errorGeneral, setErrorGeneral] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [seleccionados, setSeleccionados] = useState([])
+  // Envío desde la lista (borrador/rechazada).
+  const [enviandoId, setEnviandoId] = useState(null)
+  const [avisoEnvio, setAvisoEnvio] = useState('')
 
   function alternarCompanero(id) {
     setSeleccionados((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]))
@@ -215,6 +199,35 @@ export default function Propuestas() {
     setCreando(false)
   }
 
+  // Guarda la propuesta como borrador (sin validar ni enviar al instructor).
+  async function guardarBorrador() {
+    if (!miFicha || !miAprendiz) {
+      setErrorGeneral('Únete a una ficha para registrar propuestas.')
+      return
+    }
+    setGuardando(true)
+    setErrorGeneral('')
+    try {
+      await proyectos.crear({
+        titulo: form.title.trim() || null,
+        resumen: form.description.trim() || null,
+        palabras_clave: form.keywords.trim() || null,
+        area_aplicacion: form.areaAplicacion || null,
+        objetivo_general: form.objetivoGeneral.trim() || null,
+        objetivos_especificos: objetivosValidos,
+        id_creador: Number(user.id),
+        id_instructor_asignado: instructorId,
+        id_class_group: Number(miFicha.id),
+      })
+      setCreando(false)
+      await recargar()
+    } catch (err) {
+      setErrorGeneral(err?.data?.message || 'No se pudo guardar el borrador.')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     const errs = validar()
@@ -228,7 +241,7 @@ export default function Propuestas() {
 
     setGuardando(true)
     try {
-      // 1) Crear la propuesta en el backend.
+      // 1) Crear el borrador en el backend (nace sin enviar).
       const nueva = await proyectos.crear({
         titulo: form.title.trim(),
         resumen: form.description.trim(),
@@ -236,7 +249,6 @@ export default function Propuestas() {
         area_aplicacion: form.areaAplicacion,
         objetivo_general: form.objetivoGeneral.trim(),
         objetivos_especificos: objetivosValidos,
-        estado: 'pendiente',
         id_creador: Number(user.id),
         id_instructor_asignado: instructorId,
         id_class_group: Number(miFicha.id),
@@ -253,8 +265,9 @@ export default function Propuestas() {
         }
       }
 
-      // 3) El motor de similitud se ejecuta (y se espera) en la pantalla de
-      // análisis, que muestra el progreso real y permite reintentar.
+      // 3) Envío explícito: el backend valida, detecta similitudes y avisa al
+      // instructor. La pantalla de análisis espera ese resultado.
+      await proyectos.enviar(nueva.id)
       navigate('/aprendiz/analizando-proyecto', {
         state: { projectId: nueva.id, equipoFallidos },
         replace: true,
@@ -267,10 +280,23 @@ export default function Propuestas() {
       }
       setErrors(traducidos)
       if (Object.keys(traducidos).length === 0) {
-        setErrorGeneral(err?.message || 'No se pudo crear la propuesta. Intenta de nuevo.')
+        setErrorGeneral(err?.data?.message || err?.message || 'No se pudo enviar la propuesta. Intenta de nuevo.')
       }
     } finally {
       setGuardando(false)
+    }
+  }
+
+  // Envía una propuesta existente (borrador o rechazada) desde la lista.
+  async function enviarExistente(p) {
+    setAvisoEnvio('')
+    setEnviandoId(p.id)
+    try {
+      await proyectos.enviar(p.id)
+      navigate('/aprendiz/analizando-proyecto', { state: { projectId: p.id }, replace: true })
+    } catch (err) {
+      setAvisoEnvio(err?.data?.message || 'No se pudo enviar la propuesta.')
+      setEnviandoId(null)
     }
   }
 
@@ -463,9 +489,12 @@ export default function Propuestas() {
 
             <Actions className={n.actions}>
               <Button type="submit" disabled={guardando}>
-                {guardando ? 'Enviando...' : 'Enviar propuesta y analizar'}
+                <PaperPlaneRight size={14} /> {guardando ? 'Enviando...' : 'Enviar propuesta y analizar'}
               </Button>
-              <Button type="button" variant="secondary" onClick={volverALista}>
+              <Button type="button" variant="secondary" disabled={guardando} onClick={guardarBorrador}>
+                Guardar borrador
+              </Button>
+              <Button type="button" variant="ghost" onClick={volverALista}>
                 Cancelar
               </Button>
             </Actions>
@@ -488,9 +517,9 @@ export default function Propuestas() {
                   onChange={(e) => cambiarFiltro(e.target.value)}
                 >
                   <option value="todos">Todos</option>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="aprobado">Aprobado</option>
-                  <option value="rechazado">Rechazado</option>
+                  {Object.entries(ESTADO_LABEL).map(([valor, etiqueta]) => (
+                    <option key={valor} value={valor}>{etiqueta}</option>
+                  ))}
                 </Select>
               </label>
             </FilterBar>
@@ -502,7 +531,7 @@ export default function Propuestas() {
                   title={filtro === 'todos' && proyectosMios.length === 0 ? 'Aún no tienes propuestas' : 'Sin resultados'}
                   message={
                     filtro === 'todos' && proyectosMios.length === 0
-                      ? 'Registra tu primera propuesta para comenzar a analizarla en ProyecTwin.'
+                      ? 'Registra tu primera propuesta y envíala para analizarla en ProyecTwin.'
                       : 'No hay propuestas con el estado seleccionado. Prueba con otro filtro.'
                   }
                   actionLabel={
@@ -527,13 +556,19 @@ export default function Propuestas() {
                       ficha donde las creaste y no se mueven al cambiarte de ficha.
                     </Alert>
                   )}
+                  {avisoEnvio && (
+                    <Alert variant="warning">{avisoEnvio}</Alert>
+                  )}
                   <div className={s.cardGrid}>
                     {visibles.map((p) => {
                       const info = infoSimilitud(todasSimilitudes, p.id)
+                      const editable = p.estado === 'borrador' || p.estado === 'rechazado'
                       return (
-                        <Link key={p.id} to={`/aprendiz/detalle-proyecto/${p.id}`} viewTransition className={s.card}>
+                        <article key={p.id} className={`${s.card} ${s.cardClickable}`}>
                           <header className={s.cardHeader}>
-                            <h3 className={s.cardTitle}>{p.titulo}</h3>
+                            <Link to={`/aprendiz/detalle-proyecto/${p.id}`} viewTransition className={s.cardTitle}>
+                              {p.titulo}
+                            </Link>
                             <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
                               {ESTADO_LABEL[p.estado] || p.estado}
                             </Badge>
@@ -551,8 +586,19 @@ export default function Propuestas() {
                                 <GradeBadge score={info.pct} size="sm" />
                               </span>
                             )}
+                            {editable && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                disabled={enviandoId === p.id}
+                                onClick={() => enviarExistente(p)}
+                              >
+                                <PaperPlaneRight size={14} /> {enviandoId === p.id ? 'Enviando…' : 'Enviar'}
+                              </Button>
+                            )}
                           </footer>
-                        </Link>
+                        </article>
                       )
                     })}
                   </div>

@@ -12,15 +12,11 @@ import Tag from '../../../components/Tag/Tag'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { similitudes, observaciones } from '../../../lib/recursos'
-import { fechaDesdeApi } from '../../../utils/helpers'
+import { fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
+import { ROL_LABEL as ROL_CHIP } from '../../../constants/badgeVariants'
 
-const ROL_CHIP = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admin' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 function mapearObservaciones(lista, projectId) {
   return (lista || []).map((o) => ({
@@ -42,12 +38,7 @@ export default function DetalleSimilitudAdmin() {
   // Fuente única: la API. Similitud + observaciones de ambas propuestas del par.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      let similitud
-      try {
-        similitud = await similitudes.obtener(id)
-      } catch {
-        similitud = null
-      }
+      const similitud = await similitudes.obtener(id)
       if (!similitud) return { similitud: null, obsA: [], obsB: [] }
       const [obsA, obsB] = await Promise.all([
         observaciones.listar('user', { id_proyecto: similitud.id_proyecto_1 }),
@@ -67,10 +58,7 @@ export default function DetalleSimilitudAdmin() {
         {cargando ? (
           <ApiState cargando error={null} />
         ) : error ? (
-          <DataPanel title="Error" icon={<ChatCircle />}>
-            <p className={s.muted}>{error.message || 'No se pudo cargar la similitud.'}</p>
-            <Button type="button" variant="secondary" onClick={recargar}>Reintentar</Button>
-          </DataPanel>
+          <ApiState error={error} onReintentar={recargar} />
         ) : (
           <DetalleSimilitudBase similitud={null} role="admin" />
         )}

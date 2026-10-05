@@ -17,7 +17,7 @@ test.describe('Revisión de propuestas (instructor)', () => {
   test('aprobar una pendiente cambia su estado y notifica al aprendiz', async ({ page }) => {
     const cola = page.getByRole('list', { name: /Cola de revisión/i })
     await expect(cola.getByRole('button').first()).toBeVisible({ timeout: 15000 })
-    const nodo = cola.getByRole('button', { name: /Pendiente/ }).first()
+    const nodo = cola.getByRole('button', { name: /En revisión/ }).first()
     if ((await nodo.count()) === 0) test.skip(true, 'No hay pendientes para este instructor en el seed actual')
 
     await nodo.click()

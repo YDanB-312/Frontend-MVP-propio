@@ -18,10 +18,10 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { aprendices, fichas, proyectos } from '../../../lib/recursos'
 import sd from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
+import { nombreCompleto } from '../../../utils/helpers'
 
 function nombreUsuario(u) {
-  if (!u) return 'Usuario'
-  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
+  return nombreCompleto(u, u?.correo || 'Usuario')
 }
 
 export default function MiFicha() {

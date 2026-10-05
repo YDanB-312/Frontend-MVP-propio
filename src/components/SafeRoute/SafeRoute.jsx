@@ -2,13 +2,8 @@ import ErrorBoundary from '../ErrorBoundary/ErrorBoundary'
 import Actions from '../Actions/Actions'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { WarningCircle, ArrowCounterClockwise, Bug } from 'phosphor-react'
+import { RUTA_POR_ROL } from '../../constants/routes'
 import s from './SafeRoute.module.css'
-
-const HOME_POR_ROL = {
-  aprendiz: '/aprendiz/dashboard',
-  instructor: '/instructor/dashboard',
-  admin: '/admin/dashboard',
-}
 
 // El admin no tiene formulario propio: va al listado de reportes
 const REPORTE_POR_ROL = {
@@ -27,7 +22,7 @@ export default function SafeRoute({ children }) {
   const location = useLocation()
   const navigate = useNavigate()
   const role = derivarRol(location.pathname)
-  const home = HOME_POR_ROL[role] || '/login'
+  const home = RUTA_POR_ROL[role] || '/login'
 
   return (
     <ErrorBoundary

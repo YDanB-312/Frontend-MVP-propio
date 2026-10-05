@@ -31,7 +31,7 @@ export default function ConfigSimilitud() {
   // se refresca el contexto para que los badges/niveles se recalculen.
   const { recargar: recargarMotor } = useMotor()
 
-  const vigente = data?.configMotor || { umbral: 0.65, meses: 12 }
+  const vigente = data?.configMotor || { umbral: 0.30, meses: 12 }
   const totalSimilitudes = (data?.listaSimilitudes || []).length
 
   const [umbral, setUmbral] = useState('')
@@ -161,9 +161,9 @@ export default function ConfigSimilitud() {
 
             <ConsoleCard title="Base de comparación">
               <p className={s.baseText}>
-                El motor compara cada propuesta contra las <strong>propuestas vigentes (pendientes y
-                aprobadas)</strong> del mismo programa de los últimos <strong>{vigente.meses} meses</strong>, con{' '}
-                <strong>{totalSimilitudes} coincidencia(s) válida(s)</strong> a la fecha.
+                El motor compara cada propuesta contra las <strong>propuestas aprobadas</strong> del
+                mismo programa de los últimos <strong>{vigente.meses} meses</strong>, con{' '}
+                <strong>{totalSimilitudes} coincidencia(s) vǭlida(s)</strong> a la fecha.
                 Así aprobar siempre sigue siendo posible aunque la base crezca.
               </p>
               <p className={`mono ${s.pipeline}`}>propuestas → TF-IDF + coseno → umbral {Math.round(vigente.umbral * 100)}% → coincidencias</p>
@@ -174,7 +174,7 @@ export default function ConfigSimilitud() {
       <ConfirmModal
         open={confirmRecalcular}
         titulo="Recalcular coincidencias"
-        mensaje={`Se recalcularán las coincidencias con el umbral vigente de ${Math.round(vigente.umbral * 100)}% y ventana de ${vigente.meses} meses. Las que queden por debajo se eliminarán y se generarán las nuevas que superen el umbral. ¿Continuar?`}
+        mensaje={`Se recalcularán las coincidencias con el umbral vigente de ${Math.round(vigente.umbral * 100)}% y ventana de ${vigente.meses} meses. Las que queden por debajo dejarán de considerarse vigentes (se conservan como evidencia) y se generarán las nuevas que superen el umbral. ¿Continuar?`}
         textoConfirmar="Sí, recalcular"
         responsabilidad
         onConfirmar={ejecutarRecalcular}

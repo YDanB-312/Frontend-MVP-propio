@@ -64,24 +64,9 @@
   transition: all var(--dur-fast) var(--ease-out);
 }
 
-.btnGhost {
-  color: var(--c-text-2);
-  background: transparent;
-}
 
-.btnGhost:hover {
-  color: var(--c-text);
-  background: var(--c-surface-alt);
-}
 
-.btnPrimary {
-  color: var(--c-on-primary);
-  background: var(--c-primary);
-}
 
-.btnPrimary:hover {
-  background: var(--c-primary-hover);
-}
 
 @media (max-width: 640px) {
   .container {

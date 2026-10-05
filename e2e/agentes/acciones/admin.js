@@ -44,7 +44,7 @@ export async function admin(h) {
     h.usar('Restablecer contraseña')
     await page.getByRole('button', { name: /Restablecer contraseña/i }).click()
     await page.getByRole('button', { name: /Sí, restablecer/i }).click()
-    await page.getByText(/sena-[a-z0-9]+/i).first().waitFor({ timeout: 10000 })
+    await page.getByText(/[A-Z0-9]{4}-[A-Z0-9]{4}/).first().waitFor({ timeout: 10000 })
   })
 
   await h.paso('suspender y reactivar un usuario', async () => {

@@ -16,7 +16,8 @@ test.describe('Autorización: instructor vs recursos ajenos', () => {
     await login(page, 'otro') // Carlos Rodríguez Díaz (fichas 2 y 3)
     await page.goto('/instructor/detalle-ficha/1')
 
-    await expect(page.getByText(/no está a tu cargo/i)).toBeVisible()
+    // El backend ahora responde 403 (antes lo filtraba solo la interfaz).
+    await expect(page.getByRole('alert')).toContainText(/no tienes acceso a esta ficha/i)
     await expect(page.getByRole('button', { name: /Eliminar/i })).toHaveCount(0)
     await expect(page.getByRole('button', { name: /Editar/i })).toHaveCount(0)
   })

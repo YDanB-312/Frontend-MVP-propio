@@ -12,20 +12,16 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import ApiState from '../../../components/ApiState/ApiState'
-import { norm, fechaDesdeApi } from '../../../utils/helpers'
+import { norm, fechaDesdeApi, infoSimilitud, nombreCompleto } from '../../../utils/helpers'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes, programas, fichas } from '../../../lib/recursos'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import { PAGINA_TABLA } from '../../../constants/pagination'
+import { PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 export default function ProyectosAdmin() {
   const [busqueda, setBusqueda] = useState('')
@@ -70,13 +66,9 @@ export default function ProyectosAdmin() {
 
   // Máximo porcentaje y conteo de coincidencias por propuesta.
   const simInfo = {}
-  for (const sim of listaSimilitudes) {
-    const pct = Math.round(Number(sim.porcentaje) || 0)
-    for (const pid of [sim.id_proyecto_1, sim.id_proyecto_2]) {
-      if (!simInfo[pid]) simInfo[pid] = { pct, count: 0 }
-      if (pct > simInfo[pid].pct) simInfo[pid].pct = pct
-      simInfo[pid].count += 1
-    }
+  for (const p of listaProyectos) {
+    const info = infoSimilitud(listaSimilitudes, p.id)
+    if (info) simInfo[p.id] = info
   }
 
   const filtrados = listaProyectos.filter((p) => {

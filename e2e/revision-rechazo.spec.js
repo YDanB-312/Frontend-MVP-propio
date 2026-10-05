@@ -6,7 +6,7 @@ test.describe('Revisión: rechazar propuesta', () => {
     await page.goto('/instructor/revision-propuestas')
     const cola = page.getByRole('list', { name: /Cola de revisión/i })
     await expect(cola.getByRole('button').first()).toBeVisible({ timeout: 15000 })
-    const nodo = cola.getByRole('button', { name: /Pendiente/ }).first()
+    const nodo = cola.getByRole('button', { name: /En revisión/ }).first()
     if ((await nodo.count()) === 0) test.skip(true, 'No hay pendientes para este instructor en el seed actual')
 
     const titulo = (await nodo.innerText()).split('\n')[0]

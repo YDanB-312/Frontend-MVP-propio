@@ -13,7 +13,7 @@ export const RUTAS_POR_ROL = {
     '/aprendiz/detalle-similitud/2',
     '/aprendiz/perfil-companero/5',
     '/aprendiz/perfil-instructor',
-    '/aprendiz/resultado-analisis?analisis=ok',
+    '/aprendiz/resultado-analisis?projectId=4',
   ],
   instructor: [
     '/instructor/dashboard',

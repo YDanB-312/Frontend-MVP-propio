@@ -15,7 +15,7 @@
   flex-wrap: wrap;
   padding: var(--space-4, 16px);
   border: 1px solid var(--red-100, #f3c1c1);
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--r-md);
   background: var(--red-50, #fdf2f2);
 }
 

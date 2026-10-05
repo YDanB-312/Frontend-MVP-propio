@@ -1,7 +1,7 @@
 // Simulación cruzada "similitud entre dos aprendices":
-//   María y Ana (misma ficha y programa) registran propuestas casi
-//   idénticas; el instructor aprueba ambas y el motor detecta la coincidencia;
-//   María la ve en su sección de similitudes.
+//   María registra y el instructor aprueba (entra al corpus); Ana registra una
+//   propuesta casi idéntica y el motor la compara al enviar; María ve la
+//   coincidencia en su sección de similitudes.
 import { expect } from '@playwright/test'
 import { entrar, logout } from '../../helpers'
 
@@ -42,19 +42,22 @@ export async function simulacionSimilitud(h) {
     await crearPropuesta(page, h, tituloMaria)
   })
 
-  await h.paso('aprendiz Ana: registrar propuesta similar', async () => {
+  await h.paso('instructor: aprobar la propuesta de María (entra al corpus)', async () => {
+    await logout(page)
+    await entrar(page, 'cruiz', '123456', '/instructor/dashboard')
+    await aprobar(page, h, tituloMaria)
+  })
+
+  await h.paso('aprendiz Ana: registrar propuesta similar (el motor la compara al enviar)', async () => {
     await logout(page)
     await entrar(page, 'amartinez', '123456', '/aprendiz/dashboard')
     await crearPropuesta(page, h, tituloAna)
   })
 
-  await h.paso('instructor: aprobar ambas y detectar la coincidencia', async () => {
+  await h.paso('instructor: aprobar la propuesta de Ana', async () => {
     await logout(page)
     await entrar(page, 'cruiz', '123456', '/instructor/dashboard')
-    await aprobar(page, h, tituloMaria)
     await aprobar(page, h, tituloAna)
-    // Al aprobar la segunda, el motor reporta las coincidencias detectadas.
-    await expect(page.getByText(/se detectaron \d+ coincidencia/i)).toBeVisible({ timeout: 15000 })
   })
 
   await h.paso('instructor: ver la coincidencia en similitudes', async () => {

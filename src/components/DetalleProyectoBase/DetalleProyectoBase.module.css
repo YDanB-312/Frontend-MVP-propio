@@ -1,4 +1,4 @@
-﻿/* ── Shared layout for DetalleProyecto ×3 (aprendiz · instructor · admin) ── */
+/* ── Shared layout for DetalleProyecto ×3 (aprendiz · instructor · admin) ── */
 
 /* Page wrapper */
 .page {
@@ -169,19 +169,6 @@
 }
 
 /* Pre-formatted code/text blocks */
-.pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: var(--font);
-  font-size: var(--text-sm);
-  line-height: var(--leading-relaxed);
-  color: var(--c-text-2);
-  background: var(--c-surface-alt);
-  border: 1px solid var(--c-border-2);
-  border-radius: var(--r-md);
-  padding: var(--sp-3) var(--sp-4);
-}
 
 /* Keyword chips container */
 .chips,
@@ -192,19 +179,6 @@
   margin-top: var(--sp-4);
 }
 
-.keyword {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--sp-1) var(--sp-2_5);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  border-radius: var(--r-full);
-  background: var(--c-success-bg);
-  color: var(--c-success);
-  border: 1px solid var(--g-200);
-  white-space: nowrap;
-  line-height: 1;
-}
 
 /* Inline link */
 .link {
@@ -288,9 +262,6 @@
   text-align: right;
 }
 
-.pctHigh { color: var(--c-danger); }
-.pctMid { color: var(--c-warning-text); }
-.pctLow { color: var(--c-info); }
 
 /* ── Person/Student card (instructor + admin) ── */
 .personCard {
@@ -394,24 +365,7 @@
 }
 
 /* ── Admin objective blocks ── */
-.blocks {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-4);
-  margin-top: var(--sp-5);
-}
 
-.blockTitle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1_5);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--c-text-3);
-  margin: 0 0 var(--sp-2_5) 0;
-}
 
 /* ── Responsive breakpoints ── */
 @media (min-width: 768px) {
@@ -428,9 +382,5 @@
 @media (min-width: 1024px) {
   .grid {
     grid-template-columns: 3fr 2fr;
-  }
-
-  .blocks {
-    grid-template-columns: repeat(2, 1fr);
   }
 }

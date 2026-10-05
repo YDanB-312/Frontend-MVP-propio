@@ -4,19 +4,12 @@ import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { usuarios, aprendices, fichas, proyectos, notificaciones } from '../../../lib/recursos'
+import { usuarios, aprendices, fichas, proyectos, notificaciones, INCLUDE_PROYECTOS } from '../../../lib/recursos'
+import { esPropietarioProyecto } from '../../../utils/helpers'
 
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 // Una propuesta es del aprendiz si la creó o si figura en su equipo.
-function esMia(proyecto, userId) {
-  if (!proyecto) return false
-  if (Number(proyecto.id_creador) === Number(userId)) return true
-  return (proyecto.apprentices || []).some(
-    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
-  )
-}
-
+const esMia = esPropietarioProyecto
 export default function MiPerfil() {
   const { user } = useAuth()
 

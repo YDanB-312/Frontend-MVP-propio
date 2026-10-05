@@ -8,13 +8,9 @@ import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { similitudes as similitudesApi, observaciones as observacionesApi } from '../../../lib/recursos'
-import { formatearFecha } from '../../../utils/helpers'
+import { esPropietarioProyecto, formatearFecha, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
 
-function nombreUsuario(u) {
-  if (!u) return 'Usuario'
-  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
-}
 
 export default function DetalleSimilitud() {
   const { id } = useParams()
@@ -29,12 +25,7 @@ export default function DetalleSimilitud() {
   )
 
   // Solo las observaciones de MI propuesta del par — nunca las de la ajena.
-  const esMia = (p) => !!p && (
-    Number(p.id_creador) === Number(user.id) ||
-    (p.apprentices || []).some(
-      (a) => Number(a.generalUser?.id) === Number(user.id) || Number(a.id_usuario) === Number(user.id)
-    )
-  )
+  const esMia = (p) => esPropietarioProyecto(p, user?.id)
 
   let miPid = null
   let contraparte = null
@@ -58,7 +49,7 @@ export default function DetalleSimilitud() {
 
   const observaciones = (comentariosApi || []).map((c) => ({
     id: c.id,
-    autor: nombreUsuario(c.user),
+    autor: nombreCompleto(c.user, c.user?.correo || 'Usuario'),
     fecha: formatearFecha(c.created_at),
     texto: c.texto,
   }))

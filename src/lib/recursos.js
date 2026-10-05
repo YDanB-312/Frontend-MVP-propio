@@ -7,6 +7,10 @@ import { apiFetch, apiDescargar, qs } from "./api";
 
 const lista = (data) => (Array.isArray(data) ? data : (data?.data ?? []));
 
+// Includes compartidos: mismo shape de propuesta en todas las vistas.
+export const INCLUDE_PROYECTOS =
+  "creator,instructor.generalUser,classGroup.program,apprentices.generalUser";
+
 // ---------------------------------------------------------------- Usuarios
 export const usuarios = {
   listar: (filtros = {}) =>
@@ -29,6 +33,12 @@ export const usuarios = {
       body: { ids },
       nombre: "credenciales-usuarios.pdf",
     }),
+  // Reenvía las credenciales temporales al correo personal (solo admin).
+  reenviarCredenciales: (id) =>
+    apiFetch(`/general-users/${id}/credenciales/reenviar`, { method: "POST" }),
+  // Restablece la contraseña temporal: la genera el servidor (solo admin).
+  restablecerCredenciales: (id) =>
+    apiFetch(`/general-users/${id}/credenciales/restablecer`, { method: "POST" }),
   // Cambio del propio correo: el backend exige la contraseña actual.
   cambiarCorreo: (correo, passwordActual) =>
     apiFetch("/auth/email", {
@@ -61,9 +71,6 @@ export const instructores = {
   listar: (included = "generalUser") =>
     apiFetch(`/instructors${qs({ included })}`).then(lista),
   crear: (body) => apiFetch("/instructors", { method: "POST", body }),
-  // Resolución del admin: aprobar o rechazar (con motivo) la verificación.
-  verificar: (id, body) =>
-    apiFetch(`/instructors/${id}/verificacion`, { method: "PUT", body }),
 };
 
 export const aprendices = {
@@ -102,6 +109,9 @@ export const fichas = {
     apiDescargar(`/class-groups/${id}/credenciales`, {
       nombre: `credenciales-ficha-${id}.pdf`,
     }),
+  // Alta/asociación atómica de un aprendiz: usuario_id (existente) o datos.
+  agregarAprendiz: (id, body) =>
+    apiFetch(`/class-groups/${id}/aprendices`, { method: "POST", body }),
 };
 
 // ---------------------------------------------------------------- Propuestas
@@ -115,6 +125,11 @@ export const proyectos = {
       `/projects/${id}${qs({ included: "creator,instructor.generalUser,classGroup.program,apprentices.generalUser" })}`,
     ),
   crear: (body) => apiFetch("/projects", { method: "POST", body }),
+  // Envío explícito del borrador (valida, detecta similitudes y avisa al instructor).
+  enviar: (id) => apiFetch(`/projects/${id}/enviar`, { method: "POST" }),
+  // Evolución de la propuesta (visible para participantes e instructor).
+  historial: (id) =>
+    apiFetch(`/projects/${id}/historial${qs({ included: "user" })}`).then(lista),
   actualizar: (id, body) =>
     apiFetch(`/projects/${id}`, { method: "PUT", body }),
   eliminar: (id) => apiFetch(`/projects/${id}`, { method: "DELETE" }),
@@ -140,7 +155,7 @@ export const proyectos = {
 // ---------------------------------------------------------------- Similitudes
 // Se incluyen los proyectos del par (con su equipo) para resolver títulos y
 // autoría sin depender del listado global de propuestas.
-const INCLUDE_SIMILITUD =
+export const INCLUDE_SIMILITUD =
   "project1.classGroup.program,project2.classGroup.program,project1.creator,project2.creator,project1.apprentices.generalUser,project2.apprentices.generalUser";
 
 export const similitudes = {

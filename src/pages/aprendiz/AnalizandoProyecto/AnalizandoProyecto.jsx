@@ -54,14 +54,15 @@ export default function AnalizandoProyecto() {
     }
   }, [])
 
-  // Análisis real: el motor se ejecuta en el servidor y se espera su resultado.
+  // El motor ya se ejecutó en el servidor al enviar la propuesta: aquí solo se
+  // confirma que el resultado quedó disponible (con reintento si falla).
   useEffect(() => {
     if (!projectId) {
       navigate('/aprendiz/propuestas', { replace: true })
       return
     }
     let vivo = true
-    similitudesApi.detectar(projectId)
+    similitudesApi.listar({ proyecto_id: projectId })
       .then(() => { if (vivo) setListo(true) })
       .catch((err) => {
         if (!vivo) return

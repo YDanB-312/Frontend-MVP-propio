@@ -10,10 +10,10 @@ import { useApi } from '../../../lib/useApi'
 import { usuarios, aprendices, fichas } from '../../../lib/recursos'
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import { CaretRight, GraduationCap, MagnifyingGlass } from 'phosphor-react'
+import { nombreCompleto } from '../../../utils/helpers'
 
 function nombreUsuario(u) {
-  if (!u) return 'Usuario'
-  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
+  return nombreCompleto(u, u?.correo || 'Usuario')
 }
 
 export default function DetalleInstructor() {

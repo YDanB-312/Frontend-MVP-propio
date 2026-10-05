@@ -15,22 +15,16 @@ import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
 import { useApi } from '../../../lib/useApi'
-import { fichas, programas, redes, instructores, proyectos } from '../../../lib/recursos'
+import { fichas, programas, redes, instructores, proyectos, usuarios } from '../../../lib/recursos'
 import { toFieldErrors } from '../../../lib/api'
-import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { fechaDesdeApi } from '../../../utils/helpers'
+import { MAX_NOMBRE, MAX_NUMERO_FICHA, esNumeroFichaValido } from '../../../utils/validation'
+import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as PROYECTO_ESTADO_LABEL, FICHA_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
+import { fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
-import { Books, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, MagnifyingGlass, PencilLine, Trash, Warning } from 'phosphor-react'
+import { Books, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, MagnifyingGlass, PencilLine, Plus, Trash, Warning } from 'phosphor-react'
 
 const ESTADOS_FICHA = ['activo', 'finalizado']
-const ESTADO_LABEL = { activo: 'Activo', finalizado: 'Finalizado' }
-const PROYECTO_ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 function formDesde(ficha) {
   if (!ficha) return null
@@ -55,18 +49,28 @@ export default function DetalleFichaAdmin() {
   const [modalEliminar, setModalEliminar] = useState(false)
   const [busquedaAprendiz, setBusquedaAprendiz] = useState('')
   const [filtroPropFicha, setFiltroPropFicha] = useState('todos')
+  // Alta/asociación de aprendices desde la ficha.
+  const [mostrarAlta, setMostrarAlta] = useState(false)
+  const [nuevoAprendiz, setNuevoAprendiz] = useState({
+    nombre: '', apellido: '', tipoDocumento: 'CC', numeroDocumento: '', correo: '',
+  })
+  const [altaError, setAltaError] = useState('')
+  const [altaMsg, setAltaMsg] = useState('')
+  const [altaCredenciales, setAltaCredenciales] = useState(null)
+  const [ocupadoAlta, setOcupadoAlta] = useState(false)
 
-  // Fuente única: la API. Ficha con relaciones + catálogos + propuestas.
+  // Fuente única: la API. Ficha con relaciones + catálogos + propuestas + usuarios.
   const { data, cargando, error, recargar } = useApi(
     async () => {
-      const [ficha, listaProgramas, listaRedes, listaInstructores, listaProyectos] = await Promise.all([
+      const [ficha, listaProgramas, listaRedes, listaInstructores, listaProyectos, listaUsuarios] = await Promise.all([
         fichas.obtener(id),
         programas.listar(),
         redes.listar(),
         instructores.listar('generalUser'),
         proyectos.listar(),
+        usuarios.listar({ role: 'aprendiz' }),
       ])
-      return { ficha, listaProgramas, listaRedes, listaInstructores, listaProyectos }
+      return { ficha, listaProgramas, listaRedes, listaInstructores, listaProyectos, listaUsuarios }
     },
     [id],
     { inicial: null }
@@ -123,8 +127,83 @@ export default function DetalleFichaAdmin() {
     const q = busquedaAprendiz.trim().toLowerCase()
     if (!q) return true
     const g = est.generalUser || {}
-    return nombreCompleto(g).toLowerCase().includes(q) || (g.correo || '').toLowerCase().includes(q)
+    return nombreCompleto(g).toLowerCase().includes(q)
+      || (g.correo || '').toLowerCase().includes(q)
+      || (g.username || '').toLowerCase().includes(q)
+      || String(g.numero_documento || '').includes(q)
   })
+
+  // Usuarios con rol aprendiz que aún no están en la ficha (se pueden asociar).
+  const idsEnFicha = new Set(estudiantes.map((e) => Number(e.generalUser?.id)))
+  const disponibles = (data.listaUsuarios || []).filter((u) => !idsEnFicha.has(Number(u.id)))
+  const qDisponibles = busquedaAprendiz.trim().toLowerCase()
+  const disponiblesFiltrados = qDisponibles
+    ? disponibles.filter((u) => {
+        const texto = `${u.nombre || ''} ${u.apellido || ''} ${u.username || ''} ${u.numero_documento || ''} ${u.correo || ''}`.toLowerCase()
+        return texto.includes(qDisponibles)
+      })
+    : []
+
+  // Asocia un usuario existente (sin credenciales nuevas).
+  const asociarExistente = async (usuario) => {
+    setAltaError('')
+    setAltaMsg('')
+    setOcupadoAlta(true)
+    try {
+      await fichas.agregarAprendiz(ficha.id, { usuario_id: usuario.id })
+      setAltaMsg(`${nombreCompleto(usuario)} se asoció a la ficha (sin nuevas credenciales).`)
+      setBusquedaAprendiz('')
+      setMostrarAlta(false)
+      await recargar()
+    } catch (err) {
+      setAltaError(err?.data?.message || 'No se pudo asociar el aprendiz.')
+    } finally {
+      setOcupadoAlta(false)
+    }
+  }
+
+  // Crea la cuenta del aprendiz, la asocia a la ficha y envía credenciales.
+  const crearAprendiz = async (e) => {
+    e.preventDefault()
+    setAltaError('')
+    setAltaMsg('')
+    setAltaCredenciales(null)
+    if (!nuevoAprendiz.nombre.trim() || !nuevoAprendiz.apellido.trim()
+      || !nuevoAprendiz.numeroDocumento.trim() || !nuevoAprendiz.correo.trim()) {
+      setAltaError('Completa nombre, apellido, documento y correo.')
+      return
+    }
+
+    setOcupadoAlta(true)
+    try {
+      const resp = await fichas.agregarAprendiz(ficha.id, {
+        nombre: nuevoAprendiz.nombre.trim(),
+        apellido: nuevoAprendiz.apellido.trim(),
+        tipo_documento: nuevoAprendiz.tipoDocumento,
+        numero_documento: nuevoAprendiz.numeroDocumento.trim(),
+        correo: nuevoAprendiz.correo.trim().toLowerCase(),
+      })
+      setAltaCredenciales({
+        nombre: `${resp.usuario.nombre} ${resp.usuario.apellido}`.trim(),
+        username: resp.credenciales.username,
+        temporal: resp.credenciales.password_temporal,
+        enviadas: resp.credenciales.enviadas,
+        correo: resp.usuario.correo,
+      })
+      setNuevoAprendiz({ nombre: '', apellido: '', tipoDocumento: 'CC', numeroDocumento: '', correo: '' })
+      setMostrarAlta(false)
+      setBusquedaAprendiz('')
+      await recargar()
+    } catch (err) {
+      const campos = toFieldErrors(err?.data)
+      setAltaError(
+        campos.numero_documento || campos.correo || campos.nombre || campos.apellido
+        || err?.data?.message || 'No se pudo crear el aprendiz.'
+      )
+    } finally {
+      setOcupadoAlta(false)
+    }
+  }
   const proyectosFiltradosFicha = proyectosDeLaFicha.filter(
     (p) => filtroPropFicha === 'todos' || p.estado === filtroPropFicha
   )
@@ -152,8 +231,9 @@ export default function DetalleFichaAdmin() {
     const err = {}
     if (!form.nombre.trim()) err.nombre = 'El nombre es obligatorio.'
     if (!form.numero.trim()) err.numero = 'El número de ficha es obligatorio.'
-    else if (!/^\d{4,8}$/.test(form.numero.trim())) err.numero = 'Solo dígitos (4 a 8 caracteres).'
+    else if (!esNumeroFichaValido(form.numero)) err.numero = 'Solo dígitos (4 a 8 caracteres).'
     if (!form.programa) err.programa = 'Selecciona el programa de formación.'
+    if (!form.instructorId) err.instructorId = 'Selecciona un instructor a cargo.'
     return err
   }
 
@@ -171,7 +251,7 @@ export default function DetalleFichaAdmin() {
         numero: form.numero.trim(),
         estado: form.estado,
         id_programa: Number(form.programa),
-        id_instructor: form.instructorId === '' ? null : Number(form.instructorId),
+        id_instructor: Number(form.instructorId),
       })
       await recargar()
       setEditando(false)
@@ -293,9 +373,9 @@ export default function DetalleFichaAdmin() {
                   ))}
                 </Select>
               </FormField>
-              <FormField label="Instructor a cargo">
+              <FormField label="Instructor a cargo" required error={errores.instructorId}>
                 <Select name="instructorId" value={form.instructorId} onChange={onChange}>
-                  <option value="">Sin asignar</option>
+                  <option value="">Selecciona un instructor…</option>
                   {instructoresActivos.map((i) => (
                     <option key={i.id} value={String(i.id)}>
                       {nombreCompleto(i.generalUser)}
@@ -325,20 +405,123 @@ export default function DetalleFichaAdmin() {
         </DataPanel>
 
         <DataPanel title={`Aprendices (${estudiantes.length})`} icon={<GraduationCap />}>
-          {estudiantes.length > 0 && (
-            <FormField label="Buscar aprendiz">
-              <Input
-                value={busquedaAprendiz}
-                onChange={(e) => setBusquedaAprendiz(e.target.value)}
-                placeholder="Nombre o correo…"
-              />
-            </FormField>
+          <FormField
+            label="Buscar o agregar aprendiz"
+            help="Busca por nombre, usuario, documento o correo; si no existe, créalo aquí."
+          >
+            <Input
+              value={busquedaAprendiz}
+              onChange={(e) => setBusquedaAprendiz(e.target.value)}
+              placeholder="Nombre, usuario, documento o correo…"
+            />
+          </FormField>
+
+          {altaMsg && <Alert variant="success"><CheckCircle size={14} /> {altaMsg}</Alert>}
+          {altaError && <Alert variant="danger">{altaError}</Alert>}
+          {altaCredenciales && (
+            <Alert variant={altaCredenciales.enviadas ? 'success' : 'warning'}>
+              <CheckCircle size={14} /> Aprendiz <strong>{altaCredenciales.nombre}</strong> creado.
+              {altaCredenciales.enviadas
+                ? <> Credenciales enviadas a <strong>{altaCredenciales.correo}</strong>.</>
+                : <> No se pudo enviar el correo; reenvíalas desde Usuarios.</>}
+              <div className={s.altaCred}>
+                Usuario: <code>{altaCredenciales.username}</code> · Contraseña temporal: <code>{altaCredenciales.temporal}</code>
+              </div>
+            </Alert>
           )}
-          {estudiantes.length === 0 ? (
+
+          {qDisponibles !== '' && (
+            disponiblesFiltrados.length > 0 ? (
+              <ul className={s.studentList}>
+                {disponiblesFiltrados.slice(0, 8).map((u) => (
+                  <li key={u.id}>
+                    <div className={s.studentRow}>
+                      <Avatar name={nombreCompleto(u)} src={u.foto_url} size="md" />
+                      <span className={s.studentInfo}>
+                        <span className={s.studentName}>{nombreCompleto(u)}</span>
+                        <span className={s.studentEmail}>{u.username} · {u.correo}</span>
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={ocupadoAlta}
+                        onClick={() => asociarExistente(u)}
+                      >
+                        <Plus size={12} /> Agregar
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Button type="button" variant="secondary" size="sm" onClick={() => setMostrarAlta(true)}>
+                <Plus size={12} /> Crear aprendiz «{busquedaAprendiz.trim()}»
+              </Button>
+            )
+          )}
+
+          {mostrarAlta && (
+            <form className={s.altaForm} onSubmit={crearAprendiz} noValidate>
+              <div className={s.altaGrid}>
+                <FormField label="Nombres" required>
+                  <Input
+                    value={nuevoAprendiz.nombre}
+                    onChange={(e) => setNuevoAprendiz((f) => ({ ...f, nombre: e.target.value }))}
+                    placeholder="Ej. María José"
+                  />
+                </FormField>
+                <FormField label="Apellidos" required>
+                  <Input
+                    value={nuevoAprendiz.apellido}
+                    onChange={(e) => setNuevoAprendiz((f) => ({ ...f, apellido: e.target.value }))}
+                    placeholder="Ej. González Ruiz"
+                  />
+                </FormField>
+              </div>
+              <div className={s.altaGrid}>
+                <FormField label="Tipo de documento" required>
+                  <Select
+                    value={nuevoAprendiz.tipoDocumento}
+                    onChange={(e) => setNuevoAprendiz((f) => ({ ...f, tipoDocumento: e.target.value }))}
+                  >
+                    {['CC', 'TI', 'CE', 'PPT'].map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </Select>
+                </FormField>
+                <FormField label="Número de documento" required>
+                  <Input
+                    inputMode="numeric"
+                    value={nuevoAprendiz.numeroDocumento}
+                    onChange={(e) => setNuevoAprendiz((f) => ({ ...f, numeroDocumento: e.target.value }))}
+                    placeholder="Ej. 1234567890"
+                  />
+                </FormField>
+              </div>
+              <FormField label="Correo personal" required help="Allí se envían las credenciales.">
+                <Input
+                  type="email"
+                  value={nuevoAprendiz.correo}
+                  onChange={(e) => setNuevoAprendiz((f) => ({ ...f, correo: e.target.value }))}
+                  placeholder="Correo personal"
+                />
+              </FormField>
+              <Actions>
+                <Button type="submit" disabled={ocupadoAlta}>
+                  <CheckCircle size={14} /> {ocupadoAlta ? 'Creando…' : 'Crear y asociar'}
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setMostrarAlta(false)}>
+                  Cancelar
+                </Button>
+              </Actions>
+            </form>
+          )}
+
+          {estudiantes.length === 0 && qDisponibles === '' && (
             <p className={s.muted}>Aún no hay aprendices en esta ficha.</p>
-          ) : estudiantesFiltrados.length === 0 ? (
-            <p className={s.muted}>Ningún aprendiz coincide con la búsqueda.</p>
-          ) : (
+          )}
+          {estudiantesFiltrados.length > 0 && (
             <ul className={s.studentList}>
               {estudiantesFiltrados.map((est) => {
                 const perfil = est.generalUser || {}
@@ -364,9 +547,9 @@ export default function DetalleFichaAdmin() {
             <FormField label="Filtrar por estado">
               <Select value={filtroPropFicha} onChange={(e) => setFiltroPropFicha(e.target.value)}>
                 <option value="todos">Todas</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="aprobado">Aprobado</option>
-                <option value="rechazado">Rechazado</option>
+                {Object.entries(PROYECTO_ESTADO_LABEL).map(([valor, etiqueta]) => (
+                  <option key={valor} value={valor}>{etiqueta}</option>
+                ))}
               </Select>
             </FormField>
           )}

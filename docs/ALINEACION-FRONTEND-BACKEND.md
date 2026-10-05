@@ -1,3 +1,5 @@
+> NOTA HISTÓRICA (F8): documento anterior a la integración real. El frontend ya no usa datos mock y el motor de similitud detecta al enviar (no al aprobar).
+
 # Auditoría de Alineación Frontend ↔ Backend — ProyecTwin MVP
 
 **Fecha:** 2026-08-28

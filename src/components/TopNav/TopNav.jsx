@@ -2,8 +2,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../lib/useApi'
 import { usuarios } from '../../lib/recursos'
+import { iniciales } from '../../utils/helpers'
 import Tooltip from '../Tooltip/Tooltip'
 import s from './TopNav.module.css'
+import { ROL_LABEL } from '../../constants/badgeVariants'
 
 const RUTA_NOTIFICACIONES = {
   aprendiz: '/aprendiz/alertas',
@@ -23,20 +25,6 @@ const TITULO_CREAR = {
   admin: 'Crear usuario',
 }
 
-const ROL_LABEL = {
-  aprendiz: 'Aprendiz',
-  instructor: 'Instructor',
-  admin: 'Administrador',
-}
-
-function iniciales(nombre = '') {
-  return nombre
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map(p => p[0]?.toUpperCase() || '')
-    .join('')
-}
 
 function BellIcon() {
   return (

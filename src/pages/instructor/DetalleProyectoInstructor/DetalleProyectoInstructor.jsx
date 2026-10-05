@@ -14,20 +14,22 @@ import ApiState from '../../../components/ApiState/ApiState'
 import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import HistorialProyecto from '../../../components/HistorialProyecto/HistorialProyecto'
+import SimilitudesHistoricas from '../../../components/SimilitudesHistoricas/SimilitudesHistoricas'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import {
   proyectos,
   similitudes as similitudesApi,
   observaciones as observacionesApi,
-  notificaciones,
   fichas,
   instructores,
 } from '../../../lib/recursos'
-import { agruparObservaciones, formatearFecha, fechaDesdeApi } from '../../../utils/helpers'
+import { agruparObservaciones, formatearFecha, fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 import { ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, X, LockKey, Plus, XCircle } from 'phosphor-react'
+import { ROL_LABEL } from '../../../constants/badgeVariants'
 
 // Acciones de revisión disponibles para el instructor.
 const ACCIONES = {
@@ -45,12 +47,7 @@ const ACCIONES = {
   },
 }
 
-const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admin' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 export default function DetalleProyectoInstructor() {
   const { id } = useParams()
@@ -157,27 +154,8 @@ export default function DetalleProyectoInstructor() {
     if (!modal) return
     const estado = modal.estado
     try {
-      // 1) Actualiza el estado (PUT exige el objeto completo).
+      // El backend registra historial/notifica; el motor ya corrió al enviar.
       await proyectos.actualizar(proyecto.id, { ...proyecto, estado })
-
-      // 2) Notifica al creador.
-      await notificaciones.crear({
-        titulo: `Tu proyecto '${proyecto.titulo}' ha pasado a ${estado === 'aprobado' ? 'Aprobado' : 'Rechazado'}`,
-        tipo: 'revision',
-        enlace: `proyecto:${proyecto.id}`,
-        fecha: new Date().toISOString(),
-        id_usuario: proyecto.id_creador,
-      })
-
-      // 3) Al aprobar, el motor del backend calcula las coincidencias.
-      if (estado === 'aprobado') {
-        try {
-          await similitudesApi.detectar(proyecto.id)
-        } catch {
-          // El análisis puede recalcularse después.
-        }
-      }
-      // Refresca propuesta Y similitudes: el motor ya pudo crear coincidencias.
       await Promise.all([recargarProyecto(), recargarSims()])
     } catch {
       // El error se refleja al recargar la propuesta; se cierra el modal.
@@ -237,10 +215,10 @@ export default function DetalleProyectoInstructor() {
           action={
             enMiCargo ? (
               <Actions>
-                <Button type="button" variant="success" disabled={proyecto.estado === 'aprobado'} onClick={() => setModal(ACCIONES.aprobado)}>
+                <Button type="button" variant="success" disabled={proyecto.estado !== 'pendiente'} onClick={() => setModal(ACCIONES.aprobado)}>
                   <CheckCircle size={14} /> Aprobar
                 </Button>
-                <Button type="button" variant="danger" disabled={proyecto.estado === 'rechazado'} onClick={() => setModal(ACCIONES.rechazado)}>
+                <Button type="button" variant="danger" disabled={proyecto.estado !== 'pendiente'} onClick={() => setModal(ACCIONES.rechazado)}>
                   <XCircle size={14} /> Rechazar
                 </Button>
               </Actions>
@@ -249,6 +227,8 @@ export default function DetalleProyectoInstructor() {
         >
           <InformacionProyecto proyecto={proyecto} ficha={ficha} fichaHref={ficha ? `/instructor/detalle-ficha/${ficha.id}` : null} />
         </DataPanel>
+
+        <HistorialProyecto projectId={proyecto.id} />
         </div>
 
         <aside className={s.rail} aria-label="Aprendiz, similitudes y observaciones">
@@ -306,6 +286,7 @@ export default function DetalleProyectoInstructor() {
               })}
             </ul>
           )}
+          <SimilitudesHistoricas proyectoId={proyecto.id} detalleBase="/instructor" />
         </DataPanel>
         )}
 

@@ -8,13 +8,24 @@ test.describe('Admin: precisión y botones', () => {
     await page.waitForURL('**/admin/config-similitud')
   })
 
-  test('sidebar admin solo con el motor; sin accesos globales', async ({ page }) => {
+  test('sidebar admin con los accesos del panel', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/admin/dashboard')
-    await expect(page.locator('aside a[href="/admin/redes-conocimiento"]')).toHaveCount(0)
-    await expect(page.locator('aside a[href="/admin/training-centers"]')).toHaveCount(0)
-    await expect(page.locator('aside a[href="/admin/configuracion"]')).toHaveCount(0)
+    await expect(page.locator('aside a[href="/admin/redes-conocimiento"]')).toHaveCount(1)
+    await expect(page.locator('aside a[href="/admin/bitacora"]')).toHaveCount(1)
     await expect(page.locator('aside a[href="/admin/config-similitud"]')).toHaveCount(1)
+  })
+
+  test('el umbral configurado se refleja en las pantallas', async ({ page }) => {
+    await login(page, 'admin')
+    await page.goto('/admin/config-similitud')
+    const umbral = page.locator('input[type="number"]').first()
+    await umbral.fill('45')
+    await page.getByRole('button', { name: /Guardar parámetros/i }).click()
+    await expect(page.getByText(/Motor actualizado/i)).toBeVisible({ timeout: 15000 })
+
+    await page.goto('/admin/similitudes')
+    await expect(page.getByText('Sobre 45%')).toBeVisible({ timeout: 15000 })
   })
 
   test('búsqueda ignora tildes y limpiar filtros restaura', async ({ page }) => {

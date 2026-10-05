@@ -1,16 +1,4 @@
-.student {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  white-space: nowrap;
-}
 
-.simCell {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1_5);
-  white-space: nowrap;
-}
 
 .split {
   display: grid;

@@ -8,15 +8,3 @@ export function reduceMovimiento() {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   )
 }
-
-export function transitionView(actualizar) {
-  if (
-    reduceMovimiento() ||
-    typeof document === 'undefined' ||
-    typeof document.startViewTransition !== 'function'
-  ) {
-    actualizar()
-    return
-  }
-  document.startViewTransition(() => actualizar())
-}

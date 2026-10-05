@@ -15,24 +15,21 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import ApiState from '../../../components/ApiState/ApiState'
 import ObservacionHilo from '../../../components/ObservacionHilo/ObservacionHilo'
+import HistorialProyecto from '../../../components/HistorialProyecto/HistorialProyecto'
+import SimilitudesHistoricas from '../../../components/SimilitudesHistoricas/SimilitudesHistoricas'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes, observaciones, notificaciones } from '../../../lib/recursos'
-import { agruparObservaciones, fechaDesdeApi, fechaHoyLocal } from '../../../utils/helpers'
+import { proyectos, similitudes, observaciones } from '../../../lib/recursos'
+import { agruparObservaciones, fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
+import { PROJECT_ESTADO_LABEL as ESTADO_LABEL, ROL_LABEL as ROL_CHIP } from '../../../constants/badgeVariants'
 
 const ESTADOS = ['pendiente', 'aprobado', 'rechazado']
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
 // Rol legible para el chip del hilo de observaciones.
-const ROL_CHIP = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admin' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 // Campos que acepta PUT /projects (varios son obligatorios).
 function payloadProyecto(proyecto, extra = {}) {
@@ -83,7 +80,7 @@ export default function DetalleProyectoAdmin() {
   const [editando, setEditando] = useState(false)
   const [form, setForm] = useState({ titulo: '', resumen: '', palabras_clave: '' })
   const [errores, setErrores] = useState({})
-  const [editMsg, setEditMsg] = useState(false)
+  const [editMsg, setEditMsg] = useState(null)
 
   // Sincroniza los selectores al navegar entre proyectos sin remontar.
   useEffect(() => {
@@ -92,7 +89,7 @@ export default function DetalleProyectoAdmin() {
       setNuevoEstado(proyecto.estado)
       setGuardado(false)
       setEditando(false)
-      setEditMsg(false)
+      setEditMsg(null)
     }
   }, [proyecto?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -145,16 +142,8 @@ export default function DetalleProyectoAdmin() {
     if (nuevoEstado === proyecto.estado) return
     setAccionMsg(null)
     try {
+      // El backend registra historial y avisa al creador (F1/F3).
       await proyectos.actualizar(proyecto.id, payloadProyecto(proyecto, { estado: nuevoEstado }))
-      // Aviso al creador (best-effort): no bloquea la actualización.
-      await notificaciones.crear({
-        titulo: `Tu proyecto '${proyecto.titulo}' ha pasado a ${ESTADO_LABEL[nuevoEstado] || nuevoEstado}`,
-        tipo: 'revision',
-        enlace: `proyecto:${proyecto.id}`,
-        leida: false,
-        fecha: fechaHoyLocal(),
-        id_usuario: proyecto.id_creador,
-      }).catch(() => null)
       await recargar()
       setGuardado(true)
       setTimeout(() => setGuardado(false), 3000)
@@ -214,7 +203,7 @@ export default function DetalleProyectoAdmin() {
       palabras_clave: proyecto.palabras_clave || '',
     })
     setErrores({})
-    setEditMsg(false)
+    setEditMsg(null)
     setEditando(true)
   }
 
@@ -225,6 +214,7 @@ export default function DetalleProyectoAdmin() {
     if (form.resumen.trim().length < 20) errs.resumen = 'La descripción debe tener al menos 20 caracteres.'
     setErrores(errs)
     if (Object.keys(errs).length > 0) return
+    const eraAprobada = proyecto.estado === 'aprobado'
     try {
       await proyectos.actualizar(proyecto.id, payloadProyecto(proyecto, {
         titulo: form.titulo.trim(),
@@ -233,7 +223,9 @@ export default function DetalleProyectoAdmin() {
       }))
       await recargar()
       setEditando(false)
-      setEditMsg(true)
+      setEditMsg(eraAprobada
+        ? 'Contenido actualizado. La propuesta volvió a En revisión por intervención administrativa.'
+        : 'Contenido actualizado correctamente.')
     } catch (err) {
       setErrores({ titulo: err?.data?.message || 'No se pudo actualizar el contenido.' })
     }
@@ -300,10 +292,16 @@ export default function DetalleProyectoAdmin() {
               }
             >
               {editMsg && (
-                <Alert><CheckCircle size={14} /> Contenido actualizado correctamente.</Alert>
+                <Alert><CheckCircle size={14} /> {editMsg}</Alert>
               )}
               {editando ? (
                 <form className={s.obsForm} onSubmit={guardarEdicion} noValidate>
+                  {proyecto.estado === 'aprobado' && (
+                    <Alert variant="warning">
+                      <Warning size={14} /> Intervención administrativa: al guardar contenido de una
+                      propuesta aprobada, volverá a En revisión.
+                    </Alert>
+                  )}
                   <FormField label="Título" required error={errores.titulo}>
                     <Input
                       value={form.titulo}
@@ -381,6 +379,7 @@ export default function DetalleProyectoAdmin() {
                   })}
                 </ul>
               )}
+              <SimilitudesHistoricas proyectoId={proyecto.id} detalleBase="/admin" />
             </DataPanel>
 
             <DataPanel title={`Observaciones (${observacionesMapeadas.length})`} icon={<ChatCircle />}>
@@ -412,6 +411,8 @@ export default function DetalleProyectoAdmin() {
                 </Button>
               </form>
             </DataPanel>
+
+            <HistorialProyecto projectId={proyecto.id} />
           </aside>
         </div>
       </div>

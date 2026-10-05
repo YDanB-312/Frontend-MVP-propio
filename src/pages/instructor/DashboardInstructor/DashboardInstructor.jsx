@@ -14,33 +14,17 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instructores } from '../../../lib/recursos'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { fechaDesdeApi } from '../../../utils/helpers'
+import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instructores, INCLUDE_PROYECTOS } from '../../../lib/recursos'
+import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
+import { fechaDesdeApi, nombreCompleto, infoSimilitud } from '../../../utils/helpers'
 import { RECIENTES } from '../../../constants/pagination'
 import s from './DashboardInstructor.module.css'
 
 // Relaciones que la lista de propuestas debe traer para mostrar creador y ficha.
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 // Máximo porcentaje y conteo de coincidencias de una propuesta.
-function infoSimilitud(lista, projectId) {
-  const pares = (lista || []).filter(
-    (x) => Number(x.id_proyecto_1) === Number(projectId) || Number(x.id_proyecto_2) === Number(projectId)
-  )
-  if (pares.length === 0) return null
-  return {
-    pct: Math.max(...pares.map((x) => Math.round(Number(x.porcentaje) || 0))),
-    count: pares.length,
-  }
-}
 
 export default function DashboardInstructor() {
   const { user } = useAuth()

@@ -20,6 +20,8 @@ import { toFieldErrors } from '../../lib/api'
 import { procesarFoto } from '../../utils/foto'
 import s from './PerfilBase.module.css'
 import { esEmailValido, esPasswordValida } from '../../utils/validation'
+import { payloadCuenta } from '../../utils/helpers'
+import { ROL_LABEL } from '../../constants/badgeVariants'
 
 const SUBTITULOS = {
   aprendiz: 'Consulta y administra tu información personal',
@@ -27,23 +29,7 @@ const SUBTITULOS = {
   admin: 'Consulta y actualiza tu información personal como administrador.',
 }
 
-const ROL_LABEL = {
-  aprendiz: 'Aprendiz',
-  instructor: 'Instructor',
-  admin: 'Administrador',
-}
 
-// Campos escalares que exige PUT /general-users.
-function payloadCuenta(cuenta, extra = {}) {
-  return {
-    nombre: cuenta.nombre,
-    apellido: cuenta.apellido,
-    correo: cuenta.correo,
-    rol: cuenta.rol,
-    estado: cuenta.estado,
-    ...extra,
-  }
-}
 
 export default function PerfilBase({
   user,

@@ -9,21 +9,20 @@ import DataPanel from '../../../components/DataPanel/DataPanel'
 import QuickActions from '../../../components/QuickActions/QuickActions'
 import ActivityList from '../../../components/ActivityList/ActivityList'
 import Badge from '../../../components/Badge/Badge'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi, notificaciones } from '../../../lib/recursos'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { proyectos, similitudes as similitudesApi, notificaciones, INCLUDE_PROYECTOS } from '../../../lib/recursos'
+import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 import { useAuth } from '../../../contexts/AuthContext'
-import { formatearFecha } from '../../../utils/helpers'
+import { formatearFecha, esPropietarioProyecto, infoSimilitud } from '../../../utils/helpers'
 import { RECIENTES } from '../../../constants/pagination'
 import s from './DashboardAprendiz.module.css'
 
 // Relaciones que la lista debe incluir para poder detectar al equipo (pivote).
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 // Etiquetas de estado de propuesta (el backend solo devuelve el código).
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
 const fechaHoy = new Intl.DateTimeFormat('es-CO', {
   weekday: 'long',
@@ -33,25 +32,8 @@ const fechaHoy = new Intl.DateTimeFormat('es-CO', {
 }).format(new Date())
 
 // Una propuesta es del aprendiz si la creó o si figura en su equipo.
-function esMio(proyecto, userId) {
-  if (!proyecto) return false
-  if (Number(proyecto.id_creador) === Number(userId)) return true
-  return (proyecto.apprentices || []).some(
-    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
-  )
-}
-
+const esMio = esPropietarioProyecto
 // Máximo porcentaje y número de coincidencias de una propuesta.
-function infoSimilitud(lista, projectId) {
-  const pares = (lista || []).filter(
-    (x) => Number(x.id_proyecto_1) === Number(projectId) || Number(x.id_proyecto_2) === Number(projectId)
-  )
-  if (pares.length === 0) return null
-  return {
-    pct: Math.max(...pares.map((x) => Math.round(Number(x.porcentaje) || 0))),
-    count: pares.length,
-  }
-}
 
 export default function DashboardAprendiz() {
   const { user } = useAuth()
@@ -110,9 +92,9 @@ export default function DashboardAprendiz() {
       side: (
         <>
           {info && (
-            <Badge variant={info.pct >= 70 ? 'danger' : info.pct >= 40 ? 'warning' : 'success'}>
-              {info.pct}% · {info.count} coincidencia{info.count !== 1 ? 's' : ''}
-            </Badge>
+            <span title={`${info.pct}% · ${info.count} coincidencia${info.count !== 1 ? 's' : ''}`}>
+              <GradeBadge score={info.pct} size="sm" />
+            </span>
           )}
           <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>{ESTADO_LABEL[p.estado] || p.estado}</Badge>
           <CaretRight size={16} />
@@ -156,7 +138,7 @@ export default function DashboardAprendiz() {
                     <EmptyState
                       icon={<Tray />}
                       title="Aún no tienes propuestas"
-                      message="Registra tu primera propuesta para comenzar a analizarla."
+                      message="Registra tu primera propuesta y envíala para analizarla."
                       actionLabel="Crear propuesta"
                       onAction={() => navigate('/aprendiz/propuestas?crear=1')}
                     />

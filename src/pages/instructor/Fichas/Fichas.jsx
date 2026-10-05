@@ -19,8 +19,8 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { toFieldErrors } from '../../../lib/api'
 import { fichas, instructores, aprendices, proyectos, redes, programas } from '../../../lib/recursos'
-import { FICHA_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
+import { FICHA_ESTADO_VARIANT, FICHA_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
+import { MAX_NOMBRE, MAX_NUMERO_FICHA, esNumeroFichaValido } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 // Estilos reutilizados de las páginas originales (lista + formulario)
 import s from '../../../components/ListaBase/ListaBase.module.css'
@@ -28,11 +28,6 @@ import c from '../../../components/FormularioBase/FormularioBase.module.css'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
-const ESTADO_LABEL = {
-  activo: 'Activo',
-  finalizado: 'Finalizado',
-  anulada: 'Anulada',
-}
 
 export default function Fichas() {
   const { user } = useAuth()
@@ -187,7 +182,7 @@ export default function Fichas() {
     const numero = form.numero.trim()
     if (!numero) {
       err.numero = 'El número de ficha es obligatorio.'
-    } else if (!/^\d{4,8}$/.test(numero)) {
+    } else if (!esNumeroFichaValido(numero)) {
       err.numero = 'Solo dígitos (4 a 8 caracteres).'
     }
     return err
@@ -380,9 +375,9 @@ export default function Fichas() {
                   }}
                 >
                   <option value="todos">Todos</option>
-                  <option value="activo">Activo</option>
-                  <option value="finalizado">Finalizado</option>
-                  <option value="anulada">Anulada</option>
+                  <option value="activo">{ESTADO_LABEL.activo}</option>
+                  <option value="finalizado">{ESTADO_LABEL.finalizado}</option>
+                  <option value="anulada">{ESTADO_LABEL.anulada}</option>
                 </Select>
               </label>
               <label className={s.field}>

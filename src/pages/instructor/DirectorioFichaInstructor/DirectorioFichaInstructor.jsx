@@ -15,13 +15,10 @@ import { fichas, instructores } from '../../../lib/recursos'
 import { PAGINA_TARJETAS } from '../../../constants/pagination'
 import s from './DirectorioFichaInstructor.module.css'
 import { ArrowRight, Books, ChartBar, LockKey, MagnifyingGlass, Users } from 'phosphor-react'
+import { nombreCompleto } from '../../../utils/helpers'
 
 const ITEMS_POR_PAGINA = PAGINA_TARJETAS
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 export default function DirectorioFichaInstructor() {
   const { id } = useParams()

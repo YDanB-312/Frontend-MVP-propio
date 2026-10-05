@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FolderOpen, MagnifyingGlass, ChartBar, Users, PencilSimple, Prohibit, Key, Trash, CheckCircle, Warning } from 'phosphor-react'
+import { FolderOpen, MagnifyingGlass, ChartBar, Users, PencilSimple, Prohibit, Key, Trash, CheckCircle, Warning, ArrowCounterClockwise } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import DataPanel from '../../../components/DataPanel/DataPanel'
@@ -18,39 +18,12 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { usuarios, aprendices, fichas, proyectos, similitudes } from '../../../lib/recursos'
 import { esEmailValido } from '../../../utils/validation'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { fechaDesdeApi } from '../../../utils/helpers'
+import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as PROYECTO_ESTADO_LABEL, ROL_LABEL } from '../../../constants/badgeVariants'
+import { fechaDesdeApi, infoSimilitud, nombreCompleto, payloadCuenta } from '../../../utils/helpers'
 
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import formStyles from '../../../components/FormularioBase/FormularioBase.module.css'
 
-const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }
-const PROYECTO_ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
-
-// Campos que acepta PUT /general-users (requiere los escalares obligatorios).
-function payloadCuenta(cuenta, extra = {}) {
-  return {
-    nombre: cuenta.nombre,
-    apellido: cuenta.apellido,
-    correo: cuenta.correo,
-    rol: cuenta.rol,
-    estado: cuenta.estado,
-    ...extra,
-  }
-}
-
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
-
-// Contraseña temporal legible para el reinicio del admin: sena-xxxxxx.
-function passwordTemporal() {
-  const abc = 'abcdefghijkmnpqrstuvwxyz23456789'
-  let out = ''
-  for (let i = 0; i < 6; i++) out += abc[Math.floor(Math.random() * abc.length)]
-  return `sena-${out}`
-}
 
 export default function DetalleUsuario() {
   const { id } = useParams()
@@ -71,6 +44,7 @@ export default function DetalleUsuario() {
   const [guardado, setGuardado] = useState(false)
   const [accionMsg, setAccionMsg] = useState(null)
   const [claveTemporal, setClaveTemporal] = useState(null)
+  const [avisoCredenciales, setAvisoCredenciales] = useState('')
   const [filtroProp, setFiltroProp] = useState('todos')
   const [busquedaProp, setBusquedaProp] = useState('')
 
@@ -146,19 +120,17 @@ export default function DetalleUsuario() {
   })
 
   // Máximo porcentaje y conteo de coincidencias de una propuesta.
-  const similitudInfoDe = (projectId) => {
-    const propias = listaSimilitudes.filter(
-      (sim) => Number(sim.id_proyecto_1) === Number(projectId) || Number(sim.id_proyecto_2) === Number(projectId)
-    )
-    if (propias.length === 0) return null
-    return {
-      pct: Math.max(...propias.map((sim) => Math.round(Number(sim.porcentaje) || 0))),
-      count: propias.length,
-    }
-  }
+  const similitudInfoDe = (projectId) => infoSimilitud(listaSimilitudes, projectId)
 
   const estado = usuario.estado === false ? 'suspendido' : 'activo'
   const esMiCuenta = Number(sesion?.id) === Number(usuario.id)
+
+  // Estado del envío de credenciales temporales (solo mientras sean vigentes).
+  const estadoCredenciales = usuario.must_change_password
+    ? (usuario.credenciales_error
+      ? 'Falló el envío'
+      : (usuario.credenciales_enviadas_en ? 'Enviadas al correo' : 'Pendiente de envío'))
+    : 'Contraseña ya establecida'
 
   const detalles =
     usuario.rol === 'aprendiz'
@@ -167,11 +139,13 @@ export default function DetalleUsuario() {
           { label: 'Estado', value: estado === 'suspendido' ? 'Suspendido' : 'Activo' },
           { label: 'Ficha', value: ficha ? `${ficha.nombre} (${ficha.codigo})` : 'Sin ficha asignada' },
           { label: 'Programa', value: perfilAprendiz?.program?.nombre || ficha?.program?.nombre || 'No asignado' },
+          { label: 'Credenciales', value: estadoCredenciales },
         ]
       : [
           { label: 'Rol', value: ROL_LABEL[usuario.rol] || usuario.rol },
           { label: 'Estado', value: estado === 'suspendido' ? 'Suspendido' : 'Activo' },
           { label: 'Ficha', value: ficha ? `${ficha.nombre} (${ficha.codigo})` : 'Sin ficha asignada' },
+          { label: 'Credenciales', value: estadoCredenciales },
         ]
 
   const confirmarEliminar = async () => {
@@ -292,12 +266,13 @@ export default function DetalleUsuario() {
   }
 
   const restablecerClave = async () => {
-    const temporal = passwordTemporal()
     try {
-      await usuarios.actualizar(usuario.id, payloadCuenta(usuario, { password: temporal }))
-      setClaveTemporal(temporal)
+      // La temporal la genera el servidor con el formato institucional único.
+      const resp = await usuarios.restablecerCredenciales(usuario.id)
+      setClaveTemporal(resp.credenciales.password_temporal)
       setGuardado(false)
       setAccionMsg(null)
+      await recargar()
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo restablecer la contraseña.')
     }
@@ -310,6 +285,19 @@ export default function DetalleUsuario() {
       await recargar()
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado.')
+    }
+  }
+
+  // Reenvía las credenciales temporales (solo mientras la contraseña no cambie).
+  const reenviarCredenciales = async () => {
+    setAccionMsg(null)
+    setAvisoCredenciales('')
+    try {
+      await usuarios.reenviarCredenciales(usuario.id)
+      setAvisoCredenciales('Credenciales reenviadas al correo personal.')
+      await recargar()
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudieron reenviar las credenciales.')
     }
   }
 
@@ -352,9 +340,21 @@ export default function DetalleUsuario() {
                 <Prohibit size={14} /> Suspender
               </Button>
             )}
-            <Button type="button" variant="secondary" onClick={() => setModalRestablecer(true)}>
-              <Key size={14} /> Restablecer contraseña
-            </Button>
+            {usuario.rol !== 'admin' && (
+              <Button type="button" variant="secondary" onClick={() => setModalRestablecer(true)}>
+                <Key size={14} /> Restablecer contraseña
+              </Button>
+            )}
+            {usuario.rol !== 'admin' && usuario.must_change_password && (
+              <Button
+                type="button"
+                variant="secondary"
+                title="Reenviar las credenciales temporales al correo personal"
+                onClick={reenviarCredenciales}
+              >
+                <ArrowCounterClockwise size={14} /> Reenviar credenciales
+              </Button>
+            )}
             <Button
               type="button"
               variant="dangerGhost"
@@ -371,6 +371,10 @@ export default function DetalleUsuario() {
           <Alert>
             <Key size={14} /> Nueva contraseña temporal: <strong>{claveTemporal}</strong>. Compártela con el usuario por un canal seguro.
           </Alert>
+        )}
+
+        {avisoCredenciales && (
+          <Alert><CheckCircle size={14} /> {avisoCredenciales}</Alert>
         )}
 
         {accionMsg && (

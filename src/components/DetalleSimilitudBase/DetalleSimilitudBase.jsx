@@ -11,17 +11,9 @@ import EmptyState from '../EmptyState/EmptyState'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../lib/useApi'
 import { similitudes, fichas } from '../../lib/recursos'
-import { fechaDesdeApi } from '../../utils/helpers'
+import { fechaDesdeApi, esPropietarioProyecto, nombreCompleto } from '../../utils/helpers'
 import s from './DetalleSimilitudBase.module.css'
-
-const ESTADO_PROYECTO_VARIANT = (estado) =>
-  estado === 'aprobado' ? 'success' : estado === 'rechazado' ? 'danger' : estado === 'pendiente' ? 'warning' : 'neutral'
-
-const ESTADO_PROYECTO_LABEL = {
-  pendiente: 'Pendiente',
-  aprobado: 'Aprobado',
-  rechazado: 'Rechazado',
-}
+import { PROJECT_ESTADO_LABEL as ESTADO_PROYECTO_LABEL, PROJECT_ESTADO_VARIANT as ESTADO_PROYECTO_VARIANT } from '../../constants/badgeVariants'
 
 const RUTA_POR_ROL = {
   aprendiz: { volver: '/aprendiz/propuestas', label: 'Mis Propuestas' },
@@ -29,10 +21,6 @@ const RUTA_POR_ROL = {
   admin: { volver: '/admin/similitudes', label: 'Similitudes' },
 }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 // ¿La propuesta pertenece a las fichas o programas del instructor?
 function estaEnAlcance(proyecto, misFichasIds, misProgramas) {
@@ -61,12 +49,7 @@ export default function DetalleSimilitudBase({
   const proyecto2 = similitud?.project2 || null
 
   // ¿La propuesta es del usuario (creador o integrante del equipo)?
-  const esMia = (p) => !!p && (
-    Number(p.id_creador) === Number(user?.id) ||
-    (p.apprentices || []).some(
-      (a) => Number(a.generalUser?.id) === Number(user?.id) || Number(a.id_usuario) === Number(user?.id)
-    )
-  )
+  const esMia = (p) => esPropietarioProyecto(p, user?.id)
 
   // Lados del par que son del usuario. Sin esto, "A" era el id menor y la
   // propuesta propia podía salir como B.
@@ -248,7 +231,7 @@ export default function DetalleSimilitudBase({
                   <CalendarBlank size={14} /> {fechaDesdeApi(p.created_at)}
                 </p>
                 <p className={s.projectDesc}>{p.resumen}</p>
-                <Badge variant={ESTADO_PROYECTO_VARIANT(p.estado)}>
+                <Badge variant={ESTADO_PROYECTO_VARIANT[p.estado]}>
                   {ESTADO_PROYECTO_LABEL[p.estado] || p.estado}
                 </Badge>
                 {puedeVerProyecto(p.id) ? (

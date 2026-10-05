@@ -42,28 +42,6 @@ export function fechaDesdeApi(valor) {
   return formatearFecha(`${fecha.getDate()}/${fecha.getMonth() + 1}/${fecha.getFullYear()}`)
 }
 
-// Fecha de HOY en zona local (YYYY-MM-DD). Evita el off-by-one que produce
-// `toISOString()` en horas de la noche (UTC).
-export function fechaHoyLocal() {
-  const d = new Date()
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-  return d.toISOString().slice(0, 10)
-}
-
-// El código de unión de ficha lo genera el SERVIDOR (formato abc-defg). Se
-// conserva esta utilidad solo para pruebas/formato; el cliente no lo elige.
-export function generarCodigoFicha(existentes = []) {
-  const letras = 'abcdefghijklmnopqrstuvwxyz'
-  const bloque = (n) => Array.from({ length: n }, () => letras[Math.floor(Math.random() * letras.length)]).join('')
-  let codigo
-  let intento = 0
-  do {
-    codigo = `${bloque(3)}-${bloque(4)}`
-    intento += 1
-  } while (existentes.some((f) => f.codigo === codigo) && intento < 20)
-  return codigo
-}
-
 // Agrupa observaciones planas en hilos: [{ ...obsRaiz, respuestas: [...] }]
 export function agruparObservaciones(lista) {
   const nodos = new Map(lista.map((o) => [o.id, { ...o, respuestas: [] }]))
@@ -76,6 +54,45 @@ export function agruparObservaciones(lista) {
   })
   raices.forEach((r) => r.respuestas?.sort((a, b) => a.id - b.id))
   return raices
+}
+
+// Nombre visible de una persona (general_user o perfil con nombre/apellido).
+export function nombreCompleto(usuario, alterno = '') {
+  const nombre = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
+  return nombre || alterno
+}
+
+// ¿La propuesta es del usuario? (creador o integrante del equipo).
+export function esPropietarioProyecto(proyecto, userId) {
+  if (!proyecto || !userId) return false
+  if (Number(proyecto.id_creador) === Number(userId)) return true
+  return (proyecto.apprentices || []).some(
+    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
+  )
+}
+
+// Máximo % y cantidad de pares de similitud de una propuesta.
+export function infoSimilitud(lista, projectId) {
+  const pares = (lista || []).filter(
+    (x) => Number(x.id_proyecto_1) === Number(projectId) || Number(x.id_proyecto_2) === Number(projectId)
+  )
+  if (pares.length === 0) return null
+  return {
+    pct: Math.max(...pares.map((x) => Math.round(Number(x.porcentaje) || 0))),
+    count: pares.length,
+  }
+}
+
+// Campos escalares que acepta PUT /general-users (edición de cuentas).
+export function payloadCuenta(cuenta, extra = {}) {
+  return {
+    nombre: cuenta.nombre,
+    apellido: cuenta.apellido,
+    correo: cuenta.correo,
+    rol: cuenta.rol,
+    estado: cuenta.estado,
+    ...extra,
+  }
 }
 
 

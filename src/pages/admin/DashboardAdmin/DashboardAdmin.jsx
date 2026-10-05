@@ -55,7 +55,7 @@ export default function DashboardAdmin() {
   const proyectosLista = dato.listaProyectos || []
   const similitudesLista = dato.listaSimilitudes || []
   const reportesLista = dato.listaReportes || []
-  const motorConfig = dato.configMotor || { umbral: 0.2, meses: 12 }
+  const motorConfig = dato.configMotor || { umbral: 0.30, meses: 12 }
 
   // Alertas del admin autenticado (la API devuelve todas; se filtra por usuario).
   const alertas = (dato.listaNotificaciones || [])

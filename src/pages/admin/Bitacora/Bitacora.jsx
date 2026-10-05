@@ -11,7 +11,7 @@ import Pagination from '../../../components/Pagination/Pagination'
 import Button from '../../../components/Button/Button'
 import { useApi } from '../../../lib/useApi'
 import { auditoria, usuarios } from '../../../lib/recursos'
-import { formatearFecha } from '../../../utils/helpers'
+import { formatearFecha, nombreCompleto } from '../../../utils/helpers'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 import { ClockCounterClockwise } from 'phosphor-react'
 
@@ -22,12 +22,35 @@ const ACCIONES = [
   ['crear_usuario', 'Crear usuario'],
   ['actualizar_usuario', 'Actualizar usuario'],
   ['eliminar_usuario', 'Eliminar usuario'],
+  ['reenviar_credenciales', 'Reenviar credenciales'],
+  ['restablecer_credenciales', 'Restablecer credenciales'],
+  ['exportar_credenciales', 'Exportar credenciales'],
   ['cambiar_correo', 'Cambiar correo'],
+  ['cambiar_clave', 'Cambiar contraseña'],
+  ['solicitar_reset', 'Solicitar recuperación'],
+  ['restablecer_clave', 'Restablecer contraseña'],
+  ['crear_propuesta', 'Crear propuesta'],
+  ['enviar_propuesta', 'Enviar propuesta'],
   ['revisar_propuesta', 'Revisar propuesta'],
-  ['archivar_ficha', 'Archivar ficha'],
+  ['eliminar_propuesta', 'Eliminar propuesta'],
+  ['crear_ficha', 'Crear ficha'],
+  ['actualizar_ficha', 'Actualizar ficha'],
+  ['finalizar_ficha', 'Finalizar ficha'],
+  ['anular_ficha', 'Anular ficha'],
+  ['reasignar_ficha', 'Reasignar ficha'],
   ['eliminar_ficha', 'Eliminar ficha'],
+  ['agregar_aprendiz', 'Agregar aprendiz'],
+  ['asignar_aprendices', 'Asignar aprendices'],
+  ['crear_aprendiz', 'Crear aprendiz'],
+  ['actualizar_aprendiz', 'Actualizar aprendiz'],
+  ['eliminar_aprendiz', 'Eliminar aprendiz'],
+  ['actualizar_instructor', 'Actualizar instructor'],
+  ['eliminar_instructor', 'Eliminar instructor'],
   ['config_motor', 'Configurar motor'],
   ['recalibrar_motor', 'Recalibrar motor'],
+  ['resolver_soporte', 'Resolver soporte'],
+  ['eliminar_red', 'Eliminar red'],
+  ['eliminar_programa', 'Eliminar programa'],
 ]
 
 const ENTIDADES = [
@@ -37,6 +60,11 @@ const ENTIDADES = [
   ['class_groups', 'Fichas'],
   ['similarities', 'Similitudes'],
   ['motor_configs', 'Motor'],
+  ['apprentices', 'Aprendices'],
+  ['instructors', 'Instructores'],
+  ['bug_reports', 'Soporte'],
+  ['knowledge_networks', 'Redes'],
+  ['training_programs', 'Programas'],
 ]
 
 function detalleTexto(detalle) {
@@ -47,8 +75,7 @@ function detalleTexto(detalle) {
 }
 
 function nombreUsuario(u) {
-  if (!u) return 'Sistema'
-  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
+  return u ? nombreCompleto(u, u.correo || 'Usuario') : 'Sistema'
 }
 
 export default function Bitacora() {

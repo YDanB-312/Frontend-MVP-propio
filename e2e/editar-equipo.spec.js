@@ -1,11 +1,21 @@
 import { test, expect, login } from './helpers'
 
-// El creador puede gestionar el equipo de su propuesta, pero nunca quitarse a
-// sí mismo. Los nombres se resuelven con el propio equipo (nunca "Usuario").
+// El creador puede gestionar el equipo de su propuesta mientras es editable
+// (borrador o rechazada), pero nunca quitarse a sí mismo. Los nombres se
+// resuelven con el propio equipo (nunca "Usuario").
 test('el creador agrega y quita integrantes, y no puede quitarse a sí mismo', async ({ page }) => {
   await login(page, 'aprendiz')
-  // Propuesta 4 (Plataforma de Ventas Online): creada por María en la ficha 1.
-  await page.goto('/aprendiz/detalle-proyecto/4')
+
+  // Propuesta propia en borrador (el equipo solo se gestiona si es editable).
+  const titulo = `Borrador equipo E2E ${Date.now()}`
+  await page.goto('/aprendiz/propuestas')
+  await page.getByRole('main').getByRole('button', { name: /Nueva propuesta/i }).click()
+  await page.getByPlaceholder(/Sistema de monitoreo ambiental/i).fill(titulo)
+  await page.getByRole('button', { name: /Guardar borrador/i }).click()
+
+  await expect(page.getByText(titulo)).toBeVisible({ timeout: 15000 })
+  await page.getByText(titulo).first().click()
+  await page.waitForURL('**/aprendiz/detalle-proyecto/**')
 
   await expect(page.getByText('Equipo', { exact: true })).toBeVisible()
   await expect(page.getByText(/\(creador\)/i)).toBeVisible()
@@ -56,4 +66,17 @@ test('sin ficha: el equipo se ve con nombres y en solo lectura', async ({ page }
   await expect(page.getByRole('button', { name: 'Agregar', exact: true })).toHaveCount(0)
   const filaCreador = page.locator('li', { hasText: '(creador)' }).first()
   await expect(filaCreador.getByRole('button', { name: /Quitar/i })).toHaveCount(0)
+})
+
+// En revisión y aprobado el equipo es solo lectura (mismo criterio que el backend).
+test('en revisión y aprobado no se ofrece gestionar el equipo', async ({ page }) => {
+  await login(page, 'aprendiz')
+
+  // Proyecto 4 (pendiente) y 5 (aprobado) de María en el seed.
+  for (const id of [4, 5]) {
+    await page.goto(`/aprendiz/detalle-proyecto/${id}`)
+    await expect(page.getByText('Equipo', { exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('button', { name: 'Agregar', exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /Quitar/i })).toHaveCount(0)
+  }
 })

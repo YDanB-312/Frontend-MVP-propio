@@ -5,7 +5,6 @@ export default function AlertasAprendiz() {
   return (
     <DashboardLayout role="aprendiz" titulo="Alertas">
       <AlertasBase
-        role="aprendiz"
         titulo="Alertas"
         subtitle="Mantente al tanto de las novedades de tus proyectos"
         detallePath="/aprendiz"

@@ -4,9 +4,6 @@
   gap: var(--sp-6);
 }
 
-.bigBadge {
-  font-size: var(--text-sm);
-}
 
 .alertSuccess {
   font-size: var(--text-sm);

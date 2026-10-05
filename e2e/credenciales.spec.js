@@ -29,8 +29,9 @@ test('el admin crea un usuario, exporta sus credenciales y el primer ingreso obl
   expect(username.length).toBeGreaterThan(0)
   expect(temporal).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/)
 
-  // El panel muestra las credenciales y permite exportarlas.
+  // El panel muestra las credenciales, avisa del envío al correo y permite exportarlas.
   await expect(page.getByText(/creado\./i).first()).toBeVisible()
+  await expect(page.getByText(/Credenciales enviadas a/i)).toBeVisible()
   const [descarga] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: /^PDF$/i }).click(),
@@ -45,6 +46,15 @@ test('el admin crea un usuario, exporta sus credenciales y el primer ingreso obl
   await page.getByLabel(/Confirmar nueva contraseña/i).fill('nuevaClave123')
   await page.getByRole('button', { name: /Establecer contraseña/i }).click()
   await page.waitForURL('**/aprendiz/dashboard', { timeout: 15000 })
+
+  // Ya cambiada: el admin lo ve y no puede reenviar credenciales.
+  await logout(page)
+  await login(page, 'admin')
+  await page.goto('/admin/usuarios')
+  await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill(username)
+  const fila = page.locator('tr', { hasText: username })
+  await expect(fila.getByText('Ya cambiada')).toBeVisible()
+  await expect(fila.getByRole('button', { name: /Reenviar/i })).toHaveCount(0)
 })
 
 test('exportar credenciales de una ficha genera un PDF', async ({ page }) => {
@@ -68,4 +78,34 @@ test('exportar credenciales de usuarios seleccionados genera un PDF', async ({ p
     page.getByRole('button', { name: /Exportar credenciales/i }).click(),
   ])
   expect(descarga.suggestedFilename()).toMatch(/credenciales-usuarios\.pdf/i)
+})
+
+test('reenviar credenciales mientras siguen siendo temporales', async ({ page, request }) => {
+  // Alta por API (queda con contraseña temporal vigente).
+  const acceso = await request.post('/v1/auth/login', {
+    data: { username: 'a', password: 'admin123' },
+  })
+  const { token } = await acceso.json()
+  const correo = `reenvio.${Date.now()}@correo.com`
+  const alta = await request.post('/v1/general-users', {
+    headers: { Authorization: `Bearer ${token}` },
+    data: {
+      nombre: 'Reenvio',
+      apellido: 'E2E',
+      tipo_documento: 'CC',
+      numero_documento: String(Date.now()).slice(-8),
+      correo,
+      rol: 'aprendiz',
+    },
+  })
+  const username = (await alta.json()).credenciales.username
+
+  await login(page, 'admin')
+  await page.goto('/admin/usuarios')
+  await page.getByPlaceholder(/Nombre, documento, usuario o correo/i).fill(username)
+
+  const fila = page.locator('tr', { hasText: username })
+  await expect(fila.getByText('Enviadas')).toBeVisible()
+  await fila.getByRole('button', { name: /Reenviar/i }).click()
+  await expect(fila.getByText('Enviadas')).toBeVisible()
 })

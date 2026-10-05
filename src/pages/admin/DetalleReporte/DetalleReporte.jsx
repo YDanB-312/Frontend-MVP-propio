@@ -6,7 +6,13 @@ import PageHeader from '../../../components/PageHeader/PageHeader'
 import DataPanel from '../../../components/DataPanel/DataPanel'
 import Badge from '../../../components/Badge/Badge'
 import StatusMark from '../../../components/StatusMark/StatusMark'
-import { REPORTE_STATUS } from '../../../constants/estadoStatus'
+import {
+  REPORTE_STATUS,
+  REPORTE_ESTADO_LABEL as ESTADO_LABEL,
+  REPORTE_TIPO_LABEL as TIPO_LABEL,
+  REPORTE_PRIORIDAD_META as PRIORIDAD_META,
+  REPORTE_PRIORIDAD_POR_TIPO as PRIORIDAD_POR_TIPO,
+} from '../../../constants/estadoStatus'
 import Avatar from '../../../components/Avatar/Avatar'
 import Button from '../../../components/Button/Button'
 import { Select, Textarea } from '../../../components/Input/Input'
@@ -15,52 +21,15 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useApi } from '../../../lib/useApi'
 import { reportes } from '../../../lib/recursos'
-import { fechaDesdeApi } from '../../../utils/helpers'
+import { fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from './DetalleReporte.module.css'
 
-const ESTADO_LABEL = {
-  pendiente: 'Pendiente',
-  en_revision: 'En Revisión',
-  resuelto: 'Resuelto',
-  cerrado: 'Cerrado',
-  rechazado: 'Rechazado',
-}
 
-const TIPO_LABEL = {
-  sistema: 'Sistema',
-  proyecto: 'Proyecto',
-  datos: 'Datos',
-  bug_ui: 'Interfaz',
-  error_datos: 'Error de datos',
-  rendimiento: 'Rendimiento',
-  seguridad: 'Seguridad',
-  otro: 'Otro',
-}
 
-const PRIORIDAD_META = {
-  baja: { label: 'Baja', variant: 'neutral' },
-  media: { label: 'Media', variant: 'warning' },
-  alta: { label: 'Alta', variant: 'danger' },
-  critica: { label: 'Crítica', variant: 'danger' },
-}
 
-const PRIORIDAD_POR_TIPO = {
-  sistema: { label: 'Alta', variant: 'danger' },
-  proyecto: { label: 'Media', variant: 'warning' },
-  datos: { label: 'Media', variant: 'warning' },
-  bug_ui: { label: 'Media', variant: 'warning' },
-  error_datos: { label: 'Alta', variant: 'danger' },
-  rendimiento: { label: 'Alta', variant: 'danger' },
-  seguridad: { label: 'Crítica', variant: 'danger' },
-  otro: { label: 'Baja', variant: 'neutral' },
-}
 
 const ESTADOS = ['pendiente', 'en_revision', 'resuelto', 'cerrado', 'rechazado']
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 export default function DetalleReporte() {
   const { id } = useParams()

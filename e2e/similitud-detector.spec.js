@@ -18,6 +18,7 @@ const TEMA_B = {
   keywords: 'ecommerce, ventas online, manualidades',
 }
 
+// Crea y envía una propuesta (el envío ejecuta el motor en el servidor).
 async function crearPropuesta(page, tema) {
   await page.getByRole('main').getByRole('button', { name: /Nueva propuesta/i }).click()
   await page.getByPlaceholder(/Sistema de monitoreo ambiental/i).fill(tema.titulo)
@@ -32,7 +33,7 @@ async function crearPropuesta(page, tema) {
 }
 
 test.describe('Detector de similitud entre propuestas', () => {
-  test('una pendiente no ve a otra pendiente; tras aprobar, la editada sí la detecta', async ({ page }) => {
+  test('una pendiente no ve a otra pendiente; tras aprobar y reenviar, sí la detecta', async ({ page }) => {
     // Títulos únicos por corrida: el reseed es por archivo, y un reintento
     // acumularía propuestas duplicadas con el mismo texto.
     const suf = String(Date.now())
@@ -49,34 +50,50 @@ test.describe('Detector de similitud entre propuestas', () => {
     await crearPropuesta(page, temaB)
 
     // Regla de negocio: solo las aprobadas entran al corpus, así que dos
-    // pendientes del mismo tema NO se comparan entre sí (aunque el seed sí
-    // tenga aprobadas parecidas: la que debe faltar es la pendiente).
+    // pendientes del mismo tema NO se comparan entre sí.
     await expect(page.getByText(temaA.titulo)).toHaveCount(0)
 
     // El instructor aprueba la primera propuesta.
     await logout(page)
     await login(page, 'instructor')
     await page.goto('/instructor/revision-propuestas')
-    // La cola está paginada: se busca por título para asegurar el nodo.
     await page.getByPlaceholder(/Título, aprendiz o ficha/i).fill(temaA.titulo)
-    const nodo = page.getByRole('button', { name: temaA.titulo }).first()
-    await expect(nodo).toBeVisible({ timeout: 15000 })
-    await nodo.click()
+    const nodoA = page.getByRole('button', { name: temaA.titulo }).first()
+    await expect(nodoA).toBeVisible({ timeout: 15000 })
+    await nodoA.click()
     await page.getByRole('button', { name: `Aprobar ${temaA.titulo}` }).click()
     await page.getByRole('button', { name: /Sí, aprobar/i }).click()
     await expect(page.getByRole('button', { name: `Aprobar ${temaA.titulo}` })).toHaveCount(0, { timeout: 10000 })
 
-    // El aprendiz edita y guarda la segunda propuesta: al guardar, el motor
-    // vuelve a puntuar y ahora sí encuentra a la aprobada.
+    // El instructor rechaza la segunda (con observación) para que sea editable.
+    await page.getByPlaceholder(/Título, aprendiz o ficha/i).fill(temaB.titulo)
+    const nodoB = page.getByRole('button', { name: temaB.titulo }).first()
+    await expect(nodoB).toBeVisible({ timeout: 15000 })
+    await nodoB.click()
+    await page.getByRole('button', { name: `Rechazar ${temaB.titulo}` }).click()
+    await page.getByLabel(/Observación/i).fill('Agrega un diferencial al proyecto.')
+    await page.getByRole('button', { name: /Sí, rechazar/i }).click()
+    await expect(page.getByRole('button', { name: `Rechazar ${temaB.titulo}` })).toHaveCount(0, { timeout: 10000 })
+
+    // El aprendiz modifica la rechazada y la reenvía: el motor vuelve a correr
+    // y ahora encuentra a la aprobada.
     await logout(page)
     await login(page, 'aprendiz')
     await page.goto('/aprendiz/propuestas')
-    await page.getByRole('link', { name: temaB.titulo }).first().click()
+    await page.getByText(temaB.titulo).first().click()
     await page.waitForURL('**/aprendiz/detalle-proyecto/**')
     await page.getByRole('button', { name: /^Editar$/ }).click()
+    await page.getByLabel('Título').fill(`${temaB.titulo} con diferencial`)
     await page.getByRole('button', { name: /Guardar cambios/i }).click()
-    await expect(page.getByText(/Propuesta actualizada correctamente/i)).toBeVisible({ timeout: 15000 })
-    await expect(page.getByText(temaA.titulo)).toBeVisible()
+    await expect(page.getByText(/Propuesta actualizada/i)).toBeVisible({ timeout: 15000 })
+
+    await page.getByRole('button', { name: /Enviar propuesta/i }).click()
+    await page.waitForURL('**/aprendiz/analizando-proyecto', { timeout: 15000 })
+    await page.waitForURL('**/aprendiz/resultado-analisis**', { timeout: 20000 })
+
+    // La coincidencia con la aprobada ya aparece para el aprendiz.
+    await page.goto('/aprendiz/similitudes')
+    await expect(page.getByText(temaA.titulo).first()).toBeVisible({ timeout: 15000 })
   })
 
   test('el ranking agrupa por propuesta y colapsa', async ({ page }) => {

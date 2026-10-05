@@ -3,19 +3,10 @@ import StatusMark from '../StatusMark/StatusMark'
 import { PROPUESTA_STATUS } from '../../constants/estadoStatus'
 import Tag from '../Tag/Tag'
 import s from './DetalleProyectoBase.module.css'
-import { fechaDesdeApi } from '../../utils/helpers'
+import { fechaDesdeApi, nombreCompleto } from '../../utils/helpers'
+import { PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../constants/badgeVariants'
 
-// Etiquetas legibles del estado de la propuesta (columnas reales de la API).
-const ESTADO_LABEL = {
-  pendiente: 'Pendiente',
-  aprobado: 'Aprobado',
-  rechazado: 'Rechazado',
-}
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 /**
  * Contenido compartido "Información del proyecto" — usado por

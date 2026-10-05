@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { CaretRight, CaretDown, MagnifyingGlass } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -11,23 +11,16 @@ import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { Input } from '../../../components/Input/Input'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi } from '../../../lib/recursos'
-import { norm } from '../../../utils/helpers'
+import { proyectos, similitudes as similitudesApi, INCLUDE_PROYECTOS } from '../../../lib/recursos'
+import { norm, esPropietarioProyecto } from '../../../utils/helpers'
 import s from './Similitudes.module.css'
 
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 // Una propuesta es del aprendiz si la creó o si figura en su equipo.
-function esMia(proyecto, userId) {
-  if (!proyecto) return false
-  if (Number(proyecto.id_creador) === Number(userId)) return true
-  return (proyecto.apprentices || []).some(
-    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
-  )
-}
-
+const esMia = esPropietarioProyecto
 export default function Similitudes() {
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   // Filtros de la vista.
   const [busqueda, setBusqueda] = useState('')
@@ -124,7 +117,7 @@ export default function Similitudes() {
                 title="Sin similitudes detectadas"
                 message="Aún no tienes propuestas vigentes para comparar. Registra tu primera propuesta."
                 actionLabel="Ir a mis propuestas"
-                onAction={() => window.location.assign('/aprendiz/propuestas')}
+                onAction={() => navigate('/aprendiz/propuestas')}
               />
             ) : (
               <EmptyState

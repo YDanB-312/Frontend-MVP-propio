@@ -14,23 +14,18 @@ import DataTable from '../../../components/DataTable/DataTable'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi, fichas, instructores } from '../../../lib/recursos'
+import { proyectos, similitudes as similitudesApi, fichas, instructores, INCLUDE_PROYECTOS } from '../../../lib/recursos'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesInstructor.module.css'
 import { PAGINA_TABLA } from '../../../constants/pagination'
-import { fechaDesdeApi, norm } from '../../../utils/helpers'
+import { fechaDesdeApi, norm, nombreCompleto } from '../../../utils/helpers'
+import { PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 // Relaciones necesarias para mostrar creador y ficha de cada propuesta del par.
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 export default function SimilitudesInstructor() {
   const { user } = useAuth()

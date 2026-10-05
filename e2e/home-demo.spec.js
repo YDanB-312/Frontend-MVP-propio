@@ -28,4 +28,15 @@ test.describe('Home pública: demo del motor', () => {
     // Ninguna llamada pública debe responder 401
     expect(noAutorizado).toHaveLength(0)
   })
+
+  test('sin registro público: las cuentas las crea el administrador', async ({ page }) => {
+    await page.goto('/')
+
+    // No queda ninguna invitación a autorregistrarse.
+    await expect(page.getByText(/Regístrate|Crea tu cuenta|Crear cuenta|Registrarse/i)).toHaveCount(0)
+    await expect(page.getByText(/Recibe tus credenciales/i)).toBeVisible()
+
+    // Un único CTA de login en el hero además del header (sin duplicados).
+    await expect(page.getByRole('link', { name: /Iniciar sesión/i })).toHaveCount(2)
+  })
 })

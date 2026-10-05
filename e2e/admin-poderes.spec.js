@@ -53,7 +53,7 @@ test.describe('Admin: rol y contraseña', () => {
     const alerta = page.getByText(/Nueva contraseña temporal/i)
     await expect(alerta).toBeVisible()
     const texto = await alerta.innerText()
-    const temporal = texto.match(/sena-[a-z0-9]+/i)?.[0]?.trim() || ''
+    const temporal = texto.match(/[A-Z0-9]{4}-[A-Z0-9]{4}/)?.[0]?.trim() || ''
     expect(temporal.length).toBeGreaterThan(0)
 
     await logout(page)

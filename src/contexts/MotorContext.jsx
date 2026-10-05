@@ -3,7 +3,7 @@ import { motor as motorApi } from '../lib/recursos'
 
 // Configuración del motor de similitud (umbral + ventana), compartida por toda
 // la app para que la CLASIFICACIÓN (A/B/C: alta/media/baja) siga siempre al
-// umbral que fija el admin. Sin provider, usa el valor por defecto (65%).
+// umbral que fija el admin. Sin provider, usa el valor por defecto (30%).
 const MotorContext = createContext({
   umbral: 0.30,
   umbralPct: 30,

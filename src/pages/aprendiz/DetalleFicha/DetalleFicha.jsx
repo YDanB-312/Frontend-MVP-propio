@@ -9,16 +9,14 @@ import ApiState from '../../../components/ApiState/ApiState'
 import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
 import { useApi } from '../../../lib/useApi'
 import { fichas, proyectos } from '../../../lib/recursos'
-import { formatearFecha } from '../../../utils/helpers'
+import { formatearFecha, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 import { ArrowRight, CalendarBlank, FolderOpen, GraduationCap, IdentificationCard, MagnifyingGlass, Users } from 'phosphor-react'
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
 function nombreUsuario(u) {
-  if (!u) return 'Usuario'
-  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
+  return nombreCompleto(u, u?.correo || 'Usuario')
 }
 
 export default function DetalleFicha() {

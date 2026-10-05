@@ -79,7 +79,7 @@ test.describe('Admin: tira resumen de similitudes', () => {
     const tira = page.getByRole('status', { name: /Resumen de coincidencias/i })
     await expect(tira).toBeVisible()
     await expect(tira.getByText('Pares', { exact: true })).toBeVisible()
-    await expect(tira.getByText('Sobre 70%', { exact: true })).toBeVisible()
+    await expect(tira.getByText('Sobre 30%', { exact: true })).toBeVisible()
     await expect(tira.getByText('Programas', { exact: true })).toBeVisible()
     await expect(tira.getByText('Umbral', { exact: true })).toBeVisible()
     await expect(tira.getByText('30%', { exact: true })).toBeVisible()

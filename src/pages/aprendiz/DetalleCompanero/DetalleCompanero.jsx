@@ -9,26 +9,16 @@ import ApiState from '../../../components/ApiState/ApiState'
 import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { usuarios, aprendices, fichas, proyectos, similitudes as similitudesApi } from '../../../lib/recursos'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { formatearFecha } from '../../../utils/helpers'
+import { usuarios, aprendices, fichas, proyectos, similitudes as similitudesApi, INCLUDE_PROYECTOS } from '../../../lib/recursos'
+import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL, ROL_LABEL } from '../../../constants/badgeVariants'
+import { formatearFecha, esPropietarioProyecto, infoSimilitud, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import { CalendarBlank, FolderOpen, Info, MagnifyingGlass } from 'phosphor-react'
 
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
-const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }
 
 // Una propuesta es del usuario si la creó o si figura en su equipo.
-function esMia(proyecto, userId) {
-  if (!proyecto) return false
-  if (Number(proyecto.id_creador) === Number(userId)) return true
-  return (proyecto.apprentices || []).some(
-    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
-  )
-}
-
+const esMia = esPropietarioProyecto
 export default function DetalleCompanero() {
   const { user } = useAuth()
   const { id } = useParams()
@@ -72,11 +62,7 @@ export default function DetalleCompanero() {
   )
 
   function similitudMax(projectId) {
-    const pares = similitudesValidas.filter(
-      (x) => Number(x.id_proyecto_1) === Number(projectId) || Number(x.id_proyecto_2) === Number(projectId)
-    )
-    if (pares.length === 0) return null
-    return Math.max(...pares.map((x) => Math.round(Number(x.porcentaje) || 0)))
+    return infoSimilitud(similitudesValidas, projectId)?.pct ?? null
   }
 
   if (cargando) {
@@ -118,14 +104,14 @@ export default function DetalleCompanero() {
           user={companero}
           role={companero.rol}
           soloLectura
-          titulo={nombreCompleto(companero)}
+          titulo={nombreCompleto(companero, companero?.correo || 'Usuario')}
           subtitulo={esAprendiz ? 'Perfil de aprendiz' : 'Perfil de instructor'}
           breadcrumb={[
             { label: 'Dashboard', to: `${base}/dashboard` },
             ...(ficha && esAprendiz
               ? [{ label: 'Mi Ficha', to: `${base}/detalle-ficha/${ficha.id}` }]
               : []),
-            { label: nombreCompleto(companero) },
+            { label: nombreCompleto(companero, companero?.correo || 'Usuario') },
           ]}
           detalles={
             esAprendiz
@@ -138,7 +124,7 @@ export default function DetalleCompanero() {
         />
 
         {esAprendiz ? (
-          <DataPanel title={`Propuestas de ${nombreCompleto(companero).split(' ')[0]} (${proyectosUsuario.length})`} icon={<FolderOpen />}>
+          <DataPanel title={`Propuestas de ${nombreCompleto(companero, companero?.correo || 'Usuario').split(' ')[0]} (${proyectosUsuario.length})`} icon={<FolderOpen />}>
             {proyectosUsuario.length === 0 ? (
               <p className={s.muted}>Este aprendiz aún no ha registrado propuestas.</p>
             ) : (
@@ -178,7 +164,4 @@ export default function DetalleCompanero() {
   )
 }
 
-function nombreCompleto(u) {
-  if (!u) return 'Usuario'
-  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
-}
+

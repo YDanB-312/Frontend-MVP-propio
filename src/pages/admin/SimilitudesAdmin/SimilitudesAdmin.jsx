@@ -15,20 +15,16 @@ import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { useApi } from '../../../lib/useApi'
 import { similitudes, proyectos, programas, fichas, motor } from '../../../lib/recursos'
-import { norm, fechaDesdeApi } from '../../../utils/helpers'
+import { norm, fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesAdmin.module.css'
 import { Eye, MagnifyingGlass, Trash } from 'phosphor-react'
 import { PAGINA_TABLA } from '../../../constants/pagination'
+import { PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 export default function SimilitudesAdmin() {
   const [busqueda, setBusqueda] = useState('')
@@ -73,7 +69,7 @@ export default function SimilitudesAdmin() {
   const listaProyectos = data?.listaProyectos || []
   const listaProgramas = data?.listaProgramas || []
   const listaFichas = data?.listaFichas || []
-  const motorConfig = data?.configMotor || { umbral: 0.2, meses: 12 }
+  const motorConfig = data?.configMotor || { umbral: 0.30, meses: 12 }
   const umbralPct = Math.round(motorConfig.umbral * 100)
 
   const proyectosPorId = new Map(listaProyectos.map((p) => [Number(p.id), p]))
@@ -137,7 +133,7 @@ export default function SimilitudesAdmin() {
     setPagina(1)
   }
 
-  const altas = listaSimilitudes.filter((sim) => Math.round(Number(sim.porcentaje) || 0) >= 70).length
+  const altas = listaSimilitudes.filter((sim) => Math.round(Number(sim.porcentaje) || 0) >= umbralPct).length
   const programasAfectados = new Set(
     listaSimilitudes.flatMap((sim) => [
       programaDeProyecto(proyectoDe(sim, 1)),
@@ -166,7 +162,7 @@ export default function SimilitudesAdmin() {
         <ApiState cargando={cargando} error={error} onReintentar={recargar}>
           <div className={local.tira} role="status" aria-label="Resumen de coincidencias">
             <StatChip label="Pares" value={listaSimilitudes.length} />
-            <StatChip label="Sobre 70%" value={altas} />
+            <StatChip label={`Sobre ${umbralPct}%`} value={altas} />
             <StatChip label="Programas" value={programasAfectados} />
             <StatChip label="Umbral" value={`${umbralPct}%`} />
           </div>

@@ -46,7 +46,7 @@ export async function instructor(h) {
     await h.ir('/instructor/revision-propuestas')
     await h.auditar()
     const cola = page.getByRole('list', { name: /Cola de revisión/i })
-    const nodo = cola.getByRole('button', { name: /Pendiente/ }).first()
+    const nodo = cola.getByRole('button', { name: /En revisión/ }).first()
     if ((await nodo.count()) === 0) return // no hay pendientes en este seed
 
     await nodo.click()
@@ -59,7 +59,7 @@ export async function instructor(h) {
   await h.paso('rechazar una propuesta pendiente', async () => {
     await h.ir('/instructor/revision-propuestas')
     const cola = page.getByRole('list', { name: /Cola de revisión/i })
-    const nodo = cola.getByRole('button', { name: /Pendiente/ }).first()
+    const nodo = cola.getByRole('button', { name: /En revisión/ }).first()
     if ((await nodo.count()) === 0) return
 
     await nodo.click()

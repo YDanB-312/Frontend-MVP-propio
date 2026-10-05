@@ -8,27 +8,22 @@ import Badge from '../../../components/Badge/Badge'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import Alert from '../../../components/Alert/Alert'
 import ApiState from '../../../components/ApiState/ApiState'
-import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL, FICHA_ESTADO_LABEL } from '../../../constants/badgeVariants'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import FormField from '../../../components/FormField/FormField'
 import Actions from '../../../components/Actions/Actions'
 import Button from '../../../components/Button/Button'
 import { Input, Select } from '../../../components/Input/Input'
-import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
+import { MAX_NOMBRE, MAX_NUMERO_FICHA, esNumeroFichaValido } from '../../../utils/validation'
 import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { fichas, instructores, proyectos } from '../../../lib/recursos'
-import { formatearFecha } from '../../../utils/helpers'
+import { formatearFecha, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 import { ArrowRight, Books, CalendarBlank, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users, Warning } from 'phosphor-react'
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 export default function DetalleFichaInstructor() {
   const { id } = useParams()
@@ -135,15 +130,15 @@ export default function DetalleFichaInstructor() {
       setErrores({ numero: 'El número de ficha es obligatorio.' })
       return
     }
-    if (!/^\d{4,8}$/.test(numero)) {
+    if (!esNumeroFichaValido(numero)) {
       setErrores({ numero: 'Solo dígitos (4 a 8 caracteres).' })
       return
     }
     setGuardando(true)
     try {
-      // PUT exige el objeto completo de la ficha.
+      // Solo escalares: el PUT no debe reenviar relaciones (aprendices) que el
+      // backend espera como ids de usuario.
       await fichas.actualizar(ficha.id, {
-        ...ficha,
         nombre: form.nombre.trim(),
         numero,
         estado: form.estado,
@@ -242,8 +237,8 @@ export default function DetalleFichaInstructor() {
                   value={form.estado}
                   onChange={onChange}
                 >
-                  <option value="activo">Activo</option>
-                  <option value="finalizado">Finalizado</option>
+                  <option value="activo">{FICHA_ESTADO_LABEL.activo}</option>
+                  <option value="finalizado">{FICHA_ESTADO_LABEL.finalizado}</option>
                 </Select>
               </FormField>
               <Actions form>

@@ -316,3 +316,29 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Alta de aprendices desde la ficha */
+.altaForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: var(--sp-3) 0;
+  padding: var(--sp-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+}
+
+.altaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+@media (max-width: 640px) {
+  .altaGrid { grid-template-columns: 1fr; }
+}
+
+.altaCred {
+  margin-top: var(--sp-2);
+  font-size: var(--text-sm);
+}

@@ -15,31 +15,26 @@ import ApiState from '../../../components/ApiState/ApiState'
 import ObservacionHilo from
 '../../../components/ObservacionHilo/ObservacionHilo'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import HistorialProyecto from '../../../components/HistorialProyecto/HistorialProyecto'
+import SimilitudesHistoricas from '../../../components/SimilitudesHistoricas/SimilitudesHistoricas'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, observaciones as observacionesApi, aprendices } from '../../../lib/recursos'
-import { agruparObservaciones, fechaDesdeApi } from '../../../utils/helpers'
+import { agruparObservaciones, fechaDesdeApi, esPropietarioProyecto, nombreCompleto } from '../../../utils/helpers'
+import { MAX_TITULO, MAX_DESCRIPCION, MAX_DESCRIPCION_CORTA } from '../../../utils/validation'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import n from '../../../components/FormularioBase/FormularioBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
-import { ChatCircle, CheckCircle, FileText, FolderOpen, MagnifyingGlass, PencilSimple, Plus, Trash, UsersThree, Warning, X } from 'phosphor-react'
+import { ChatCircle, CheckCircle, FileText, FolderOpen, MagnifyingGlass, PaperPlaneRight, PencilSimple, Plus, Trash, UsersThree, Warning, X } from 'phosphor-react'
+import { ROL_LABEL } from '../../../constants/badgeVariants'
 
-const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admin' }
 
 function nombreUsuario(u) {
-  if (!u) return 'Usuario'
-  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
+  return nombreCompleto(u, u?.correo || 'Usuario')
 }
 
 // Una propuesta es del aprendiz si la creó o si figura en su equipo.
-function esMia(proyecto, userId) {
-  if (!proyecto) return false
-  if (Number(proyecto.id_creador) === Number(userId)) return true
-  return (proyecto.apprentices || []).some(
-    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
-  )
-}
-
+const esMia = esPropietarioProyecto
 export default function DetalleProyecto() {
   const { id } = useParams()
   const { user } = useAuth()
@@ -51,7 +46,7 @@ export default function DetalleProyecto() {
     [id],
     { inicial: null }
   )
-  const { data: todasSimilitudes, recargar: recargarSims } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
+  const { data: todasSimilitudes } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
   const { data: comentariosApi, cargando: cargandoObs, recargar: recargarObs } = useApi(
     () => observacionesApi.listar('user', { id_proyecto: id }),
     [id],
@@ -78,8 +73,10 @@ export default function DetalleProyecto() {
   /* ---------- Edición de la propuesta (mientras no esté aprobada) ---------- */
   const [editando, setEditando] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [enviandoPropuesta, setEnviandoPropuesta] = useState(false)
   const [errores, setErrores] = useState({})
   const [aviso, setAviso] = useState('')
+  const [avisoError, setAvisoError] = useState('')
   const [form, setForm] = useState({ titulo: '', resumen: '', palabras_clave: '', objetivo_general: '', objetivos_especificos: '', area_aplicacion: '' })
 
   // Comentarios de la API → shape que consume ObservacionHilo.
@@ -119,8 +116,11 @@ export default function DetalleProyecto() {
   const fichaActiva = project?.classGroup?.estado === 'activo'
   const perteneceAFicha = !!miAprendiz
     && Number(miAprendiz.id_class_group) === Number(project?.id_class_group)
-  // El equipo lo gestiona el CREADOR, dentro de su ficha activa.
-  const gestionaEquipo = Number(project?.id_creador) === Number(user.id)
+  // El equipo lo gestiona el CREADOR, dentro de su ficha activa y solo
+  // mientras la propuesta es editable (borrador/rechazada).
+  const equipoEditable = ['borrador', 'rechazado'].includes(project?.estado)
+  const gestionaEquipo = equipoEditable
+    && Number(project?.id_creador) === Number(user.id)
     && fichaActiva && perteneceAFicha
   const disponibles = useMemo(
     () => (gestionaEquipo ? (rosterApi || []).filter((a) => !equipoIds.has(Number(a.id))) : []),
@@ -170,8 +170,23 @@ export default function DetalleProyecto() {
   const motivoSoloLectura = ficha && ficha.estado !== 'activo'
     ? 'La ficha está finalizada: la propuesta queda en solo lectura.'
     : 'Solo lectura: ya no perteneces a esta ficha.'
-  // Se puede editar mientras la propuesta no haya sido aprobada por el instructor.
-  const puedeEditar = puedeEscribir && project.estado !== 'aprobado'
+  // Se puede editar mientras la propuesta sea editable (borrador o rechazada);
+  // una vez enviada queda en revisión y solo se consulta.
+  const puedeEditar = puedeEscribir && ['borrador', 'rechazado'].includes(project.estado)
+
+  // Envío explícito: el backend valida, detecta similitudes y avisa al instructor.
+  async function enviarPropuesta() {
+    setAviso('')
+    setAvisoError('')
+    setEnviandoPropuesta(true)
+    try {
+      await proyectos.enviar(project.id)
+      navigate('/aprendiz/analizando-proyecto', { state: { projectId: project.id }, replace: true })
+    } catch (err) {
+      setAvisoError(err?.data?.message || 'No se pudo enviar la propuesta.')
+      setEnviandoPropuesta(false)
+    }
+  }
 
   function iniciarEdicion() {
     setForm({
@@ -184,6 +199,7 @@ export default function DetalleProyecto() {
     })
     setErrores({})
     setAviso('')
+    setAvisoError('')
     setEditando(true)
   }
 
@@ -194,6 +210,7 @@ export default function DetalleProyecto() {
     if (form.objetivo_general.trim().length < 15) errs.objetivo_general = 'El objetivo general debe tener al menos 15 caracteres.'
     const objetivos = form.objetivos_especificos.split('\n').map((l) => l.trim()).filter(Boolean)
     if (objetivos.length < 2) errs.objetivos_especificos = 'Escribe al menos 2 objetivos específicos (uno por línea).'
+    else if (objetivos.some((o) => o.length < 8)) errs.objetivos_especificos = 'Cada objetivo específico debe tener al menos 8 caracteres.'
     if (!form.area_aplicacion.trim()) errs.area_aplicacion = 'Indica el área de aplicación.'
     return errs
   }
@@ -214,17 +231,14 @@ export default function DetalleProyecto() {
         area_aplicacion: form.area_aplicacion.trim(),
         objetivo_general: form.objetivo_general.trim() || null,
         objetivos_especificos: objetivosValidos,
-        estado: project.estado === 'rechazado' ? 'pendiente' : project.estado,
         id_creador: project.id_creador,
         id_instructor_asignado: project.id_instructor_asignado,
         id_class_group: project.id_class_group,
       })
-      // El contenido cambió: el backend vuelve a puntuar sus coincidencias.
-      try { await similitudesApi.detectar(project.id) } catch { /* no bloquea el guardado */ }
-      await Promise.all([recargar(), recargarSims()])
+      await recargar()
       setEditando(false)
       setAviso(project.estado === 'rechazado'
-        ? 'Propuesta reenviada: vuelve a quedar pendiente de revisión.'
+        ? 'Propuesta actualizada. Revísala y envíala de nuevo cuando estés listo.'
         : 'Propuesta actualizada correctamente.')
     } catch (err) {
       setErrores({ titulo: err?.data?.message || 'No se pudo actualizar la propuesta.' })
@@ -322,6 +336,11 @@ export default function DetalleProyecto() {
                     <PencilSimple size={14} /> Editar
                   </Button>
                 )}
+                {puedeEditar && (
+                  <Button type="button" disabled={enviandoPropuesta} onClick={enviarPropuesta}>
+                    <PaperPlaneRight size={14} /> {enviandoPropuesta ? 'Enviando…' : 'Enviar propuesta'}
+                  </Button>
+                )}
                 {esCreador && puedeEscribir && (
                   <Button type="button" variant="dangerGhost" onClick={() => setModalEliminar(true)}>
                     <Trash size={14} /> Eliminar
@@ -336,6 +355,8 @@ export default function DetalleProyecto() {
           <p className={s.muted} role="status"><CheckCircle size={14} /> {aviso}</p>
         )}
 
+        {avisoError && <Alert variant="danger">{avisoError}</Alert>}
+
         {eliminarError && <Alert variant="danger">{eliminarError}</Alert>}
 
         {soloLectura && <Alert variant="info">{motivoSoloLectura}</Alert>}
@@ -349,7 +370,7 @@ export default function DetalleProyecto() {
                     <Input
                       value={form.titulo}
                       onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
-                      maxLength={120}
+                      maxLength={MAX_TITULO}
                     />
                   </FormField>
                   <FormField label="Descripción" required error={errores.resumen}>
@@ -357,6 +378,7 @@ export default function DetalleProyecto() {
                       rows={4}
                       value={form.resumen}
                       onChange={(e) => setForm((f) => ({ ...f, resumen: e.target.value }))}
+                      maxLength={MAX_DESCRIPCION}
                     />
                   </FormField>
                   <FormField label="Objetivo general" required error={errores.objetivo_general}>
@@ -364,6 +386,7 @@ export default function DetalleProyecto() {
                       rows={3}
                       value={form.objetivo_general}
                       onChange={(e) => setForm((f) => ({ ...f, objetivo_general: e.target.value }))}
+                      maxLength={MAX_DESCRIPCION_CORTA}
                     />
                   </FormField>
                   <FormField label="Objetivos específicos" required error={errores.objetivos_especificos} help="Uno por línea.">
@@ -390,7 +413,7 @@ export default function DetalleProyecto() {
                     </FormField>
                   </div>
                   {project.estado === 'rechazado' && (
-                    <p className={s.muted}><Warning size={14} /> Al guardar, la propuesta vuelve a quedar pendiente de revisión.</p>
+                    <p className={s.muted}><Warning size={14} /> Al guardar, la propuesta sigue rechazada. Cuando termines, usa «Enviar propuesta» para reenviarla a revisión (el sistema exige que el contenido haya cambiado).</p>
                   )}
                   <Actions form>
                     <Button type="submit" disabled={guardando}>
@@ -432,6 +455,7 @@ export default function DetalleProyecto() {
                     })}
                   </ul>
                 )}
+                <SimilitudesHistoricas proyectoId={project.id} detalleBase="/aprendiz" />
               </DataPanel>
 
               <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>
@@ -471,6 +495,8 @@ export default function DetalleProyecto() {
                   <p className={s.muted}>Solo lectura: no puedes agregar observaciones.</p>
                 )}
               </DataPanel>
+
+              <HistorialProyecto projectId={project.id} />
 
               <DataPanel title="Equipo" icon={<UsersThree />}>
                 {equipoError && <Alert variant="danger">{equipoError}</Alert>}

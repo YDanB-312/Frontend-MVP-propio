@@ -14,26 +14,17 @@ import { gradeForScore, NIVEL_GRADO } from '../../../components/GradeBadge/grade
 import { useMotor } from '../../../contexts/MotorContext'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi } from '../../../lib/recursos'
-import { formatearFecha } from '../../../utils/helpers'
+import { proyectos, similitudes as similitudesApi, INCLUDE_PROYECTOS } from '../../../lib/recursos'
+import { formatearFecha, esPropietarioProyecto, nombreCompleto } from '../../../utils/helpers'
 import s from './ResultadoAnalisis.module.css'
 
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
 function nombreUsuario(u) {
-  if (!u) return 'Usuario'
-  return [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo || 'Usuario'
+  return nombreCompleto(u, u?.correo || 'Usuario')
 }
 
 // Una propuesta es del aprendiz si la creó o si figura en su equipo.
-function esMia(proyecto, userId) {
-  if (!proyecto) return false
-  if (Number(proyecto.id_creador) === Number(userId)) return true
-  return (proyecto.apprentices || []).some(
-    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
-  )
-}
-
+const esMia = esPropietarioProyecto
 export default function ResultadoAnalisis() {
   const { user } = useAuth()
   const { umbralPct } = useMotor()
@@ -190,7 +181,7 @@ export default function ResultadoAnalisis() {
         : [
             '¡Buen trabajo! Tu proyecto muestra un nivel bajo de coincidencia.',
             'Continúa documentando con detalle tu proceso y fuentes.',
-            'Guarda este análisis como evidencia de originalidad.',
+            'Documenta este resultado como evidencia de originalidad.',
           ]
 
   return (

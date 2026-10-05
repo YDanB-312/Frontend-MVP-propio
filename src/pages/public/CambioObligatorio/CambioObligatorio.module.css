@@ -33,9 +33,9 @@
   align-items: center;
   gap: var(--sp-2);
   padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--radius-md);
-  background: var(--c-danger-bg, rgba(192, 57, 43, 0.1));
-  color: var(--c-danger, #c0392b);
+  border-radius: var(--r-md);
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
   font-size: var(--text-sm);
   margin: 0;
 }

@@ -31,13 +31,6 @@
 }
 
 /* ── Table container ── */
-.tableWrap {
-  overflow-x: auto;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
-  box-shadow: var(--sh-card);
-}
 
 /* ── Table element ── */
 .table {
@@ -80,16 +73,7 @@
 }
 
 /* ── Clickable text link in cells ── */
-.titleLink {
-  display: block;
-  font-weight: 600;
-  color: var(--c-text);
-}
 
-.titleLink:hover {
-  color: var(--c-primary);
-  text-decoration: underline;
-}
 
 /* ── Bold text (non-linked) in cells ── */
 .title {
@@ -99,16 +83,7 @@
 }
 
 /* ── Name link in cells ── */
-.nameLink {
-  display: block;
-  font-weight: 600;
-  color: var(--c-text);
-}
 
-.nameLink:hover {
-  color: var(--c-primary);
-  text-decoration: underline;
-}
 
 /* ── Count badge pill ── */
 .count {
@@ -187,9 +162,6 @@
 }
 
 /* ── Actions column ── */
-.colActions {
-  text-align: right;
-}
 
 .actions {
   display: inline-flex;
@@ -208,13 +180,6 @@
 
 /* ── Mobile: table → cards ── */
 @media (max-width: 768px) {
-  .tableWrap {
-    overflow-x: visible;
-    border: none;
-    box-shadow: none;
-    background: transparent;
-    border-radius: 0;
-  }
 
   .table {
     min-width: 0;
@@ -268,12 +233,7 @@
     color: var(--c-text-3);
   }
 
-  .colActions {
-    text-align: right;
-  }
-
-  .actions,
-  .colActions .actions {
+  .actions {
     justify-content: flex-end;
     flex-wrap: wrap;
   }
@@ -304,6 +264,24 @@
   box-shadow: var(--sh-card-h);
   border-color: var(--c-border-h);
   transform: translateY(-1px);
+}
+
+/* Tarjeta con enlace extendido: toda la superficie abre el detalle (el botón
+   "Enviar" del footer queda por encima y conserva su clic). */
+.cardClickable {
+  position: relative;
+}
+
+.cardClickable .cardTitle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-xl);
+}
+
+.cardClickable .cardFooter button {
+  position: relative;
+  z-index: 1;
 }
 
 .cardHeader {

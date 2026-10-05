@@ -1,5 +1,5 @@
-// Playbook del agente APRENDIZ: propuestas (crear/editar/comentar), fichas,
-// alertas, perfil y reporte de fallas. Datos propios (sufijo único).
+// Playbook del agente APRENDIZ: propuestas (borrador/editar/enviar/comentar),
+// alertas, perfil y soporte. Datos propios (sufijo único).
 import { expect } from '@playwright/test'
 
 export async function aprendiz(h) {
@@ -7,7 +7,7 @@ export async function aprendiz(h) {
   const titulo = `Propuesta Agente ${h.sufijo}`
   const tituloEditado = `${titulo} (editada)`
 
-  await h.paso('crear propuesta', async () => {
+  await h.paso('crear borrador', async () => {
     await h.ir('/aprendiz/propuestas')
     await h.auditar()
     h.usar('Nueva propuesta')
@@ -18,10 +18,10 @@ export async function aprendiz(h) {
     await page.locator('textarea').nth(1).fill('Validar el registro y la edición de propuestas por parte del aprendiz.')
     await page.locator('textarea').nth(2).fill('Registrar la propuesta desde el formulario.\nVerificar el análisis de similitud posterior.')
     await page.locator('select').nth(0).selectOption({ index: 1 })
-    await page.getByRole('button', { name: /Enviar propuesta/i }).click()
+    h.usar('Guardar borrador')
+    await page.getByRole('button', { name: /Guardar borrador/i }).click()
 
-    await page.waitForURL('**/aprendiz/analizando-proyecto', { timeout: 15000 })
-    await page.waitForURL('**/aprendiz/resultado-analisis**', { timeout: 20000 })
+    await h.esperar(titulo, 15000)
   })
 
   await h.paso('editar propuesta propia', async () => {
@@ -37,7 +37,18 @@ export async function aprendiz(h) {
     await h.esperar(tituloEditado)
   })
 
+  await h.paso('enviar propuesta', async () => {
+    // El envío explícito ejecuta el motor en el servidor y avisa al instructor.
+    h.usar('Enviar propuesta')
+    await page.getByRole('button', { name: /Enviar propuesta/i }).click()
+    await page.waitForURL('**/aprendiz/analizando-proyecto', { timeout: 15000 })
+    await page.waitForURL('**/aprendiz/resultado-analisis**', { timeout: 20000 })
+  })
+
   await h.paso('comentar propuesta', async () => {
+    await h.ir('/aprendiz/propuestas')
+    await page.getByText(tituloEditado, { exact: false }).first().click()
+    await page.waitForURL('**/aprendiz/detalle-proyecto/**')
     h.usar('Agregar observación')
     await page.getByLabel('Escribe un comentario sobre la propuesta').fill(`Comentario del agente ${h.sufijo}.`)
     await page.getByRole('button', { name: /Agregar observación/i }).click()

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
@@ -7,7 +7,8 @@ import { PROPUESTA_STATUS } from '../../../constants/estadoStatus'
 import Button from '../../../components/Button/Button'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
-import { Input, Select } from '../../../components/Input/Input'
+import { Input, Select, Textarea } from '../../../components/Input/Input'
+import FormField from '../../../components/FormField/FormField'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
@@ -16,36 +17,21 @@ import Alert from '../../../components/Alert/Alert'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instructores } from '../../../lib/recursos'
-import { fechaDesdeApi, norm } from '../../../utils/helpers'
+import { proyectos, similitudes as similitudesApi, fichas, instructores, INCLUDE_PROYECTOS } from '../../../lib/recursos'
+import { fechaDesdeApi, norm, nombreCompleto, infoSimilitud } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './RevisionPropuestas.module.css'
 import { ArrowRight, CheckCircle, ClipboardText, Tray, XCircle } from 'phosphor-react'
 import { PAGINA_TABLA } from '../../../constants/pagination'
+import { PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 // Relaciones necesarias para mostrar creador y ficha en la cola de revisión.
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,apprentices.generalUser'
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 // Máximo porcentaje y conteo de coincidencias de una propuesta.
-function infoSimilitud(lista, projectId) {
-  const pares = (lista || []).filter(
-    (x) => Number(x.id_proyecto_1) === Number(projectId) || Number(x.id_proyecto_2) === Number(projectId)
-  )
-  if (pares.length === 0) return null
-  return {
-    pct: Math.max(...pares.map((x) => Math.round(Number(x.porcentaje) || 0))),
-    count: pares.length,
-  }
-}
 
 export default function RevisionPropuestas() {
   const { user } = useAuth()
@@ -54,10 +40,15 @@ export default function RevisionPropuestas() {
   const [filtroFicha, setFiltroFicha] = useState('todos')
   const [pagina, setPagina] = useState(1)
   const [modal, setModal] = useState(null)
+  // Observación opcional del rechazo (se guarda en comments y viaja al aprendiz).
+  const [observacion, setObservacion] = useState('')
   const [msgAprobacion, setMsgAprobacion] = useState(null)
   const [selId, setSelId] = useState(null)
   const [errorAccion, setErrorAccion] = useState('')
   const msgTimer = useRef(null)
+
+  // Limpia el temporizador del aviso si se sale de la pantalla.
+  useEffect(() => () => { if (msgTimer.current) clearTimeout(msgTimer.current) }, [])
 
   // Propuestas (alcance), similitudes y catálogos del instructor: fuente única la API.
   const { data: instructoresApi } = useApi(() => instructores.listar(), [], { inicial: [] })
@@ -93,7 +84,8 @@ export default function RevisionPropuestas() {
   // Regla de negocio: proyecto propio asignado O de una ficha a cargo.
   const proyectosMios = useMemo(
     () => todosProyectos.filter(
-      (p) => Number(p.id_instructor_asignado) === Number(miFila?.id) || misFichasIds.has(Number(p.id_class_group))
+      (p) => p.estado !== 'borrador'
+        && (Number(p.id_instructor_asignado) === Number(miFila?.id) || misFichasIds.has(Number(p.id_class_group)))
     ),
     [todosProyectos, miFila?.id, misFichasIds]
   )
@@ -124,7 +116,7 @@ export default function RevisionPropuestas() {
 
   // Similitudes de la propuesta seleccionada (la contraparte debe estar
   // aprobada). Así una propuesta pendiente muestra sus coincidencias al revisar.
-  const { data: simsProyecto, recargar: recargarSimsProyecto } = useApi(
+  const { data: simsProyecto, setData: setSimsProyecto } = useApi(
     () => (seleccionada ? similitudesApi.listar({ proyecto_id: seleccionada.id }) : Promise.resolve([])),
     [seleccionada?.id],
     { inicial: [] }
@@ -133,37 +125,31 @@ export default function RevisionPropuestas() {
   const infoSel = seleccionada ? infoSimilitud(simsProyecto || [], seleccionada.id) : null
   const fichaSel = seleccionada?.classGroup || null
 
-  const abrirModal = (proyecto, accion) => setModal({ proyecto, accion })
+  const abrirModal = (proyecto, accion) => {
+    setObservacion('')
+    setModal({ proyecto, accion })
+  }
 
   const confirmarAccion = async () => {
     if (!modal) return
     const { proyecto, accion } = modal
     setErrorAccion('')
     try {
-      // 1) Actualiza el estado (PUT exige el objeto completo).
-      await proyectos.actualizar(proyecto.id, { ...proyecto, estado: accion })
-
-      // 2) Notifica al creador de la propuesta.
-      await notificaciones.crear({
-        titulo: accion === 'aprobado'
-          ? `Tu proyecto '${proyecto.titulo}' ha sido Aprobado`
-          : `Tu proyecto '${proyecto.titulo}' ha sido Rechazado`,
-        tipo: 'revision',
-        enlace: `proyecto:${proyecto.id}`,
-        fecha: new Date().toISOString(),
-        id_usuario: proyecto.id_creador,
+      // 1) Actualiza el estado (el rechazo puede llevar una observación opcional).
+      // El backend registra el historial y notifica al creador.
+      await proyectos.actualizar(proyecto.id, {
+        ...proyecto,
+        estado: accion,
+        observacion: accion === 'rechazado' ? (observacion.trim() || undefined) : undefined,
       })
 
-      // 3) Al aprobar, el motor del backend calcula las coincidencias.
+      // 2) El motor ya corrió al enviar la propuesta: al aprobar solo se
+      // confirman las coincidencias detectadas (no se repite el análisis).
       if (accion === 'aprobado') {
         try {
-          await similitudesApi.detectar(proyecto.id)
-        } catch {
-          // El análisis puede recalcularse después; no impide continuar.
-        }
-        try {
+          // Una sola consulta: el motor ya corrió al enviar la propuesta.
           const lista = await similitudesApi.listar({ proyecto_id: proyecto.id })
-          await recargarSimsProyecto()
+          setSimsProyecto(lista)
           const total = lista.length
           setMsgAprobacion(
             total > 0
@@ -173,7 +159,7 @@ export default function RevisionPropuestas() {
           if (msgTimer.current) clearTimeout(msgTimer.current)
           msgTimer.current = setTimeout(() => setMsgAprobacion(null), 6000)
         } catch {
-          setMsgAprobacion('Propuesta aprobada · el análisis de similitud se procesará en segundo plano.')
+          setMsgAprobacion('Propuesta aprobada. No se pudo cargar el resumen de coincidencias; puedes verlo en Similitudes.')
         }
       }
 
@@ -231,9 +217,9 @@ export default function RevisionPropuestas() {
               }}
             >
               <option value="todos">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="aprobado">Aprobado</option>
-              <option value="rechazado">Rechazado</option>
+              {['pendiente', 'aprobado', 'rechazado'].map((valor) => (
+                <option key={valor} value={valor}>{ESTADO_LABEL[valor]}</option>
+              ))}
             </Select>
           </label>
           <label className={s.field}>
@@ -398,7 +384,22 @@ export default function RevisionPropuestas() {
         textoCancelar="Cancelar"
         onConfirmar={confirmarAccion}
         onCancelar={() => setModal(null)}
-      />
+      >
+        {modal?.accion === 'rechazado' && (
+          <FormField
+            label="Observación (opcional)"
+            help="Si la escribes, se guarda en el proyecto y el aprendiz la recibe en la notificación."
+          >
+            <Textarea
+              rows={3}
+              value={observacion}
+              onChange={(e) => setObservacion(e.target.value)}
+              maxLength={1000}
+              placeholder="Ej: falta definir el diferencial del proyecto."
+            />
+          </FormField>
+        )}
+      </ConfirmModal>
     </DashboardLayout>
   )
 }

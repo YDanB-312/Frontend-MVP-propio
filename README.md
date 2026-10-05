@@ -5,9 +5,9 @@ formativos de aprendices del SENA. Permite registrar propuestas académicas, det
 coincidencias contra un corpus aprobado, gestionar fichas y revisar el ciclo completo
 de cada proyecto con tres roles: **Aprendiz**, **Instructor** y **Administrador**.
 
-> Este frontend funciona actualmente con **datos mock** (sin integración REST).
-> El backend Laravel ya expone la API completa en `routes/api-v1.php`; la conexión
-> es el siguiente paso y queda fuera de este alcance.
+> El frontend consume la **API real** de Laravel (`MVP/backend`, rutas en
+> `routes/api-v1.php`) con sesión por cookie httpOnly; no hay datos mock ni
+> registro público (las cuentas las crea el administrador).
 
 ---
 
@@ -17,20 +17,22 @@ de cada proyecto con tres roles: **Aprendiz**, **Instructor** y **Administrador*
 - **React Router 7**
 - **CSS Modules** con tokens de diseño centralizados (`src/tokens/index.css`)
 - **phosphor-react** (iconos)
-- **react-hook-form** (formularios)
 - **Playwright** (@playwright/test) para E2E
 - **ESLint 10** (flat config) + React Compiler (`react-hooks` v7)
 - **@axe-core/playwright** para auditoría de accesibilidad
 
 ---
 
-## Roles y credenciales de prueba (mocks)
+## Roles y credenciales de prueba
 
-| Rol | Credenciales |
-|-----|--------------|
-| Aprendiz | `maria.gonzalez@soy.sena.edu.co` / `123456` |
-| Instructor | `carlos.ruiz@sena.edu.co` / `123456` |
-| Admin | `admin@sena.edu.co` / `admin123` |
+El acceso es por **nombre de usuario** (no por correo): las cuentas las crea y
+configura el administrador y no existe registro público.
+
+| Rol | Usuario | Contraseña |
+|-----|---------|------------|
+| Aprendiz | `mgonzalez` | `123456` |
+| Instructor | `cruiz` | `123456` |
+| Admin | `a` | `admin123` |
 
 ---
 
@@ -60,8 +62,8 @@ src/
 ├── pages/        # páginas por rol:
 │   ├── aprendiz/ instructor/ admin/ public/
 ├── layouts/      # DashboardLayout, LandingLayout, AuthLayout
-├── contexts/     # AuthContext (sesión mock), TemaContext, etc.
-├── data/         # mockData.js — fuente única de datos de prueba
+├── contexts/     # AuthContext (sesión real por cookie), TemaContext, MotorContext
+├── constants/    # etiquetas y variantes compartidas (estados, roles, rutas)
 ├── tokens/       # tokens de diseño CSS (escala de color SENA, sombras, radios…)
 ├── utils/        # helpers (agruparObservaciones, …)
 ├── App.jsx       # enrutado + SafeRoute (control de acceso por rol)
@@ -157,7 +159,7 @@ Sin errores: `npm run lint` → `0 problemas`.
 
 ---
 
-## Roadmap (siguiente paso)
+## Integración
 
-- **Integración REST**: conectar `src/data/mockData.js` con la API Laravel
-  (`routes/api-v1.php`) manteniendo la misma forma de los datos para minimizar cambios.
+El frontend consume la API Laravel real (proxy `/v1` y `/sanctum` en
+`vite.config.js`) con sesión por cookie httpOnly y CSRF. No hay capa mock.

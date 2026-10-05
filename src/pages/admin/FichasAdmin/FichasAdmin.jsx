@@ -19,25 +19,16 @@ import { Books, ChartBar, CheckCircle, Eye, Lifebuoy, Plus, Trash, Warning, Down
 import { useApi } from '../../../lib/useApi'
 import { fichas, programas, redes, instructores, proyectos, usuarios } from '../../../lib/recursos'
 import { toFieldErrors } from '../../../lib/api'
-import { norm, fechaDesdeApi } from '../../../utils/helpers'
-import { FICHA_ESTADO_VARIANT as ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { norm, fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
+import { FICHA_ESTADO_VARIANT as ESTADO_VARIANT, FICHA_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import c from '../../../components/FormularioBase/FormularioBase.module.css'
-import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
+import { MAX_NOMBRE, MAX_NUMERO_FICHA, esNumeroFichaValido } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
-const ESTADO_LABEL = {
-  activo: 'Activo',
-  finalizado: 'Finalizado',
-  anulada: 'Anulada',
-}
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 export default function FichasAdmin() {
   const [searchParams] = useSearchParams()
@@ -217,7 +208,7 @@ export default function FichasAdmin() {
     const numero = form.numero.trim()
     if (!numero) {
       err.numero = 'El número de ficha es obligatorio.'
-    } else if (!/^\d{4,8}$/.test(numero)) {
+    } else if (!esNumeroFichaValido(numero)) {
       err.numero = 'Solo dígitos (4 a 8 caracteres).'
     }
     return err
@@ -455,9 +446,9 @@ export default function FichasAdmin() {
                   }}
                 >
                   <option value="todos">Todos</option>
-                  <option value="activo">Activo</option>
-                  <option value="finalizado">Finalizado</option>
-                  <option value="anulada">Anulada</option>
+                  <option value="activo">{ESTADO_LABEL.activo}</option>
+                  <option value="finalizado">{ESTADO_LABEL.finalizado}</option>
+                  <option value="anulada">{ESTADO_LABEL.anulada}</option>
                 </Select>
               </label>
               <label className={s.field}>

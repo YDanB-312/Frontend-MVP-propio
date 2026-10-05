@@ -5,7 +5,6 @@ export default function AlertasInstructor() {
   return (
     <DashboardLayout role="instructor" titulo="Alertas">
       <AlertasBase
-        role="instructor"
         titulo="Alertas"
         subtitle="Notificaciones sobre revisión de proyectos, similitudes detectadas y actividad del sistema."
         detallePath="/instructor"

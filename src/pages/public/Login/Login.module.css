@@ -87,26 +87,7 @@
   color: var(--c-text-2);
 }
 
-.creds {
-  border: 1px dashed var(--c-border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-}
 
-.credsToggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: var(--sp-3) var(--sp-4);
-  background: var(--c-surface-alt);
-  border: none;
-  font-family: var(--font);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--c-text-2);
-  cursor: pointer;
-}
 
 .chevron {
   transition: transform var(--dur-normal) var(--ease-out);
@@ -116,50 +97,8 @@
   transform: rotate(180deg);
 }
 
-.credsList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  margin: 0;
-  padding: var(--sp-3);
-  list-style: none;
-}
 
-.credsItem {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-0_5);
-  width: 100%;
-  padding: var(--sp-2_5) var(--sp-3);
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-md);
-  font-family: var(--font);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease;
-}
 
-.credsItem:hover {
-  border-color: var(--c-primary);
-  background: var(--c-success-bg);
-}
 
-.credsRol {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  color: var(--c-primary-strong);
-}
 
-.credsEmail {
-  font-family: var(--mono);
-  font-size: var(--text-sm);
-  color: var(--c-text);
-}
 
-.credsPass {
-  font-size: var(--text-xs);
-  color: var(--c-text-3);
-}

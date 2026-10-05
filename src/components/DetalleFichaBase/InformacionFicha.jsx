@@ -1,22 +1,14 @@
 import { Link } from 'react-router-dom'
 import Badge from '../Badge/Badge'
 import Button from '../Button/Button'
-import { FICHA_ESTADO_VARIANT } from '../../constants/badgeVariants'
+import { FICHA_ESTADO_VARIANT, FICHA_ESTADO_LABEL as ESTADO_LABEL } from '../../constants/badgeVariants'
 import { useApi } from '../../lib/useApi'
 import { redes } from '../../lib/recursos'
 import s from './DetalleFichaBase.module.css'
 import { ArrowRight, Users } from 'phosphor-react'
+import { nombreCompleto } from '../../utils/helpers'
 
-// Etiquetas legibles del estado de la ficha (columnas reales de la API).
-const ESTADO_LABEL = {
-  activo: 'Activo',
-  finalizado: 'Finalizado',
-}
 
-// Concatena nombre + apellido de un general_user.
-function nombreCompleto(usuario) {
-  return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
 
 /**
  * Contenido compartido "Información de la ficha" — usado por

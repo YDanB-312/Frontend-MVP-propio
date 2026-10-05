@@ -36,8 +36,8 @@ const FEATURES = [
 const PASOS = [
   {
     numero: '01',
-    title: 'Crea tu cuenta',
-    description: 'Regístrate como aprendiz o instructor con tu correo electrónico en menos de un minuto.',
+    title: 'Recibe tus credenciales',
+    description: 'Tu cuenta es creada y configurada por el administrador del sistema, que te entrega usuario y contraseña temporal.',
   },
   {
     numero: '02',
@@ -122,7 +122,6 @@ export default function Home() {
             </ul>
             <div className={`${s.heroCta} fx-rise`} style={{ '--fx-i': 5 }}>
               <Button as="link" to="/login" viewTransition>Iniciar sesión</Button>
-              <Button as="link" to="/login" variant="ghost" viewTransition>Iniciar sesión</Button>
             </div>
           </div>
 

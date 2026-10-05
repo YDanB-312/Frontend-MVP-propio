@@ -23,33 +23,27 @@ import {
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { usuarios, aprendices, fichas, programas } from '../../../lib/recursos'
-import { esEmailValido, MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
+import { esEmailValido, MAX_DOCUMENTO, MAX_NOMBRE } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 
 // Estilos reutilizados de las páginas originales (lista + formulario)
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import nu from '../../../components/FormularioBase/FormularioBase.module.css'
+import { payloadCuenta } from '../../../utils/helpers'
+import { ROL_LABEL } from '../../../constants/badgeVariants'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 const ROL_VARIANT = { aprendiz: 'info', instructor: 'primary', admin: 'warning' }
-const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' }
 const ESTADO_VARIANT = { activo: 'success', suspendido: 'danger' }
 const ESTADO_LABEL = { activo: 'Activo', suspendido: 'Suspendido' }
 
+// Estado del envío de credenciales temporales al correo personal.
+const CRED_VARIANT = { enviadas: 'success', pendiente: 'warning', fallo: 'danger' }
+const CRED_LABEL = { enviadas: 'Enviadas', pendiente: 'Pendiente', fallo: 'Falló' }
+
 const TIPOS_DOCUMENTO = ['CC', 'TI', 'CE', 'PPT']
 
-// Campos que acepta PUT /general-users (requiere los escalares obligatorios).
-function payloadCuenta(cuenta, extra = {}) {
-  return {
-    nombre: cuenta.nombre,
-    apellido: cuenta.apellido,
-    correo: cuenta.correo,
-    rol: cuenta.rol,
-    estado: cuenta.estado,
-    ...extra,
-  }
-}
 
 export default function Usuarios() {
   const { user } = useAuth()
@@ -177,6 +171,17 @@ export default function Usuarios() {
     }
   }
 
+  // Reenvía las credenciales temporales al correo personal del usuario.
+  const reenviar = async (usr) => {
+    setAccionMsg(null)
+    try {
+      await usuarios.reenviarCredenciales(usr.id)
+      await recargar()
+    } catch (err) {
+      setAccionMsg(err?.data?.message || 'No se pudieron reenviar las credenciales.')
+    }
+  }
+
   /* ---------- Creación ---------- */
   const [form, setForm] = useState({
     nombre: '', apellido: '', tipoDocumento: 'CC', numeroDocumento: '', correo: '', rol: 'aprendiz',
@@ -227,6 +232,8 @@ export default function Usuarios() {
         nombre: `${resp.usuario.nombre} ${resp.usuario.apellido}`.trim(),
         username: resp.credenciales.username,
         password_temporal: resp.credenciales.password_temporal,
+        enviadas: resp.credenciales.enviadas,
+        correo: resp.usuario.correo,
       })
       setForm({ nombre: '', apellido: '', tipoDocumento: 'CC', numeroDocumento: '', correo: '', rol: 'aprendiz' })
       setErrores({})
@@ -356,7 +363,7 @@ export default function Usuarios() {
                     value={form.numeroDocumento}
                     onChange={onChange}
                     placeholder="Ej. 1234567890"
-                    maxLength={MAX_NUMERO_FICHA}
+                    maxLength={MAX_DOCUMENTO}
                   />
                 </FormField>
               </div>
@@ -392,8 +399,11 @@ export default function Usuarios() {
         ) : (
           <ApiState cargando={cargando} error={error} onReintentar={recargar}>
             {credenciales && (
-              <Alert>
+              <Alert variant={credenciales.enviadas ? 'success' : 'warning'}>
                 <CheckCircle size={14} /> Usuario <strong>{credenciales.nombre}</strong> creado.
+                {credenciales.enviadas
+                  ? <> Credenciales enviadas a <strong>{credenciales.correo}</strong>.</>
+                  : <> No se pudo enviar el correo; usa <strong>Reenviar</strong> o el PDF.</>}
                 <div className={s.actions} style={{ marginTop: 'var(--sp-2)' }}>
                   Usuario: <code className={s.codigo}>{credenciales.username}</code>
                   Contraseña temporal: <code className={s.codigo}>{credenciales.password_temporal}</code>
@@ -409,6 +419,16 @@ export default function Usuarios() {
                   >
                     <DownloadSimple size={14} /> PDF
                   </Button>
+                  {!credenciales.enviadas && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => reenviar({ id: credenciales.id })}
+                    >
+                      <ArrowCounterClockwise size={14} /> Reenviar
+                    </Button>
+                  )}
                 </div>
               </Alert>
             )}
@@ -456,7 +476,7 @@ export default function Usuarios() {
                   onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1) }}
                 >
                   <option value="todos">Todos</option>
-                  <option value="activo">Activo</option>
+                  <option value="activo">{ESTADO_LABEL.activo}</option>
                   <option value="suspendido">Suspendido</option>
                 </Select>
               </label>
@@ -564,6 +584,18 @@ export default function Usuarios() {
                       },
                     },
                     {
+                      key: 'credenciales',
+                      header: 'Credenciales',
+                      render: (usr) => {
+                        if (usr.rol === 'admin') return <span className={s.muted}>—</span>
+                        if (!usr.must_change_password) return <span className={s.muted}>Ya cambiada</span>
+                        const estado = usr.credenciales_error
+                          ? 'fallo'
+                          : (usr.credenciales_enviadas_en ? 'enviadas' : 'pendiente')
+                        return <Badge variant={CRED_VARIANT[estado]}>{CRED_LABEL[estado]}</Badge>
+                      },
+                    },
+                    {
                       key: 'estado',
                       header: 'Estado',
                       render: (usr) => {
@@ -590,6 +622,17 @@ export default function Usuarios() {
                           >
                             <Eye size={14} /> Ver
                           </Button>
+                          {usr.rol !== 'admin' && usr.must_change_password && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              title="Reenviar credenciales al correo personal"
+                              onClick={() => reenviar(usr)}
+                            >
+                              <ArrowCounterClockwise size={14} /> Reenviar
+                            </Button>
+                          )}
                           {usr.estado === false ? (
                             <Button
                               type="button"

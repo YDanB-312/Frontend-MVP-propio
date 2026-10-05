@@ -5,9 +5,9 @@
 // número de ficha: 8 dígitos). Fuente única para no divergir.
 export const MAX_NOMBRE = 80
 export const MAX_TITULO = 120
-export const MAX_CIUDAD = 60
 export const MAX_PROGRAMA = 60
 export const MAX_NUMERO_FICHA = 8
+export const MAX_DOCUMENTO = 40
 export const MAX_DESCRIPCION_CORTA = 300
 export const MAX_DESCRIPCION = 600
 
@@ -21,4 +21,9 @@ export function esEmailValido(email) {
 
 export function esPasswordValida(password) {
   return String(password || '').length >= MIN_PASSWORD_LENGTH
+}
+
+// Número de ficha: solo dígitos, 4 a 8 caracteres.
+export function esNumeroFichaValido(valor) {
+  return /^\d{4,8}$/.test(String(valor || '').trim())
 }
