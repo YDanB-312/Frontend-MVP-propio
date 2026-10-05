@@ -64,6 +64,7 @@ export default function PerfilBase({
   const [editando, setEditando] = useState(false)
   const [guardado, setGuardado] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [enviandoPass, setEnviandoPass] = useState(false)
   const [form, setForm] = useState(() => ({ nombre: '', apellido: '' }))
   const [errors, setErrors] = useState({})
   const fileRef = useRef(null)
@@ -241,6 +242,7 @@ export default function PerfilBase({
 
   async function guardarPass(e) {
     e.preventDefault()
+    if (enviandoPass) return
     const errs = {}
     if (!passForm.actual) errs.actual = 'Ingresa tu contraseña actual.'
     if (!passForm.nueva || !esPasswordValida(passForm.nueva)) {
@@ -252,13 +254,18 @@ export default function PerfilBase({
     setPassErrors(errs)
     if (Object.keys(errs).length > 0) return
 
-    const res = await cambiarMiContrasena(passForm.actual, passForm.nueva)
-    if (!res.exito) {
-      setPassErrors({ actual: res.mensaje })
-      return
+    setEnviandoPass(true)
+    try {
+      const res = await cambiarMiContrasena(passForm.actual, passForm.nueva)
+      if (!res.exito) {
+        setPassErrors({ actual: res.mensaje })
+        return
+      }
+      setCambiandoPass(false)
+      mostrarPassMsg('Contraseña actualizada correctamente.')
+    } finally {
+      setEnviandoPass(false)
     }
-    setCambiandoPass(false)
-    mostrarPassMsg('Contraseña actualizada correctamente.')
   }
 
   return (
@@ -469,8 +476,8 @@ export default function PerfilBase({
               />
             </FormField>
             <Actions form>
-              <Button type="submit">
-                <CheckCircle size={14} /> Actualizar contraseña
+              <Button type="submit" disabled={enviandoPass}>
+                <CheckCircle size={14} /> {enviandoPass ? 'Actualizando…' : 'Actualizar contraseña'}
               </Button>
               <Button variant="secondary" onClick={cancelarCambioPass}>
                 Cancelar

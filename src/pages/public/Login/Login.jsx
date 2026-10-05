@@ -27,6 +27,7 @@ export default function Login() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (cargando) return
     setError('')
 
     if (!username.trim() || !password) {

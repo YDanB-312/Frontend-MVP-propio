@@ -75,6 +75,8 @@ export default function Propuestas() {
   const [busqueda, setBusqueda] = useState('')
   const [filtro, setFiltro] = useState('todos')
   const [pagina, setPagina] = useState(1)
+  // Borrador ya creado si el envío falló: evita duplicar la propuesta al reintentar.
+  const [borradorId, setBorradorId] = useState(null)
 
   const { data: todosProyectos, cargando, error, recargar } = useApi(
     () => proyectos.listar({ included: INCLUDE_PROYECTOS }),
@@ -192,10 +194,12 @@ export default function Propuestas() {
       navigate('/aprendiz/ficha')
       return
     }
+    setBorradorId(null)
     setCreando(true)
   }
 
   function volverALista() {
+    setBorradorId(null)
     setCreando(false)
   }
 
@@ -230,6 +234,7 @@ export default function Propuestas() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (guardando) return
     const errs = validar()
     setErrors(errs)
     setErrorGeneral('')
@@ -239,37 +244,43 @@ export default function Propuestas() {
       return
     }
 
+    let id = borradorId
     setGuardando(true)
     try {
-      // 1) Crear el borrador en el backend (nace sin enviar).
-      const nueva = await proyectos.crear({
-        titulo: form.title.trim(),
-        resumen: form.description.trim(),
-        palabras_clave: form.keywords.trim() || null,
-        area_aplicacion: form.areaAplicacion,
-        objetivo_general: form.objetivoGeneral.trim(),
-        objetivos_especificos: objetivosValidos,
-        id_creador: Number(user.id),
-        id_instructor_asignado: instructorId,
-        id_class_group: Number(miFicha.id),
-      })
-
-      // 2) Vincular a los compañeros seleccionados al equipo (pivote). Los que
-      // fallen se reportan: no se finge que quedaron vinculados.
       const equipoFallidos = []
-      for (const idAprendiz of seleccionados) {
-        try {
-          await proyectos.agregarAlEquipo(Number(idAprendiz), Number(nueva.id))
-        } catch {
-          equipoFallidos.push(Number(idAprendiz))
+
+      // 1) Solo la primera vez: crear el borrador y vincular el equipo. Si el
+      // envío falla, el reintento reutiliza el MISMO borrador (sin duplicar).
+      if (!id) {
+        const nueva = await proyectos.crear({
+          titulo: form.title.trim(),
+          resumen: form.description.trim(),
+          palabras_clave: form.keywords.trim() || null,
+          area_aplicacion: form.areaAplicacion,
+          objetivo_general: form.objetivoGeneral.trim(),
+          objetivos_especificos: objetivosValidos,
+          id_creador: Number(user.id),
+          id_instructor_asignado: instructorId,
+          id_class_group: Number(miFicha.id),
+        })
+        id = nueva.id
+        setBorradorId(id)
+
+        for (const idAprendiz of seleccionados) {
+          try {
+            await proyectos.agregarAlEquipo(Number(idAprendiz), Number(id))
+          } catch {
+            equipoFallidos.push(Number(idAprendiz))
+          }
         }
       }
 
-      // 3) Envío explícito: el backend valida, detecta similitudes y avisa al
+      // 2) Envío explícito: el backend valida, detecta similitudes y avisa al
       // instructor. La pantalla de análisis espera ese resultado.
-      await proyectos.enviar(nueva.id)
+      await proyectos.enviar(id)
+      setBorradorId(null)
       navigate('/aprendiz/analizando-proyecto', {
-        state: { projectId: nueva.id, equipoFallidos },
+        state: { projectId: id, equipoFallidos },
         replace: true,
       })
     } catch (err) {
@@ -280,7 +291,11 @@ export default function Propuestas() {
       }
       setErrors(traducidos)
       if (Object.keys(traducidos).length === 0) {
-        setErrorGeneral(err?.data?.message || err?.message || 'No se pudo enviar la propuesta. Intenta de nuevo.')
+        setErrorGeneral(
+          id
+            ? 'La propuesta quedó guardada como borrador. Corrige lo indicado y reenvíala desde la tarjeta.'
+            : (err?.data?.message || err?.message || 'No se pudo enviar la propuesta. Intenta de nuevo.')
+        )
       }
     } finally {
       setGuardando(false)

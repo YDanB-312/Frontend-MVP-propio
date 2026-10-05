@@ -8,7 +8,7 @@ import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { similitudes as similitudesApi, observaciones as observacionesApi } from '../../../lib/recursos'
-import { esPropietarioProyecto, formatearFecha, nombreCompleto } from '../../../utils/helpers'
+import { esPropietarioProyecto, fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
 
 
@@ -53,7 +53,7 @@ export default function DetalleSimilitud() {
   const observaciones = (comentariosApi || []).map((c) => ({
     id: c.id,
     autor: nombreCompleto(c.user, c.user?.correo || 'Usuario'),
-    fecha: formatearFecha(c.created_at),
+    fecha: fechaDesdeApi(c.created_at),
     texto: c.texto,
   }))
 

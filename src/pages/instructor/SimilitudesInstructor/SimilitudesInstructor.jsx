@@ -246,9 +246,7 @@ export default function SimilitudesInstructor() {
               }}
             >
               <option value="todos">Todos</option>
-              <option value="pendiente">{ESTADO_LABEL.pendiente}</option>
               <option value="aprobado">{ESTADO_LABEL.aprobado}</option>
-              <option value="rechazado">{ESTADO_LABEL.rechazado}</option>
             </Select>
           </label>
           <label className={s.field}>

@@ -9,7 +9,7 @@ import ApiState from '../../../components/ApiState/ApiState'
 import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFicha'
 import { useApi } from '../../../lib/useApi'
 import { fichas, proyectos } from '../../../lib/recursos'
-import { formatearFecha, nombreCompleto } from '../../../utils/helpers'
+import { fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 import { ArrowRight, CalendarBlank, FolderOpen, GraduationCap, IdentificationCard, MagnifyingGlass, Users } from 'phosphor-react'
@@ -136,7 +136,7 @@ function PropuestasFicha({ proyectos: lista, base }) {
               <Link to={`${base}/detalle-proyecto/${p.id}`} viewTransition className={s.studentRow}>
                 <span className={s.studentInfo}>
                   <span className={s.studentName}>{p.titulo}</span>
-                  <span className={s.studentEmail}><CalendarBlank size={12} /> {formatearFecha(p.created_at)}</span>
+                  <span className={s.studentEmail}><CalendarBlank size={12} /> {fechaDesdeApi(p.created_at)}</span>
                 </span>
                 <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
                   {ESTADO_LABEL[p.estado] || p.estado}

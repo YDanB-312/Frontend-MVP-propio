@@ -11,7 +11,7 @@ import Pagination from '../../../components/Pagination/Pagination'
 import Button from '../../../components/Button/Button'
 import { useApi } from '../../../lib/useApi'
 import { auditoria, usuarios } from '../../../lib/recursos'
-import { formatearFecha, nombreCompleto } from '../../../utils/helpers'
+import { fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import { PAGINA_TABLA } from '../../../constants/pagination'
 import { ClockCounterClockwise } from 'phosphor-react'
 
@@ -113,7 +113,7 @@ export default function Bitacora() {
     {
       key: 'created_at',
       header: 'Fecha',
-      render: (r) => formatearFecha(r.created_at),
+      render: (r) => fechaDesdeApi(r.created_at),
     },
     {
       key: 'usuario',

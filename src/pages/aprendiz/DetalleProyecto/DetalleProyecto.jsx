@@ -253,6 +253,7 @@ export default function DetalleProyecto() {
 
   async function agregarObservacion(e) {
     e.preventDefault()
+    if (enviando) return
     const t = texto.trim()
     if (!t) return
     setEnviando(true)

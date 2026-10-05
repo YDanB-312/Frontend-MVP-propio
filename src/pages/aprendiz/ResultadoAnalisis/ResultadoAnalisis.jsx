@@ -15,7 +15,7 @@ import { useMotor } from '../../../contexts/MotorContext'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, INCLUDE_PROYECTOS } from '../../../lib/recursos'
-import { formatearFecha, esPropietarioProyecto, nombreCompleto } from '../../../utils/helpers'
+import { fechaDesdeApi, esPropietarioProyecto, nombreCompleto } from '../../../utils/helpers'
 import s from './ResultadoAnalisis.module.css'
 
 
@@ -238,7 +238,7 @@ export default function ResultadoAnalisis() {
                       <span className={s.matchTitle}>{otro?.titulo || 'Proyecto no disponible'}</span>
                       <span className={s.matchMeta}>
                         <User size={12} /> {nombreUsuario(otro?.creator)}
-                        <CalendarBlank size={12} /> {formatearFecha(sim.fecha)}
+                        <CalendarBlank size={12} /> {fechaDesdeApi(sim.fecha)}
                       </span>
                     </span>
                     <span className={s.matchRight}>

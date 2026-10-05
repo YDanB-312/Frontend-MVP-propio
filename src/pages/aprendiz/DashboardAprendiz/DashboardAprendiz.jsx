@@ -16,7 +16,7 @@ import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, notificaciones, INCLUDE_PROYECTOS } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 import { useAuth } from '../../../contexts/AuthContext'
-import { formatearFecha, esPropietarioProyecto, infoSimilitud } from '../../../utils/helpers'
+import { fechaDesdeApi, esPropietarioProyecto, infoSimilitud } from '../../../utils/helpers'
 import { RECIENTES } from '../../../constants/pagination'
 import s from './DashboardAprendiz.module.css'
 
@@ -88,7 +88,7 @@ export default function DashboardAprendiz() {
       key: p.id,
       to: `/aprendiz/detalle-proyecto/${p.id}`,
       title: p.titulo,
-      meta: `${formatearFecha(p.created_at)} · ${ESTADO_LABEL[p.estado] || p.estado}`,
+      meta: `${fechaDesdeApi(p.created_at)} · ${ESTADO_LABEL[p.estado] || p.estado}`,
       side: (
         <>
           {info && (

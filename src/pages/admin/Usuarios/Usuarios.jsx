@@ -63,6 +63,7 @@ export default function Usuarios() {
   // Credenciales recién generadas (se muestran una sola vez tras crear).
   const [credenciales, setCredenciales] = useState(null)
   const [exportando, setExportando] = useState(false)
+  const [accionOcupada, setAccionOcupada] = useState(false)
   const [seleccionados, setSeleccionados] = useState([])
   const msgTimer = useRef(null)
 
@@ -173,12 +174,16 @@ export default function Usuarios() {
 
   // Reenvía las credenciales temporales al correo personal del usuario.
   const reenviar = async (usr) => {
+    if (accionOcupada) return
     setAccionMsg(null)
+    setAccionOcupada(true)
     try {
       await usuarios.reenviarCredenciales(usr.id)
       await recargar()
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudieron reenviar las credenciales.')
+    } finally {
+      setAccionOcupada(false)
     }
   }
 
@@ -269,13 +274,17 @@ export default function Usuarios() {
 
   /* ---------- Estado (activar / suspender) ---------- */
   const cambiarEstado = async (usr, nuevoEstado) => {
+    if (accionOcupada) return
     setAccionMsg(null)
+    setAccionOcupada(true)
     try {
       const cuenta = await usuarios.obtener(usr.id)
       await usuarios.actualizar(usr.id, payloadCuenta(cuenta, { estado: nuevoEstado }))
       await recargar()
     } catch (err2) {
       setAccionMsg(err2?.data?.message || 'No se pudo actualizar el estado del usuario.')
+    } finally {
+      setAccionOcupada(false)
     }
   }
 
@@ -628,6 +637,7 @@ export default function Usuarios() {
                               size="sm"
                               variant="ghost"
                               title="Reenviar credenciales al correo personal"
+                              disabled={accionOcupada}
                               onClick={() => reenviar(usr)}
                             >
                               <ArrowCounterClockwise size={14} /> Reenviar
@@ -639,6 +649,7 @@ export default function Usuarios() {
                               size="sm"
                               variant="ghost"
                               title="Reactivar cuenta"
+                              disabled={accionOcupada}
                               onClick={() => cambiarEstado(usr, true)}
                             >
                               <ArrowCounterClockwise size={14} /> Activar

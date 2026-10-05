@@ -23,6 +23,7 @@ export default function CambioObligatorio() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (cargando) return
     setError('')
     if (!actual || !nueva || !confirmar) {
       setError('Completa todos los campos.')

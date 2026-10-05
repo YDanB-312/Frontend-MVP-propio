@@ -25,7 +25,7 @@ import {
   fichas,
   instructores,
 } from '../../../lib/recursos'
-import { agruparObservaciones, formatearFecha, fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
+import { agruparObservaciones, fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 import { ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, X, LockKey, Plus, XCircle } from 'phosphor-react'
@@ -59,6 +59,7 @@ export default function DetalleProyectoInstructor() {
   const [fotoViendo, setFotoViendo] = useState(null)
   const [enviandoObs, setEnviandoObs] = useState(false)
   const [obsError, setObsError] = useState('')
+  const [accionError, setAccionError] = useState('')
 
   // Propuesta, similitudes del par y observaciones: fuente única la API.
   const { data: proyecto, cargando, error, recargar: recargarProyecto } = useApi(
@@ -100,7 +101,7 @@ export default function DetalleProyectoInstructor() {
       respuestaA: c.respuesta_a,
       autor: `${nombreCompleto(c.user) || 'Usuario'} | ${ROL_LABEL[c.user?.rol] || 'Comentario'}`,
       texto: c.texto,
-      fecha: formatearFecha(c.created_at),
+      fecha: fechaDesdeApi(c.created_at),
     })),
     [comentariosApi]
   )
@@ -153,18 +154,21 @@ export default function DetalleProyectoInstructor() {
   const confirmarAccion = async () => {
     if (!modal) return
     const estado = modal.estado
+    setAccionError('')
     try {
       // El backend registra historial/notifica; el motor ya corrió al enviar.
       await proyectos.actualizar(proyecto.id, { ...proyecto, estado })
       await Promise.all([recargarProyecto(), recargarSims()])
-    } catch {
-      // El error se refleja al recargar la propuesta; se cierra el modal.
+    } catch (err) {
+      // El error se muestra al usuario; la propuesta queda como estaba.
+      setAccionError(err?.data?.message || 'No se pudo actualizar el estado de la propuesta.')
     }
     setModal(null)
   }
 
   const agregarObservacion = async (e) => {
     e.preventDefault()
+    if (enviandoObs) return
     const texto = textoObs.trim()
     if (!texto) return
     setEnviandoObs(true)
@@ -309,6 +313,7 @@ export default function DetalleProyectoInstructor() {
             />
           )}
           {obsError && <Alert variant="danger">{obsError}</Alert>}
+          {accionError && <Alert variant="danger">{accionError}</Alert>}
 
           <form className={s.obsForm} onSubmit={agregarObservacion}>
             <Textarea

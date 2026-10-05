@@ -11,7 +11,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { usuarios, aprendices, fichas, proyectos, similitudes as similitudesApi, INCLUDE_PROYECTOS } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL, ROL_LABEL } from '../../../constants/badgeVariants'
-import { formatearFecha, esPropietarioProyecto, infoSimilitud, nombreCompleto } from '../../../utils/helpers'
+import { fechaDesdeApi, esPropietarioProyecto, infoSimilitud, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import { CalendarBlank, FolderOpen, Info, MagnifyingGlass } from 'phosphor-react'
 
@@ -136,7 +136,7 @@ export default function DetalleCompanero() {
                       <Link to={`${base}/detalle-proyecto/${p.id}`} viewTransition className={s.row}>
                         <span className={s.rowInfo}>
                           <span className={s.rowTitle}>{p.titulo}</span>
-                          <span className={s.rowMeta}><CalendarBlank size={14} /> {formatearFecha(p.created_at)}</span>
+                          <span className={s.rowMeta}><CalendarBlank size={14} /> {fechaDesdeApi(p.created_at)}</span>
                         </span>
                         <span className={s.rowSide}>
                           {pct != null && <GradeBadge score={pct} size="sm" />}

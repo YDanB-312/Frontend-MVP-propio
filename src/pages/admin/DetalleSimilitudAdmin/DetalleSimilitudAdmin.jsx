@@ -34,6 +34,7 @@ export default function DetalleSimilitudAdmin() {
   const [proyectoObs, setProyectoObs] = useState('1')
   const [textoObs, setTextoObs] = useState('')
   const [obsError, setObsError] = useState('')
+  const [enviandoObs, setEnviandoObs] = useState(false)
 
   // Fuente única: la API. Similitud + observaciones de ambas propuestas del par.
   const { data, cargando, error, recargar } = useApi(
@@ -75,10 +76,12 @@ export default function DetalleSimilitudAdmin() {
 
   const agregarObservacion = async (e) => {
     e.preventDefault()
+    if (enviandoObs) return
     const texto = textoObs.trim()
     if (!texto) return
     const idProyecto = Number(proyectoObs) === 1 ? similitud.id_proyecto_1 : similitud.id_proyecto_2
     setObsError('')
+    setEnviandoObs(true)
     try {
       await observaciones.crear({
         texto,
@@ -91,6 +94,8 @@ export default function DetalleSimilitudAdmin() {
     } catch (err) {
       // El formulario conserva el texto para reintentar, ahora con feedback.
       setObsError(err?.data?.message || 'No se pudo publicar la observación.')
+    } finally {
+      setEnviandoObs(false)
     }
   }
 
@@ -115,7 +120,7 @@ export default function DetalleSimilitudAdmin() {
             placeholder="Escribe una observación sobre la propuesta seleccionada…"
           />
         </div>
-        <Button type="submit" disabled={!textoObs.trim()}>
+        <Button type="submit" disabled={!textoObs.trim() || enviandoObs}>
           <Plus size={14} /> Agregar observación
         </Button>
       </form>

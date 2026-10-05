@@ -22,6 +22,7 @@ export default function RestablecerContrasena() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (enviando) return
     setError('')
 
     if (!esPasswordValida(password)) {

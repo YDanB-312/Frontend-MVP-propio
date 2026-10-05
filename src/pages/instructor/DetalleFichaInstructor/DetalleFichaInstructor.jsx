@@ -19,7 +19,7 @@ import InformacionFicha from '../../../components/DetalleFichaBase/InformacionFi
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { fichas, instructores, proyectos } from '../../../lib/recursos'
-import { formatearFecha, nombreCompleto } from '../../../utils/helpers'
+import { fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 import { ArrowRight, Books, CalendarBlank, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, LockKey, MagnifyingGlass, PencilLine, Trash, Users, Warning } from 'phosphor-react'
 
@@ -302,7 +302,7 @@ export default function DetalleFichaInstructor() {
                   <Link to={`/instructor/detalle-proyecto/${p.id}`} viewTransition className={s.studentRow}>
                     <span className={s.studentInfo}>
                       <span className={s.studentName}>{p.titulo}</span>
-                      <span className={s.studentEmail}><CalendarBlank size={12} /> {formatearFecha(p.created_at)}</span>
+                      <span className={s.studentEmail}><CalendarBlank size={12} /> {fechaDesdeApi(p.created_at)}</span>
                     </span>
                     <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
                       {ESTADO_LABEL[p.estado] || p.estado}

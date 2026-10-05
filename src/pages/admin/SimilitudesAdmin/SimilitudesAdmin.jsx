@@ -12,6 +12,7 @@ import DataTable from '../../../components/DataTable/DataTable'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import StatChip from '../../../components/StatChip/StatChip'
 import ApiState from '../../../components/ApiState/ApiState'
+import Alert from '../../../components/Alert/Alert'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { useApi } from '../../../lib/useApi'
 import { similitudes, proyectos, programas, fichas, motor } from '../../../lib/recursos'
@@ -37,6 +38,7 @@ export default function SimilitudesAdmin() {
   const [hasta, setHasta] = useState('')
   const [pagina, setPagina] = useState(1)
   const [aEliminar, setAEliminar] = useState(null)
+  const [errorAccion, setErrorAccion] = useState('')
 
   // Fuente única: la API. Similitudes + propuestas (autores/estado) + catálogos.
   const { data, cargando, error, recargar } = useApi(
@@ -56,12 +58,14 @@ export default function SimilitudesAdmin() {
 
   async function confirmarEliminar() {
     if (!aEliminar) return
+    setErrorAccion('')
     try {
       await similitudes.eliminar(aEliminar.id)
       setAEliminar(null)
       await recargar()
-    } catch {
+    } catch (err) {
       setAEliminar(null)
+      setErrorAccion(err?.data?.message || 'No se pudo eliminar la similitud. Intenta de nuevo.')
     }
   }
 
@@ -159,6 +163,8 @@ export default function SimilitudesAdmin() {
           }
         />
 
+        {errorAccion && <Alert variant="danger">{errorAccion}</Alert>}
+
         <ApiState cargando={cargando} error={error} onReintentar={recargar}>
           <div className={local.tira} role="status" aria-label="Resumen de coincidencias">
             <StatChip label="Pares" value={listaSimilitudes.length} />
@@ -189,9 +195,7 @@ export default function SimilitudesAdmin() {
                 }}
               >
                 <option value="todos">Todos</option>
-                <option value="pendiente">{ESTADO_LABEL.pendiente}</option>
                 <option value="aprobado">{ESTADO_LABEL.aprobado}</option>
-                <option value="rechazado">{ESTADO_LABEL.rechazado}</option>
               </Select>
             </label>
             <label className={s.field}>

@@ -38,6 +38,7 @@ export default function DetalleReporte() {
   const [respuesta, setRespuesta] = useState('')
   const [guardado, setGuardado] = useState(false)
   const [accionMsg, setAccionMsg] = useState(null)
+  const [enviandoEstado, setEnviandoEstado] = useState(false)
   const [fotoViendo, setFotoViendo] = useState(null)
 
   // Fuente única: la API (reporte + usuario reportante incluido).
@@ -90,7 +91,9 @@ export default function DetalleReporte() {
 
   const guardarEstado = async (e) => {
     e.preventDefault()
+    if (enviandoEstado) return
     setAccionMsg(null)
+    setEnviandoEstado(true)
     try {
       // El backend registra la bitácora y avisa al solicitante cuando la
       // solicitud se cierra (resuelta/rechazada).
@@ -109,6 +112,8 @@ export default function DetalleReporte() {
       setGuardado(true)
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado de la solicitud.')
+    } finally {
+      setEnviandoEstado(false)
     }
   }
 
@@ -218,7 +223,7 @@ export default function DetalleReporte() {
             </label>
             <Button
               type="submit"
-              disabled={nuevoEstado === reporte.estado && respuesta === (reporte.respuesta || '')}
+              disabled={enviandoEstado || (nuevoEstado === reporte.estado && respuesta === (reporte.respuesta || ''))}
             >
               <CheckCircle size={14} /> Guardar
             </Button>

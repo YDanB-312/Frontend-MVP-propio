@@ -6,6 +6,7 @@ import Badge from '../Badge/Badge'
 import Button from '../Button/Button'
 import EmptyState from '../EmptyState/EmptyState'
 import ApiState from '../ApiState/ApiState'
+import Alert from '../Alert/Alert'
 import ConfirmModal from '../ConfirmModal/ConfirmModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../lib/useApi'
@@ -21,12 +22,13 @@ const TIPO_CONFIG = {
   sistema: { icon: <GearSix size={18} />, label: 'Sistema', variant: 'primary' },
 }
 
-// La API guarda el destino como 'proyecto:<id>' o 'reporte:<id>'.
+// La API guarda el destino como 'proyecto:<id>', 'reporte:<id>' o 'ficha:<id>'.
 function decodificarEnlace(enlace) {
   if (!enlace) return {}
   const [tipo, valor] = String(enlace).split(':')
   if (tipo === 'proyecto') return { projectId: Number(valor) }
   if (tipo === 'reporte') return { reporteId: Number(valor) }
+  if (tipo === 'ficha') return { fichaId: Number(valor) }
   return {}
 }
 
@@ -34,6 +36,7 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
   const { user } = useAuth()
   const navigate = useNavigate()
   const [aEliminar, setAEliminar] = useState(null)
+  const [errorEliminar, setErrorEliminar] = useState('')
 
   // Notificaciones del usuario autenticado (fuente única: la API).
   const { data, cargando, error, recargar } = useApi(
@@ -66,20 +69,27 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
         // Si falla la marca, igualmente se navega al destino.
       }
     }
-    const { projectId, reporteId } = decodificarEnlace(n.enlace)
+    const { projectId, reporteId, fichaId } = decodificarEnlace(n.enlace)
     if (projectId) navigate(`${detallePath}/detalle-proyecto/${projectId}`)
     // Solo el admin tiene detalle-reporte; en otros roles solo se marca como leída.
     else if (reporteId && detallePath === '/admin') navigate(`${detallePath}/detalle-reporte/${reporteId}`)
+    // Movimientos de ficha: el aprendiz va a su ficha; el staff al detalle.
+    else if (fichaId) {
+      if (detallePath === '/aprendiz') navigate('/aprendiz/ficha')
+      else navigate(`${detallePath}/detalle-ficha/${fichaId}`)
+    }
   }
 
   async function confirmarEliminar() {
     if (!aEliminar) return
+    setErrorEliminar('')
     try {
       await apiNotificaciones.eliminar(aEliminar.id)
       setAEliminar(null)
       await recargar()
-    } catch {
+    } catch (err) {
       setAEliminar(null)
+      setErrorEliminar(err?.data?.message || 'No se pudo eliminar la notificación.')
     }
   }
 
@@ -95,6 +105,8 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
           </Button>
         }
       />
+
+      {errorEliminar && <Alert variant="danger">{errorEliminar}</Alert>}
 
       <ApiState cargando={cargando} error={error} onReintentar={recargar}>
         {sinLeer > 0 && (

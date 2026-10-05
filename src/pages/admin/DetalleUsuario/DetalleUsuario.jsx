@@ -45,6 +45,7 @@ export default function DetalleUsuario() {
   const [accionMsg, setAccionMsg] = useState(null)
   const [claveTemporal, setClaveTemporal] = useState(null)
   const [avisoCredenciales, setAvisoCredenciales] = useState('')
+  const [accionOcupada, setAccionOcupada] = useState(false)
   const [filtroProp, setFiltroProp] = useState('todos')
   const [busquedaProp, setBusquedaProp] = useState('')
 
@@ -266,6 +267,8 @@ export default function DetalleUsuario() {
   }
 
   const restablecerClave = async () => {
+    if (accionOcupada) return
+    setAccionOcupada(true)
     try {
       // La temporal la genera el servidor con el formato institucional único.
       const resp = await usuarios.restablecerCredenciales(usuario.id)
@@ -275,6 +278,8 @@ export default function DetalleUsuario() {
       await recargar()
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo restablecer la contraseña.')
+    } finally {
+      setAccionOcupada(false)
     }
   }
 
@@ -290,14 +295,18 @@ export default function DetalleUsuario() {
 
   // Reenvía las credenciales temporales (solo mientras la contraseña no cambie).
   const reenviarCredenciales = async () => {
+    if (accionOcupada) return
     setAccionMsg(null)
     setAvisoCredenciales('')
+    setAccionOcupada(true)
     try {
       await usuarios.reenviarCredenciales(usuario.id)
       setAvisoCredenciales('Credenciales reenviadas al correo personal.')
       await recargar()
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudieron reenviar las credenciales.')
+    } finally {
+      setAccionOcupada(false)
     }
   }
 
@@ -341,7 +350,7 @@ export default function DetalleUsuario() {
               </Button>
             )}
             {usuario.rol !== 'admin' && (
-              <Button type="button" variant="secondary" onClick={() => setModalRestablecer(true)}>
+              <Button type="button" variant="secondary" disabled={accionOcupada} onClick={() => setModalRestablecer(true)}>
                 <Key size={14} /> Restablecer contraseña
               </Button>
             )}
@@ -350,6 +359,7 @@ export default function DetalleUsuario() {
                 type="button"
                 variant="secondary"
                 title="Reenviar las credenciales temporales al correo personal"
+                disabled={accionOcupada}
                 onClick={reenviarCredenciales}
               >
                 <ArrowCounterClockwise size={14} /> Reenviar credenciales

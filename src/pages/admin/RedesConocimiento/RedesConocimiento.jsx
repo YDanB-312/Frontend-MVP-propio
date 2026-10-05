@@ -28,8 +28,8 @@ import cs from './RedesConocimiento.module.css'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
-// Datos por defecto de un programa nuevo (la API exige nivel y trimestres).
-const PROGRAMA_DEFECTO = { nivel: 'Tecnologo', num_trimestres: 6 }
+// Datos por defecto de un programa nuevo (la API exige nivel).
+const PROGRAMA_DEFECTO = { nivel: 'Tecnologo' }
 
 function ProgramasCell({ programas: lista }) {
   const LIMITE = 3
@@ -296,7 +296,6 @@ export default function RedesConocimiento() {
               await programas.actualizar(item.id, {
                 nombre: item.nombre,
                 nivel: previo.nivel,
-                num_trimestres: previo.num_trimestres,
                 knowledge_network_id: Number(editId),
               })
             }
@@ -342,9 +341,7 @@ export default function RedesConocimiento() {
   const confirmarEliminar = async () => {
     if (!confirmId) return
     try {
-      // El backend bloquea (409) si la red tiene programas: se eliminan primero.
-      const asociados = listaProgramas.filter((p) => Number(p.knowledge_network_id) === Number(confirmId))
-      for (const p of asociados) await programas.eliminar(p.id)
+      // El backend borra la red y sus programas en cascada (transaccional).
       await redes.eliminar(confirmId)
       setConfirmId(null)
       await recargar()

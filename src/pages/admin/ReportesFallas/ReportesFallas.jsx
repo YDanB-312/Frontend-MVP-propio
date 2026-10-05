@@ -18,6 +18,7 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import ApiState from '../../../components/ApiState/ApiState'
+import Alert from '../../../components/Alert/Alert'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { norm, fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import { useApi } from '../../../lib/useApi'
@@ -44,6 +45,7 @@ export default function ReportesFallas() {
   const [fechaHasta, setFechaHasta] = useState('')
   const [pagina, setPagina] = useState(1)
   const [aEliminar, setAEliminar] = useState(null)
+  const [errorAccion, setErrorAccion] = useState('')
 
   // Fuente única: la API. Reportes con su usuario incluido.
   const { data, cargando, error, recargar } = useApi(
@@ -56,12 +58,14 @@ export default function ReportesFallas() {
 
   async function confirmarEliminar() {
     if (!aEliminar) return
+    setErrorAccion('')
     try {
       await reportes.eliminar(aEliminar.id)
       setAEliminar(null)
       await recargar()
-    } catch {
+    } catch (err) {
       setAEliminar(null)
+      setErrorAccion(err?.data?.message || 'No se pudo eliminar el reporte. Intenta de nuevo.')
     }
   }
 
@@ -121,6 +125,8 @@ export default function ReportesFallas() {
             { label: 'Soporte' },
           ]}
         />
+
+        {errorAccion && <Alert variant="danger">{errorAccion}</Alert>}
 
         <ApiState cargando={cargando} error={error} onReintentar={recargar}>
           <FilterBar title="Buscar y filtrar">
