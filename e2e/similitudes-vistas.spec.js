@@ -87,6 +87,18 @@ test.describe('Evidencia histórica: la versión anterior se puede consultar', (
   })
 })
 
+test.describe('Detalle de similitud: sin señales del motor', () => {
+  test('no muestra "¿Qué tienen en común?" y conserva el porcentaje', async ({ page }) => {
+    // Similitud 3 (5↔10, ambas aprobadas): visible para María.
+    await login(page, 'aprendiz')
+    await page.goto('/aprendiz/detalle-similitud/3')
+
+    await expect(page.getByRole('heading', { name: /Similitud #3/ })).toBeVisible()
+    await expect(page.getByText(/¿Qué tienen en común\?/)).toHaveCount(0)
+    await expect(page.getByText('Índice de similitud').first()).toBeVisible()
+  })
+})
+
 test.describe('Admin: tira resumen de similitudes', () => {
   test('muestra pares, altas, programas y umbral', async ({ page }) => {
     await login(page, 'admin')

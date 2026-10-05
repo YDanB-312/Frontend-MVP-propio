@@ -46,7 +46,7 @@ export default function DetalleProyecto() {
     [id],
     { inicial: null }
   )
-  const { data: todasSimilitudes } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
+  const { data: todasSimilitudes, recargar: recargarSimilitudes } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
   const { data: comentariosApi, cargando: cargandoObs, recargar: recargarObs } = useApi(
     () => observacionesApi.listar('user', { id_proyecto: id }),
     [id],
@@ -117,8 +117,8 @@ export default function DetalleProyecto() {
   const perteneceAFicha = !!miAprendiz
     && Number(miAprendiz.id_class_group) === Number(project?.id_class_group)
   // El equipo lo gestiona el CREADOR, dentro de su ficha activa y solo
-  // mientras la propuesta es editable (borrador/rechazada).
-  const equipoEditable = ['borrador', 'rechazado'].includes(project?.estado)
+  // mientras la propuesta es editable (borrador/en revisión/rechazada).
+  const equipoEditable = ['borrador', 'pendiente', 'rechazado'].includes(project?.estado)
   const gestionaEquipo = equipoEditable
     && Number(project?.id_creador) === Number(user.id)
     && fichaActiva && perteneceAFicha
@@ -170,9 +170,10 @@ export default function DetalleProyecto() {
   const motivoSoloLectura = ficha && ficha.estado !== 'activo'
     ? 'La ficha está finalizada: la propuesta queda en solo lectura.'
     : 'Solo lectura: ya no perteneces a esta ficha.'
-  // Se puede editar mientras la propuesta sea editable (borrador o rechazada);
-  // una vez enviada queda en revisión y solo se consulta.
-  const puedeEditar = puedeEscribir && ['borrador', 'rechazado'].includes(project.estado)
+  // Se puede editar en borrador, en revisión o rechazada; aprobada queda
+  // bloqueada. El envío explícito sigue disponible solo en borrador/rechazada.
+  const puedeEditar = puedeEscribir && ['borrador', 'pendiente', 'rechazado'].includes(project.estado)
+  const puedeEnviar = puedeEscribir && ['borrador', 'rechazado'].includes(project.estado)
 
   // Envío explícito: el backend valida, detecta similitudes y avisa al instructor.
   async function enviarPropuesta() {
@@ -236,10 +237,13 @@ export default function DetalleProyecto() {
         id_class_group: project.id_class_group,
       })
       await recargar()
+      await recargarSimilitudes()
       setEditando(false)
       setAviso(project.estado === 'rechazado'
         ? 'Propuesta actualizada. Revísala y envíala de nuevo cuando estés listo.'
-        : 'Propuesta actualizada correctamente.')
+        : project.estado === 'pendiente'
+          ? 'Propuesta actualizada. Sigue en revisión; el instructor verá los cambios.'
+          : 'Propuesta actualizada correctamente.')
     } catch (err) {
       setErrores({ titulo: err?.data?.message || 'No se pudo actualizar la propuesta.' })
     } finally {
@@ -336,7 +340,7 @@ export default function DetalleProyecto() {
                     <PencilSimple size={14} /> Editar
                   </Button>
                 )}
-                {puedeEditar && (
+                {puedeEnviar && (
                   <Button type="button" disabled={enviandoPropuesta} onClick={enviarPropuesta}>
                     <PaperPlaneRight size={14} /> {enviandoPropuesta ? 'Enviando…' : 'Enviar propuesta'}
                   </Button>
@@ -415,6 +419,9 @@ export default function DetalleProyecto() {
                   {project.estado === 'rechazado' && (
                     <p className={s.muted}><Warning size={14} /> Al guardar, la propuesta sigue rechazada. Cuando termines, usa «Enviar propuesta» para reenviarla a revisión (el sistema exige que el contenido haya cambiado).</p>
                   )}
+                  {project.estado === 'pendiente' && (
+                    <p className={s.muted}><Warning size={14} /> Al guardar, la propuesta sigue en revisión y sus coincidencias se vuelven a analizar.</p>
+                  )}
                   <Actions form>
                     <Button type="submit" disabled={guardando}>
                       <CheckCircle size={14} /> {guardando ? 'Guardando…' : 'Guardar cambios'}
@@ -455,7 +462,7 @@ export default function DetalleProyecto() {
                     })}
                   </ul>
                 )}
-                <SimilitudesHistoricas proyectoId={project.id} detalleBase="/aprendiz" />
+                <SimilitudesHistoricas key={project.updated_at} proyectoId={project.id} detalleBase="/aprendiz" />
               </DataPanel>
 
               <DataPanel title={`Observaciones (${observaciones.length})`} icon={<ChatCircle />}>

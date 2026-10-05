@@ -68,15 +68,31 @@ test('sin ficha: el equipo se ve con nombres y en solo lectura', async ({ page }
   await expect(filaCreador.getByRole('button', { name: /Quitar/i })).toHaveCount(0)
 })
 
-// En revisión y aprobado el equipo es solo lectura (mismo criterio que el backend).
-test('en revisión y aprobado no se ofrece gestionar el equipo', async ({ page }) => {
+// En revisión el creador gestiona el equipo; aprobado queda en solo lectura.
+test('en revisión se gestiona el equipo y aprobado queda bloqueado', async ({ page }) => {
   await login(page, 'aprendiz')
 
-  // Proyecto 4 (pendiente) y 5 (aprobado) de María en el seed.
-  for (const id of [4, 5]) {
-    await page.goto(`/aprendiz/detalle-proyecto/${id}`)
-    await expect(page.getByText('Equipo', { exact: true })).toBeVisible({ timeout: 15000 })
-    await expect(page.getByRole('button', { name: 'Agregar', exact: true })).toHaveCount(0)
-    await expect(page.getByRole('button', { name: /Quitar/i })).toHaveCount(0)
+  // Un test anterior pudo dejar a María fuera de la ficha: se reincorpora
+  // (idempotente) para comprobar la gestión del equipo en revisión.
+  await page.goto('/aprendiz/ficha')
+  const buscar = page.getByRole('button', { name: /Buscar ficha/i })
+  const salir = page.getByRole('button', { name: /Salir de la ficha/i })
+  await expect(salir.or(buscar).first()).toBeVisible({ timeout: 15000 })
+  if (await buscar.isVisible().catch(() => false)) {
+    await page.getByLabel(/Código de la ficha/i).fill('xkp-mqwr')
+    await buscar.click()
+    await page.getByRole('button', { name: /Unirme a esta ficha/i }).click()
+    await expect(page.getByText(/Integrantes de la ficha/i)).toBeVisible({ timeout: 15000 })
   }
+
+  // Proyecto 4 (pendiente) de María: el equipo es editable.
+  await page.goto('/aprendiz/detalle-proyecto/4')
+  await expect(page.getByText('Equipo', { exact: true })).toBeVisible({ timeout: 15000 })
+  await expect(page.getByRole('button', { name: 'Agregar', exact: true }).first()).toBeVisible()
+
+  // Proyecto 5 (aprobado): solo lectura.
+  await page.goto('/aprendiz/detalle-proyecto/5')
+  await expect(page.getByText('Equipo', { exact: true })).toBeVisible({ timeout: 15000 })
+  await expect(page.getByRole('button', { name: 'Agregar', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Quitar/i })).toHaveCount(0)
 })
